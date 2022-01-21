@@ -20,6 +20,67 @@ use std::collections::HashMap;
 
 /// The types of associated data which can be fetched along with a project
 #[derive(Debug, Clone)]
+pub enum ProjectListInclude {
+    /// Trackers enabled in the project
+    Trackers,
+    /// Issue categories in the project
+    IssueCategories,
+    /// Redmine Modules enabled in the project
+    EnabledModules,
+}
+
+impl std::fmt::Display for ProjectListInclude {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Trackers => {
+                write!(f, "trackers")
+            }
+            Self::IssueCategories => {
+                write!(f, "issue_categories")
+            }
+            Self::EnabledModules => {
+                write!(f, "enabled_modules")
+            }
+        }
+    }
+}
+
+/// The endpoint for all Redmine projects
+#[derive(Debug, Builder)]
+#[builder(setter(strip_option))]
+pub struct Projects {
+    /// the types of associate data to include
+    #[builder(default)]
+    include: Option<Vec<ProjectInclude>>,
+}
+
+impl Pageable for Projects {}
+
+impl Projects {
+    /// Create a builder for the endpoint.
+    pub fn builder() -> ProjectsBuilder {
+        ProjectsBuilder::default()
+    }
+}
+
+impl<'a> Endpoint for Projects {
+    fn method(&self) -> Method {
+        Method::GET
+    }
+
+    fn endpoint(&self) -> Cow<'static, str> {
+        "projects.json".into()
+    }
+
+    fn parameters(&self) -> QueryParams {
+        let mut params = QueryParams::default();
+        params.push_opt("includes", self.include.as_ref());
+        params
+    }
+}
+
+/// The types of associated data which can be fetched along with a project
+#[derive(Debug, Clone)]
 pub enum ProjectInclude {
     /// Trackers enabled in the project
     Trackers,
@@ -47,30 +108,6 @@ impl std::fmt::Display for ProjectInclude {
                 write!(f, "time_entry_activities")
             }
         }
-    }
-}
-
-/// The endpoint for all Redmine projects
-#[derive(Debug, Builder)]
-#[builder(setter(strip_option))]
-pub struct Projects {}
-
-impl Pageable for Projects {}
-
-impl Projects {
-    /// Create a builder for the endpoint.
-    pub fn builder() -> ProjectsBuilder {
-        ProjectsBuilder::default()
-    }
-}
-
-impl<'a> Endpoint for Projects {
-    fn method(&self) -> Method {
-        Method::GET
-    }
-
-    fn endpoint(&self) -> Cow<'static, str> {
-        "projects.json".into()
     }
 }
 
