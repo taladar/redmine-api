@@ -111,7 +111,7 @@ pub struct CreateVersion<'a> {
     sharing: Option<VersionSharing>,
     /// when the version is due to be released
     #[builder(default)]
-    due_date: Option<chrono::NaiveDate>,
+    due_date: Option<time::Date>,
     /// Description of the version
     #[builder(default)]
     description: Option<Cow<'a, str>>,
@@ -156,7 +156,7 @@ pub struct UpdateVersion<'a> {
     sharing: Option<VersionSharing>,
     /// when the version is due to be released
     #[builder(default)]
-    due_date: Option<chrono::NaiveDate>,
+    due_date: Option<time::Date>,
     /// Description of the version
     #[builder(default)]
     description: Option<Cow<'a, str>>,

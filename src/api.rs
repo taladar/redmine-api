@@ -47,7 +47,6 @@ use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use serde::Deserializer;
 
-use chrono::{DateTime, NaiveDate, Utc};
 use http::Method;
 use std::borrow::Cow;
 
@@ -393,16 +392,16 @@ impl ParamValue<'static> for f64 {
     }
 }
 
-impl ParamValue<'static> for DateTime<Utc> {
+impl ParamValue<'static> for time::OffsetDateTime {
     fn as_value(&self) -> Cow<'static, str> {
-        self.to_rfc3339_opts(chrono::SecondsFormat::Secs, true)
-            .into()
+        self.format(&time::format_description::well_known::Rfc3339).unwrap().into()
     }
 }
 
-impl ParamValue<'static> for NaiveDate {
+impl ParamValue<'static> for time::Date {
     fn as_value(&self) -> Cow<'static, str> {
-        format!("{}", self.format("%Y-%m-%d")).into()
+        let format = time::format_description::parse("[year]-[month]-[day]").unwrap();
+        self.format(&format).unwrap().into()
     }
 }
 

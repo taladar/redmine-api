@@ -40,13 +40,13 @@ pub struct TimeEntries<'a> {
     activity_id: Option<u64>,
     /// day the time was spent on
     #[builder(default)]
-    spent_on: Option<chrono::NaiveDate>,
+    spent_on: Option<time::Date>,
     /// from day filter for spent on
     #[builder(default)]
-    from: Option<chrono::NaiveDate>,
+    from: Option<time::Date>,
     /// to day filter for spent on
     #[builder(default)]
-    to: Option<chrono::NaiveDate>,
+    to: Option<time::Date>,
 }
 
 impl<'a> TimeEntries<'a> {
@@ -115,7 +115,7 @@ pub struct CreateTimeEntry<'a> {
     project_id: Option<u64>,
     /// The date the time was spent, default is today
     #[builder(default)]
-    spent_on: Option<chrono::NaiveDate>,
+    spent_on: Option<time::Date>,
     /// the hours spent
     #[builder(default)]
     hours: Option<f64>,
@@ -176,7 +176,7 @@ pub struct UpdateTimeEntry<'a> {
     project_id: Option<u64>,
     /// The date the time was spent, default is today
     #[builder(default)]
-    spent_on: Option<chrono::NaiveDate>,
+    spent_on: Option<time::Date>,
     /// the hours spent
     #[builder(default)]
     hours: Option<f64>,

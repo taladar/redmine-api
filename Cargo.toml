@@ -31,9 +31,9 @@ features = [ "log" ]
 version = "~0.11"
 features = [ "blocking", "json" ]
 
-[dependencies.chrono]
-version = "~0.4"
-features = [ "serde" ]
+[dependencies.time]
+version = "~0.3"
+features = [ "serde", "serde-human-readable" ]
 
 [dependencies.url]
 version = "~2"
