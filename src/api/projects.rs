@@ -363,21 +363,38 @@ mod test {
     //use pretty_assertions::{assert_eq,assert_ne};
     use tracing_test::traced_test;
 
+    #[derive(Debug, PartialEq, Eq, serde::Deserialize)]
+    struct Project {
+        id: u64,
+    }
+
+    #[derive(Debug, PartialEq, Eq, serde::Deserialize)]
+    struct ProjectsWrapper {
+        projects: Vec<Project>,
+    }
+
+    #[derive(Debug, PartialEq, Eq, serde::Deserialize)]
+    struct ProjectWrapper {
+        project: Project,
+    }
+
     #[traced_test]
     #[test]
     fn test_list_projects_no_pagination() -> Result<(), Box<dyn Error>> {
-        #[derive(Debug, PartialEq, Eq, serde::Deserialize)]
-        struct Project {
-            id: u64,
-        }
-        #[derive(Debug, PartialEq, Eq, serde::Deserialize)]
-        struct ProjectsWrapper {
-            projects: Vec<Project>,
-        }
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = Projects::builder().build()?;
         redmine.rest::<_, ProjectsWrapper>(&endpoint)?;
+        Ok(())
+    }
+
+    #[traced_test]
+    #[test]
+    fn test_get_project() -> Result<(), Box<dyn Error>> {
+        dotenv::dotenv()?;
+        let redmine = crate::api::Redmine::from_env()?;
+        let endpoint = super::Project::builder().project_id_or_name("sandbox").build()?;
+        redmine.rest::<_, ProjectWrapper>(&endpoint)?;
         Ok(())
     }
 }
