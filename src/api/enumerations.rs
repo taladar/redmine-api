@@ -12,12 +12,10 @@ use std::borrow::Cow;
 
 use crate::api::Endpoint;
 
-
 /// The endpoint for all issue priorities
 #[derive(Debug, Builder)]
 #[builder(setter(strip_option))]
-pub struct IssuePriorities {
-}
+pub struct IssuePriorities {}
 
 impl IssuePriorities {
     /// Create a builder for the endpoint.
@@ -39,8 +37,7 @@ impl<'a> Endpoint for IssuePriorities {
 /// The endpoint for all time entry activities
 #[derive(Debug, Builder)]
 #[builder(setter(strip_option))]
-pub struct TimeEntryActivities {
-}
+pub struct TimeEntryActivities {}
 
 impl TimeEntryActivities {
     /// Create a builder for the endpoint.
@@ -62,8 +59,7 @@ impl<'a> Endpoint for TimeEntryActivities {
 /// The endpoint for all document categories
 #[derive(Debug, Builder)]
 #[builder(setter(strip_option))]
-pub struct DocumentCategories {
-}
+pub struct DocumentCategories {}
 
 impl DocumentCategories {
     /// Create a builder for the endpoint.

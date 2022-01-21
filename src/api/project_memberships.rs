@@ -12,8 +12,8 @@ use derive_builder::Builder;
 use http::Method;
 use std::borrow::Cow;
 
-use serde::Serialize;
 use crate::api::Endpoint;
+use serde::Serialize;
 
 /// The endpoint for all memberships in a Redmine project
 #[derive(Debug, Builder)]
@@ -62,7 +62,7 @@ impl<'a> Endpoint for ProjectMembership {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-       format!("memberships/{}.json", &self.id).into()
+        format!("memberships/{}.json", &self.id).into()
     }
 }
 
@@ -154,6 +154,6 @@ impl<'a> Endpoint for DeleteProjectMembership {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-       format!("memberships/{}.json", &self.id).into()
+        format!("memberships/{}.json", &self.id).into()
     }
 }

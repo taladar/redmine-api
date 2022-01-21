@@ -17,8 +17,8 @@ use derive_builder::Builder;
 use http::Method;
 use std::borrow::Cow;
 
+use crate::api::{Endpoint, Pageable, QueryParams};
 use serde::Serialize;
-use crate::api::{Endpoint,Pageable,QueryParams};
 
 /// The user status values for filtering
 #[derive(Debug, Clone)]
@@ -38,13 +38,13 @@ impl std::fmt::Display for UserStatus {
         match self {
             Self::Active => {
                 write!(f, "Active")
-            },
+            }
             Self::Registered => {
                 write!(f, "Registered")
             }
             Self::Locked => {
                 write!(f, "Locked")
-            },
+            }
             Self::AnyStatus => {
                 write!(f, "")
             }
@@ -65,7 +65,7 @@ pub struct Users<'a> {
     name: Option<Cow<'a, str>>,
     /// Users need to be members of this group
     #[builder(default)]
-    group_id: Option<u64>
+    group_id: Option<u64>,
 }
 
 impl<'a> Pageable for Users<'a> {}
@@ -83,12 +83,15 @@ impl<'a> Endpoint for Users<'a> {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-       "users.json".into()
+        "users.json".into()
     }
 
     fn parameters(&self) -> QueryParams {
         let mut params = QueryParams::default();
-        params.push_opt("status", self.status.as_ref().and_then(|s| Some(s.to_string())));
+        params.push_opt(
+            "status",
+            self.status.as_ref().and_then(|s| Some(s.to_string())),
+        );
         params.push_opt("name", self.name.as_ref());
         params.push_opt("group_id", self.group_id);
         params
@@ -109,10 +112,10 @@ impl std::fmt::Display for UserInclude {
         match self {
             Self::Memberships => {
                 write!(f, "memberships")
-            },
+            }
             Self::Groups => {
                 write!(f, "groups")
-            },
+            }
         }
     }
 }
@@ -142,12 +145,8 @@ impl<'a> Endpoint for User {
 
     fn endpoint(&self) -> Cow<'static, str> {
         match self.id {
-            Some(id) => {
-                format!("users/{}.json", id).into()
-            },
-            None => {
-                "users/current.json".into()
-            }
+            Some(id) => format!("users/{}.json", id).into(),
+            None => "users/current.json".into(),
         }
     }
 
@@ -160,7 +159,7 @@ impl<'a> Endpoint for User {
 
 /// Possible values for mail notification options for a user
 #[derive(Debug, Clone, Serialize)]
-#[serde(rename_all="snake_case")]
+#[serde(rename_all = "snake_case")]
 pub enum MailNotificationOptions {
     /// Get notified by all events (visible to user)
     All,
@@ -173,7 +172,7 @@ pub enum MailNotificationOptions {
     /// Only get notifications for events in issues owned by the user
     OnlyOwner,
     /// Do not get any notifications
-    #[serde(rename="none")]
+    #[serde(rename = "none")]
     NoMailNotifications,
 }
 
@@ -187,7 +186,7 @@ pub struct CreateUser<'a> {
     /// The user's password
     ///
     /// It is recommended to use generate_password instead
-    #[builder(setter(into),default)]
+    #[builder(setter(into), default)]
     password: Option<Cow<'a, str>>,
     /// The user's firstname
     #[builder(setter(into))]
@@ -252,7 +251,7 @@ pub struct UpdateUser<'a> {
     /// The user's password
     ///
     /// It is recommended to use generate_password instead
-    #[builder(setter(into),default)]
+    #[builder(setter(into), default)]
     password: Option<Cow<'a, str>>,
     /// The user's firstname
     #[builder(setter(into))]
@@ -325,6 +324,6 @@ impl<'a> Endpoint for DeleteUser {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-       format!("users/{}.json", &self.id).into()
+        format!("users/{}.json", &self.id).into()
     }
 }

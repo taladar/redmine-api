@@ -13,8 +13,7 @@ use crate::api::Endpoint;
 /// The endpoint for all issue statuses
 #[derive(Debug, Builder)]
 #[builder(setter(strip_option))]
-pub struct IssueStatuses {
-}
+pub struct IssueStatuses {}
 
 impl IssueStatuses {
     /// Create a builder for the endpoint.

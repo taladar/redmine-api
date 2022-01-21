@@ -77,8 +77,8 @@ use derive_builder::Builder;
 use http::Method;
 use std::borrow::Cow;
 
+use crate::api::{Endpoint, Pageable, QueryParams};
 use serde::Serialize;
-use crate::api::{Endpoint,Pageable,QueryParams};
 
 /// Sort by this column
 #[derive(Debug, Clone)]
@@ -100,7 +100,7 @@ impl std::fmt::Display for SortByColumn {
         match self {
             SortByColumn::Forward { column_name } => {
                 write!(f, "{}", column_name)
-            },
+            }
             SortByColumn::Reverse { column_name } => {
                 write!(f, "{}:rev", column_name)
             }
@@ -122,10 +122,10 @@ impl std::fmt::Display for IssueListInclude {
         match self {
             Self::Attachments => {
                 write!(f, "attachments")
-            },
+            }
             Self::Relations => {
                 write!(f, "relations")
-            },
+            }
         }
     }
 }
@@ -223,25 +223,25 @@ impl std::fmt::Display for IssueInclude {
         match self {
             Self::Children => {
                 write!(f, "children")
-            },
+            }
             Self::Attachments => {
                 write!(f, "attachments")
-            },
+            }
             Self::Relations => {
                 write!(f, "relations")
-            },
+            }
             Self::Changesets => {
                 write!(f, "relations")
-            },
+            }
             Self::Journals => {
                 write!(f, "journals")
-            },
+            }
             Self::Watchers => {
                 write!(f, "watchers")
-            },
+            }
             Self::AllowedStatuses => {
                 write!(f, "allowed_statuses")
-            },
+            }
         }
     }
 }
@@ -270,7 +270,7 @@ impl Endpoint for Issue {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-       format!("issues/{}.json", &self.id).into()
+        format!("issues/{}.json", &self.id).into()
     }
 
     fn parameters(&self) -> QueryParams {
@@ -305,10 +305,10 @@ pub struct CreateIssue<'a> {
     #[builder(default)]
     priority_id: Option<u64>,
     /// issue subject
-    #[builder(setter(into),default)]
+    #[builder(setter(into), default)]
     subject: Option<Cow<'a, str>>,
     /// issue description
-    #[builder(setter(into),default)]
+    #[builder(setter(into), default)]
     description: Option<Cow<'a, str>>,
     /// issue category
     #[builder(default)]
@@ -377,10 +377,10 @@ pub struct UpdateIssue<'a> {
     #[builder(default)]
     priority_id: Option<u64>,
     /// issue subject
-    #[builder(setter(into),default)]
+    #[builder(setter(into), default)]
     subject: Option<Cow<'a, str>>,
     /// issue description
-    #[builder(setter(into),default)]
+    #[builder(setter(into), default)]
     description: Option<Cow<'a, str>>,
     /// issue category
     #[builder(default)]
@@ -456,7 +456,7 @@ impl<'a> Endpoint for DeleteIssue {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-       format!("issues/{}.json", &self.id).into()
+        format!("issues/{}.json", &self.id).into()
     }
 }
 
@@ -484,7 +484,7 @@ impl<'a> Endpoint for AddWatcher {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-       format!("issues/{}/watchers.json", &self.issue_id).into()
+        format!("issues/{}/watchers.json", &self.issue_id).into()
     }
 
     fn body(&self) -> Result<Option<(&'static str, Vec<u8>)>, crate::Error> {
@@ -515,6 +515,6 @@ impl<'a> Endpoint for RemoveWatcher {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-       format!("issues/{}/watchers/{}.json", &self.issue_id, &self.user_id).into()
+        format!("issues/{}/watchers/{}.json", &self.issue_id, &self.user_id).into()
     }
 }

@@ -13,8 +13,8 @@ use derive_builder::Builder;
 use http::Method;
 use std::borrow::Cow;
 
-use serde::Serialize;
 use crate::api::Endpoint;
+use serde::Serialize;
 
 /// The endpoint for all issue relations in a Redmine issue
 #[derive(Debug, Builder)]
@@ -68,7 +68,7 @@ impl<'a> Endpoint for IssueRelation {
 
 /// Type of issue relation
 #[derive(Debug, Clone, Serialize)]
-#[serde(rename_all="snake_case")]
+#[serde(rename_all = "snake_case")]
 pub enum IssueRelationType {
     /// The most general type of issue relation
     Relates,

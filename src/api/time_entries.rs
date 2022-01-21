@@ -19,8 +19,8 @@ use derive_builder::Builder;
 use http::Method;
 use std::borrow::Cow;
 
+use crate::api::{Endpoint, QueryParams};
 use serde::Serialize;
-use crate::api::{Endpoint,QueryParams};
 
 /// The endpoint for all time entries
 #[derive(Debug, Builder)]
@@ -105,7 +105,7 @@ impl<'a> Endpoint for TimeEntry {
 
 /// The endpoint to create a Redmine time entry
 #[derive(Debug, Builder, Serialize)]
-#[builder(setter(strip_option),build_fn(validate = "Self::validate"))]
+#[builder(setter(strip_option), build_fn(validate = "Self::validate"))]
 pub struct CreateTimeEntry<'a> {
     /// Issue id is required if project_id is not specified
     #[builder(default)]
@@ -124,7 +124,7 @@ pub struct CreateTimeEntry<'a> {
     activity_id: Option<u64>,
     /// Short description for teh entry (255 characters max)
     #[builder(default)]
-    comments: Option<Cow<'a,str>>,
+    comments: Option<Cow<'a, str>>,
     /// User Id is only required when posting time on behalf of another user, defaults to current user
     #[builder(default)]
     user_id: Option<u64>,
@@ -163,7 +163,7 @@ impl<'a> Endpoint for CreateTimeEntry<'a> {
 
 /// The endpoint to update an existing Redmine time entry
 #[derive(Debug, Builder, Serialize)]
-#[builder(setter(strip_option),build_fn(validate = "Self::validate"))]
+#[builder(setter(strip_option), build_fn(validate = "Self::validate"))]
 pub struct UpdateTimeEntry<'a> {
     /// the id of the time entry to update
     #[serde(skip_serializing)]
@@ -185,7 +185,7 @@ pub struct UpdateTimeEntry<'a> {
     activity_id: Option<u64>,
     /// Short description for teh entry (255 characters max)
     #[builder(default)]
-    comments: Option<Cow<'a,str>>,
+    comments: Option<Cow<'a, str>>,
     /// User Id is only required when posting time on behalf of another user, defaults to current user
     #[builder(default)]
     user_id: Option<u64>,
@@ -243,6 +243,6 @@ impl<'a> Endpoint for DeleteTimeEntry {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-       format!("time_entries/{}.json", &self.id).into()
+        format!("time_entries/{}.json", &self.id).into()
     }
 }

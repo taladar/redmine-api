@@ -14,8 +14,7 @@ use crate::api::Endpoint;
 /// The endpoint for all roles
 #[derive(Debug, Builder)]
 #[builder(setter(strip_option))]
-pub struct Roles {
-}
+pub struct Roles {}
 
 impl Roles {
     /// Create a builder for the endpoint.
@@ -30,7 +29,7 @@ impl<'a> Endpoint for Roles {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-       "roles.json".into()
+        "roles.json".into()
     }
 }
 
@@ -55,6 +54,6 @@ impl<'a> Endpoint for Role {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-       format!("roles/{}.json", self.id).into()
+        format!("roles/{}.json", self.id).into()
     }
 }

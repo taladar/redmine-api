@@ -12,8 +12,8 @@ use derive_builder::Builder;
 use http::Method;
 use std::borrow::Cow;
 
-use serde::Serialize;
 use crate::api::Endpoint;
+use serde::Serialize;
 
 /// The endpoint for all versions in a Redmine project
 #[derive(Debug, Builder)]
@@ -62,14 +62,14 @@ impl<'a> Endpoint for Version {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-       format!("versions/{}.json", &self.id).into()
+        format!("versions/{}.json", &self.id).into()
     }
 }
 
 /// The status of a version restricts if issues can be assigned to this
 /// version and if assigned issues can be reopened
 #[derive(Debug, Clone, Serialize)]
-#[serde(rename_all="snake_case")]
+#[serde(rename_all = "snake_case")]
 pub enum VersionStatus {
     /// no restrictions, default
     Open,
@@ -81,7 +81,7 @@ pub enum VersionStatus {
 
 /// Version sharing determines the cross-project visibility of the version
 #[derive(Debug, Clone, Serialize)]
-#[serde(rename_all="snake_case")]
+#[serde(rename_all = "snake_case")]
 pub enum VersionSharing {
     /// default
     None,
@@ -207,6 +207,6 @@ impl<'a> Endpoint for DeleteVersion {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-       format!("versions/{}.json", &self.id).into()
+        format!("versions/{}.json", &self.id).into()
     }
 }

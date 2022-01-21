@@ -14,8 +14,7 @@ use crate::api::Endpoint;
 /// The endpoint for all news
 #[derive(Debug, Builder)]
 #[builder(setter(strip_option))]
-pub struct News {
-}
+pub struct News {}
 
 impl News {
     /// Create a builder for the endpoint.
@@ -30,7 +29,7 @@ impl<'a> Endpoint for News {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-       "news.json".into()
+        "news.json".into()
     }
 }
 

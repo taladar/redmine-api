@@ -14,9 +14,9 @@ use derive_builder::Builder;
 use http::Method;
 use std::borrow::Cow;
 
-use std::collections::HashMap;
+use crate::api::{Endpoint, Pageable, QueryParams};
 use serde::Serialize;
-use crate::api::{Endpoint,Pageable,QueryParams};
+use std::collections::HashMap;
 
 /// The types of associated data which can be fetched along with a project
 #[derive(Debug, Clone)]
@@ -36,16 +36,16 @@ impl std::fmt::Display for ProjectInclude {
         match self {
             Self::Trackers => {
                 write!(f, "trackers")
-            },
+            }
             Self::IssueCategories => {
                 write!(f, "issue_categories")
-            },
+            }
             Self::EnabledModules => {
                 write!(f, "enabled_modules")
-            },
+            }
             Self::TimeEntryActivities => {
                 write!(f, "time_entry_activities")
-            },
+            }
         }
     }
 }
@@ -53,8 +53,7 @@ impl std::fmt::Display for ProjectInclude {
 /// The endpoint for all Redmine projects
 #[derive(Debug, Builder)]
 #[builder(setter(strip_option))]
-pub struct Projects {
-}
+pub struct Projects {}
 
 impl Pageable for Projects {}
 
@@ -100,7 +99,7 @@ impl<'a> Endpoint for Project<'a> {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-       format!("projects/{}.json", &self.project_id_or_name).into()
+        format!("projects/{}.json", &self.project_id_or_name).into()
     }
 
     fn parameters(&self) -> QueryParams {
@@ -131,7 +130,7 @@ impl<'a> Endpoint for ArchiveProject {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-       format!("projects/{}/archive.json", &self.id).into()
+        format!("projects/{}/archive.json", &self.id).into()
     }
 }
 
@@ -156,7 +155,7 @@ impl<'a> Endpoint for UnarchiveProject {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-       format!("projects/{}/unarchive.json", &self.id).into()
+        format!("projects/{}/unarchive.json", &self.id).into()
     }
 }
 
@@ -171,10 +170,10 @@ pub struct CreateProject<'a> {
     #[builder(setter(into))]
     identifier: Cow<'a, str>,
     /// the project description
-    #[builder(setter(into),default)]
+    #[builder(setter(into), default)]
     description: Option<Cow<'a, str>>,
     /// the project homepage
-    #[builder(setter(into),default)]
+    #[builder(setter(into), default)]
     homepage: Option<Cow<'a, str>>,
     /// is the project public (visible to anonymous users)
     #[builder(default)]
@@ -240,10 +239,10 @@ pub struct UpdateProject<'a> {
     #[builder(setter(into))]
     identifier: Cow<'a, str>,
     /// the project description
-    #[builder(setter(into),default)]
+    #[builder(setter(into), default)]
     description: Option<Cow<'a, str>>,
     /// the project homepage
-    #[builder(setter(into),default)]
+    #[builder(setter(into), default)]
     homepage: Option<Cow<'a, str>>,
     /// is the project public (visible to anonymous users)
     #[builder(default)]
@@ -316,7 +315,7 @@ impl<'a> Endpoint for DeleteProject {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-       format!("projects/{}.json", &self.id).into()
+        format!("projects/{}.json", &self.id).into()
     }
 }
 

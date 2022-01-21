@@ -10,12 +10,10 @@ use std::borrow::Cow;
 
 use crate::api::Endpoint;
 
-
 /// The endpoint for all trackers
 #[derive(Debug, Builder)]
 #[builder(setter(strip_option))]
-pub struct Trackers {
-}
+pub struct Trackers {}
 
 impl Trackers {
     /// Create a builder for the endpoint.

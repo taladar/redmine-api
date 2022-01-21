@@ -10,12 +10,10 @@ use std::borrow::Cow;
 
 use crate::api::Endpoint;
 
-
 /// The endpoint for all custom fields
 #[derive(Debug, Builder)]
 #[builder(setter(strip_option))]
-pub struct CustomFields {
-}
+pub struct CustomFields {}
 
 impl CustomFields {
     /// Create a builder for the endpoint.

@@ -14,14 +14,13 @@ use derive_builder::Builder;
 use http::Method;
 use std::borrow::Cow;
 
+use crate::api::{Endpoint, QueryParams};
 use serde::Serialize;
-use crate::api::{Endpoint,QueryParams};
 
 /// The endpoint for all Redmine groups
 #[derive(Debug, Builder)]
 #[builder(setter(strip_option))]
-pub struct Groups {
-}
+pub struct Groups {}
 
 impl Groups {
     /// Create a builder for the endpoint.
@@ -54,10 +53,10 @@ impl std::fmt::Display for GroupInclude {
         match self {
             Self::Users => {
                 write!(f, "users")
-            },
+            }
             Self::Memberships => {
                 write!(f, "memberships")
-            },
+            }
         }
     }
 }
@@ -86,7 +85,7 @@ impl<'a> Endpoint for Group {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-       format!("groups/{}.json", &self.id).into()
+        format!("groups/{}.json", &self.id).into()
     }
 
     fn parameters(&self) -> QueryParams {
@@ -184,7 +183,7 @@ impl<'a> Endpoint for DeleteGroup {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-       format!("groups/{}.json", &self.id).into()
+        format!("groups/{}.json", &self.id).into()
     }
 }
 
@@ -212,7 +211,7 @@ impl<'a> Endpoint for AddUserToGroup {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-       format!("groups/{}/users.json", &self.group_id).into()
+        format!("groups/{}/users.json", &self.group_id).into()
     }
 
     fn body(&self) -> Result<Option<(&'static str, Vec<u8>)>, crate::Error> {
@@ -243,6 +242,6 @@ impl<'a> Endpoint for RemoveUserFromGroup {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-       format!("groups/{}/users/{}.json", &self.group_id, &self.user_id).into()
+        format!("groups/{}/users/{}.json", &self.group_id, &self.user_id).into()
     }
 }

@@ -68,7 +68,7 @@ where
 pub struct Redmine {
     client: Client,
     redmine_url: Url,
-    #[derivative(Debug="ignore")]
+    #[derivative(Debug = "ignore")]
     api_key: String,
     impersonate_user_id: Option<u64>,
 }
@@ -200,7 +200,9 @@ impl Redmine {
             .header("x-redmine-api-key", api_key);
         let req = if let Some(user_id) = impersonate_user_id {
             req.header("X-Redmine-Switch-User", format!("{}", user_id))
-        } else { req };
+        } else {
+            req
+        };
         let req = if let Some((mime, data)) = endpoint.body()? {
             req.body(data).header("Content-Type", mime)
         } else {
@@ -239,7 +241,12 @@ impl Redmine {
 
     /// call the given pageable endpoint and return a type that is provided by the user
     /// as well as the total_count, offset and limit values returned by Redmine
-    pub fn rest_page<E, R>(&self, endpoint: &E, offset: u64, limit: u64) -> Result<ResponsePage<R>, crate::Error>
+    pub fn rest_page<E, R>(
+        &self,
+        endpoint: &E,
+        offset: u64,
+        limit: u64,
+    ) -> Result<ResponsePage<R>, crate::Error>
     where
         E: Endpoint + Pageable,
         R: DeserializeOwned + std::fmt::Debug,
@@ -262,7 +269,9 @@ impl Redmine {
             .header("x-redmine-api-key", api_key);
         let req = if let Some(user_id) = impersonate_user_id {
             req.header("X-Redmine-Switch-User", format!("{}", user_id))
-        } else { req };
+        } else {
+            req
+        };
         let req = if let Some((mime, data)) = endpoint.body()? {
             req.body(data).header("Content-Type", mime)
         } else {
@@ -296,12 +305,21 @@ impl Redmine {
         if let Err(ref e) = response_counts {
             error!(%url, %method, %offset, %limit, "Failed parsing the response counts supplied by Redmine: {}", e);
         }
-        let ResponseCounts { total_count, offset, limit } = response_counts?;
+        let ResponseCounts {
+            total_count,
+            offset,
+            limit,
+        } = response_counts?;
         let result = serde_json::from_slice::<R>(&response_body);
         if let Ok(ref parsed_response_body) = result {
             trace!("Parsed response body:\n{:?}", parsed_response_body);
         }
-        Ok(ResponsePage { value: result?, total_count, offset, limit } )
+        Ok(ResponsePage {
+            value: result?,
+            total_count,
+            offset,
+            limit,
+        })
     }
 }
 
@@ -396,7 +414,9 @@ impl ParamValue<'static> for f64 {
 
 impl ParamValue<'static> for time::OffsetDateTime {
     fn as_value(&self) -> Cow<'static, str> {
-        self.format(&time::format_description::well_known::Rfc3339).unwrap().into()
+        self.format(&time::format_description::well_known::Rfc3339)
+            .unwrap()
+            .into()
     }
 }
 

@@ -12,8 +12,8 @@ use derive_builder::Builder;
 use http::Method;
 use std::borrow::Cow;
 
-use serde::Serialize;
 use crate::api::Endpoint;
+use serde::Serialize;
 
 /// The endpoint for all issue categories in a Redmine project
 #[derive(Debug, Builder)]
@@ -62,7 +62,7 @@ impl<'a> Endpoint for IssueCategory {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-       format!("issue_categories/{}.json", &self.id).into()
+        format!("issue_categories/{}.json", &self.id).into()
     }
 }
 
@@ -159,6 +159,6 @@ impl<'a> Endpoint for DeleteIssueCategory {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-       format!("issue_categories/{}.json", &self.id).into()
+        format!("issue_categories/{}.json", &self.id).into()
     }
 }

@@ -13,8 +13,7 @@ use crate::api::Endpoint;
 /// The endpoint to retrieve the current user's my account settings/data
 #[derive(Debug, Builder)]
 #[builder(setter(strip_option))]
-pub struct MyAccount {
-}
+pub struct MyAccount {}
 
 impl MyAccount {
     /// Create a builder for the endpoint.
@@ -29,6 +28,6 @@ impl<'a> Endpoint for MyAccount {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-       "my/account.json".into()
+        "my/account.json".into()
     }
 }
