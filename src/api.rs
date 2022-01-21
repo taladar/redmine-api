@@ -53,6 +53,22 @@ use std::borrow::Cow;
 use reqwest::{blocking::Client, Url};
 use tracing::{debug, error, trace};
 
+/// main API client object
+#[derive(derivative::Derivative)]
+#[derivative(Debug)]
+pub struct Redmine {
+    /// the reqwest client we use to perform our API requests
+    client: Client,
+    /// the redmine base url
+    redmine_url: Url,
+    /// a redmine API key, usually 40 hex digits where the letters (a-f) are lower case
+    #[derivative(Debug = "ignore")]
+    api_key: String,
+    /// the user id we want to impersonate, only works if the API key we use has admin privileges
+    impersonate_user_id: Option<u64>,
+}
+
+/// helper function to parse the redmine URL in the environment variable
 fn parse_url<'de, D>(deserializer: D) -> Result<url::Url, D::Error>
 where
     D: Deserializer<'de>,
@@ -62,30 +78,25 @@ where
     url::Url::parse(&buf).map_err(serde::de::Error::custom)
 }
 
-/// main API client object
-#[derive(derivative::Derivative)]
-#[derivative(Debug)]
-pub struct Redmine {
-    client: Client,
-    redmine_url: Url,
-    #[derivative(Debug = "ignore")]
-    api_key: String,
-    impersonate_user_id: Option<u64>,
-}
-
 /// used to deserialize the required options from the environment
 #[derive(Debug, serde::Deserialize)]
 struct EnvOptions {
+    /// a redmine API key, usually 40 hex digits where the letters (a-f) are lower case
     redmine_api_key: String,
 
+    /// the redmine base url
     #[serde(deserialize_with = "parse_url")]
     redmine_url: url::Url,
 }
 
+/// A structure we use to deserialize the response counts in a paged query response
 #[derive(Debug, Clone, Deserialize)]
 struct ResponseCounts {
+    /// the total number of results Redmine has for our API call
     total_count: u64,
+    /// the offset from the start
     offset: u64,
+    /// the number of results returned in one call
     limit: u64,
 }
 
@@ -430,6 +441,7 @@ impl ParamValue<'static> for time::Date {
 /// A structure for query parameters.
 #[derive(Debug, Default, Clone)]
 pub struct QueryParams<'a> {
+    /// the actual parameters
     params: Vec<(Cow<'a, str>, Cow<'a, str>)>,
 }
 

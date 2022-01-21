@@ -131,6 +131,7 @@ pub struct CreateTimeEntry<'a> {
 }
 
 impl<'a> CreateTimeEntryBuilder<'a> {
+    /// ensures that either issue_id or project_id is non-None when [Self::build()] is called
     fn validate(&self) -> Result<(), String> {
         if self.issue_id.is_none() && self.project_id.is_none() {
             Err("Either issue_id or project_id need to be specified".to_string())
@@ -192,6 +193,7 @@ pub struct UpdateTimeEntry<'a> {
 }
 
 impl<'a> UpdateTimeEntryBuilder<'a> {
+    /// ensures that either issue_id or project_id is non-None when [Self::build()] is called
     fn validate(&self) -> Result<(), String> {
         if self.issue_id.is_none() && self.project_id.is_none() {
             Err("Either issue_id or project_id need to be specified".to_string())

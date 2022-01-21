@@ -88,10 +88,7 @@ impl<'a> Endpoint for Users<'a> {
 
     fn parameters(&self) -> QueryParams {
         let mut params = QueryParams::default();
-        params.push_opt(
-            "status",
-            self.status.as_ref().and_then(|s| Some(s.to_string())),
-        );
+        params.push_opt("status", self.status.as_ref().map(|s| s.to_string()));
         params.push_opt("name", self.name.as_ref());
         params.push_opt("group_id", self.group_id);
         params

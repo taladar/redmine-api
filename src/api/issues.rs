@@ -283,9 +283,11 @@ impl Endpoint for Issue {
 /// a custom field
 #[derive(Debug, Clone, Serialize, serde::Deserialize)]
 pub struct CustomField<'a> {
+    /// the custom field's id
     id: u64,
     /// is usually present in contexts where it is returned by Redmine but can be ommitted when it is sent by the client
     name: Option<Cow<'a, str>>,
+    /// the custom field's value
     value: Cow<'a, str>,
 }
 
