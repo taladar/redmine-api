@@ -319,3 +319,29 @@ impl<'a> Endpoint for DeleteProject {
        format!("projects/{}.json", &self.id).into()
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use std::error::Error;
+    //use pretty_assertions::{assert_eq,assert_ne};
+    use tracing_test::traced_test;
+
+    #[traced_test]
+    #[test]
+    fn test_list_projects_no_pagination() -> Result<(), Box<dyn Error>> {
+        #[derive(Debug, PartialEq, Eq, serde::Deserialize)]
+        struct Project {
+            id: u64,
+        }
+        #[derive(Debug, PartialEq, Eq, serde::Deserialize)]
+        struct ProjectsWrapper {
+            projects: Vec<Project>,
+        }
+        dotenv::dotenv()?;
+        let redmine = crate::api::Redmine::from_env()?;
+        let endpoint = Projects::builder().build()?;
+        redmine.rest::<_, ProjectsWrapper>(&endpoint)?;
+        Ok(())
+    }
+}
