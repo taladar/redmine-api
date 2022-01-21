@@ -4,3 +4,4 @@
 Cargo.lock
 .env
 tarpaulin-report.html
+tarpaulin-report.json

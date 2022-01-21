@@ -1,0 +1,5 @@
+[coverage]
+
+[report]
+run-types = [ "Tests", "Doctests", "Benchmarks", "Examples" ]
+out = ["Html", "Json"]
