@@ -16,6 +16,7 @@ use std::borrow::Cow;
 
 use crate::api::{Endpoint, Pageable, QueryParams};
 use serde::Serialize;
+use serde_with::skip_serializing_none;
 use std::collections::HashMap;
 
 /// The types of associated data which can be fetched along with a project
@@ -149,55 +150,58 @@ impl<'a> Endpoint for Project<'a> {
 /// The endpoint to archive a Redmine project
 #[derive(Debug, Builder)]
 #[builder(setter(strip_option))]
-pub struct ArchiveProject {
-    /// the id of the project to archive
-    id: u64,
+pub struct ArchiveProject<'a> {
+    /// the project id or name as it appears in the URL of the project to archive
+    #[builder(setter(into))]
+    project_id_or_name: Cow<'a, str>,
 }
 
-impl ArchiveProject {
+impl<'a> ArchiveProject<'a> {
     /// Create a builder for the endpoint.
-    pub fn builder() -> ArchiveProjectBuilder {
+    pub fn builder() -> ArchiveProjectBuilder<'a> {
         ArchiveProjectBuilder::default()
     }
 }
 
-impl<'a> Endpoint for ArchiveProject {
+impl<'a> Endpoint for ArchiveProject<'a> {
     fn method(&self) -> Method {
         Method::PUT
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-        format!("projects/{}/archive.json", &self.id).into()
+        format!("projects/{}/archive.json", &self.project_id_or_name).into()
     }
 }
 
 /// The endpoint to unarchive a Redmine project
 #[derive(Debug, Builder)]
 #[builder(setter(strip_option))]
-pub struct UnarchiveProject {
-    /// the id of the project to unarchive
-    id: u64,
+pub struct UnarchiveProject<'a> {
+    /// the project id or name as it appears in the URL of the project to unarchive
+    #[builder(setter(into))]
+    project_id_or_name: Cow<'a, str>,
 }
 
-impl UnarchiveProject {
+impl<'a> UnarchiveProject<'a> {
     /// Create a builder for the endpoint.
-    pub fn builder() -> UnarchiveProjectBuilder {
+    pub fn builder() -> UnarchiveProjectBuilder<'a> {
         UnarchiveProjectBuilder::default()
     }
 }
 
-impl<'a> Endpoint for UnarchiveProject {
+impl<'a> Endpoint for UnarchiveProject<'a> {
     fn method(&self) -> Method {
         Method::PUT
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-        format!("projects/{}/unarchive.json", &self.id).into()
+        format!("projects/{}/unarchive.json", &self.project_id_or_name).into()
     }
 }
 
 /// The endpoint to create a Redmine project
-#[derive(Debug, Builder, Serialize)]
+#[skip_serializing_none]
+#[derive(Debug, Clone, Builder, Serialize)]
 #[builder(setter(strip_option))]
 pub struct CreateProject<'a> {
     /// the name of the project
@@ -258,23 +262,25 @@ impl<'a> Endpoint for CreateProject<'a> {
     }
 
     fn body(&self) -> Result<Option<(&'static str, Vec<u8>)>, crate::Error> {
-        Ok(Some(("application/json", serde_json::to_vec(self)?)))
+        Ok(Some(("application/json", serde_json::to_vec(&ProjectWrapper::<CreateProject> { project: (*self).to_owned() })?)))
     }
 }
 
 /// The endpoint to update an existing Redmine project
+#[skip_serializing_none]
 #[derive(Debug, Builder, Serialize)]
 #[builder(setter(strip_option))]
 pub struct UpdateProject<'a> {
-    /// the id of the project to update
+    /// the project id or name as it appears in the URL of the project to update
     #[serde(skip_serializing)]
-    id: u64,
+    #[builder(setter(into))]
+    project_id_or_name: Cow<'a, str>,
     /// the name of the project
-    #[builder(setter(into))]
-    name: Cow<'a, str>,
+    #[builder(setter(into), default)]
+    name: Option<Cow<'a, str>>,
     /// the identifier of the project as it appears in the URL
-    #[builder(setter(into))]
-    identifier: Cow<'a, str>,
+    #[builder(setter(into), default)]
+    identifier: Option<Cow<'a, str>>,
     /// the project description
     #[builder(setter(into), default)]
     description: Option<Cow<'a, str>>,
@@ -323,7 +329,7 @@ impl<'a> Endpoint for UpdateProject<'a> {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-        format!("projects/{}.json", self.id).into()
+        format!("projects/{}.json", self.project_id_or_name).into()
     }
 
     fn body(&self) -> Result<Option<(&'static str, Vec<u8>)>, crate::Error> {
@@ -334,26 +340,41 @@ impl<'a> Endpoint for UpdateProject<'a> {
 /// The endpoint to delete a Redmine project
 #[derive(Debug, Builder)]
 #[builder(setter(strip_option))]
-pub struct DeleteProject {
-    /// the id of the project to delete
-    id: u64,
+pub struct DeleteProject<'a> {
+    /// the project id or name as it appears in the URL of the project to delete
+    #[builder(setter(into))]
+    project_id_or_name: Cow<'a, str>,
 }
 
-impl DeleteProject {
+impl<'a> DeleteProject<'a> {
     /// Create a builder for the endpoint.
-    pub fn builder() -> DeleteProjectBuilder {
+    pub fn builder() -> DeleteProjectBuilder<'a> {
         DeleteProjectBuilder::default()
     }
 }
 
-impl<'a> Endpoint for DeleteProject {
+impl<'a> Endpoint for DeleteProject<'a> {
     fn method(&self) -> Method {
         Method::DELETE
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-        format!("projects/{}.json", &self.id).into()
+        format!("projects/{}.json", &self.project_id_or_name).into()
     }
+}
+
+/// A lot of APIs in Redmine wrap their data in an extra layer, this is a
+/// helper struct for outer layers with a projects field holding the inner data
+#[derive(Debug, PartialEq, Eq, Serialize, serde::Deserialize)]
+pub struct ProjectsWrapper<T> {
+    projects: Vec<T>,
+}
+
+/// A lot of APIs in Redmine wrap their data in an extra layer, this is a
+/// helper struct for outer layers with a project field holding the inner data
+#[derive(Debug, PartialEq, Eq, Serialize, serde::Deserialize)]
+pub struct ProjectWrapper<T> {
+    project: T,
 }
 
 #[cfg(test)]
@@ -362,20 +383,11 @@ mod test {
     use std::error::Error;
     //use pretty_assertions::{assert_eq,assert_ne};
     use tracing_test::traced_test;
+    use tracing::trace;
 
     #[derive(Debug, PartialEq, Eq, serde::Deserialize)]
     struct Project {
         id: u64,
-    }
-
-    #[derive(Debug, PartialEq, Eq, serde::Deserialize)]
-    struct ProjectsWrapper {
-        projects: Vec<Project>,
-    }
-
-    #[derive(Debug, PartialEq, Eq, serde::Deserialize)]
-    struct ProjectWrapper {
-        project: Project,
     }
 
     #[traced_test]
@@ -384,7 +396,7 @@ mod test {
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = Projects::builder().build()?;
-        redmine.rest::<_, ProjectsWrapper>(&endpoint)?;
+        redmine.rest::<_, ProjectsWrapper<Project>>(&endpoint)?;
         Ok(())
     }
 
@@ -394,7 +406,68 @@ mod test {
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = super::Project::builder().project_id_or_name("sandbox").build()?;
-        redmine.rest::<_, ProjectWrapper>(&endpoint)?;
+        redmine.rest::<_, ProjectWrapper<Project>>(&endpoint)?;
+        Ok(())
+    }
+
+    fn with_project<F>(name: &str, f: F) -> Result<(), Box<dyn Error>>
+        where F: FnOnce(&crate::api::Redmine, &str) -> Result<(), Box<dyn Error>>
+    {
+        dotenv::dotenv()?;
+        let redmine = crate::api::Redmine::from_env()?;
+        let get_endpoint = super::Project::builder()
+            .project_id_or_name(name)
+            .build()?;
+        let get_result = redmine.rest::<_, ProjectWrapper<Project>>(&get_endpoint);
+        trace!("Get result in {} test:\n{:?}", name, get_result);
+        if get_result.is_ok() {
+            let delete_endpoint = super::DeleteProject::builder()
+                .project_id_or_name(name)
+                .build()?;
+            redmine.rest::<_, ()>(&delete_endpoint)?;
+        }
+        let create_endpoint = super::CreateProject::builder()
+            .name(format!("Unittest redmine-api {}", name))
+            .identifier(name)
+            .build()?;
+        redmine.rest::<_, ProjectWrapper<Project>>(&create_endpoint)?;
+        let _fb = finally_block::finally(|| {
+            trace!(%name, "Deleting test project");
+            let delete_endpoint = super::DeleteProject::builder()
+                .project_id_or_name(name)
+                .build().expect(&format!("Building delete enedpoint for {} failed", name));
+            redmine.rest::<_, ()>(&delete_endpoint).expect(&format!("Delete project {} failed", name));
+        });
+        trace!(%name, "Actual test body starts here");
+        f(&redmine, name)?;
+        trace!(%name, "Actual test body ends here");
+        Ok(())
+    }
+
+    #[function_name::named]
+    #[traced_test]
+    #[test]
+    fn test_create_project() -> Result<(), Box<dyn Error>> {
+        let name = format!("unittest_{}", function_name!());
+        with_project(&name, |_, _| {
+            Ok(())
+        })?;
+        Ok(())
+    }
+
+    #[function_name::named]
+    #[traced_test]
+    #[test]
+    fn test_update_project() -> Result<(), Box<dyn Error>> {
+        let name = format!("unittest_{}", function_name!());
+        with_project(&name, |redmine, name| {
+            let update_endpoint = super::UpdateProject::builder()
+                .project_id_or_name(name)
+                .description("Test-Description")
+                .build()?;
+            redmine.rest::<_, ProjectWrapper<Project>>(&update_endpoint)?;
+            Ok(())
+        })?;
         Ok(())
     }
 }

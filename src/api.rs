@@ -184,14 +184,14 @@ impl Redmine {
     /// ) -> Result<u64, Box<dyn std::error::Error>> {
     ///     let endpoint = redmine_api::api::my_account::MyAccount::builder().build()?;
     ///
-    ///     Ok(redmine.rest::<_, MyAccountResponse>(&endpoint)?.user.id)
+    ///     Ok(redmine.rest::<_, MyAccountResponse>(&endpoint)?.expect("non-empty body").user.id)
     /// }
     /// ```
     ///
     /// If this is used with an [Endpoint] which is [Pageable] this will
     /// only return the first page by whatever is set as the default page
     /// size in Redmine. Use [Redmine::rest_page] instead.
-    pub fn rest<E, R>(&self, endpoint: &E) -> Result<R, crate::Error>
+    pub fn rest<E, R>(&self, endpoint: &E) -> Result<Option<R>, crate::Error>
     where
         E: Endpoint,
         R: DeserializeOwned + std::fmt::Debug,
@@ -215,6 +215,11 @@ impl Redmine {
             req
         };
         let req = if let Some((mime, data)) = endpoint.body()? {
+            if let Ok(request_body) = from_utf8(&data) {
+                trace!("Request body (Content-Type: {}):\n{}", mime, request_body);
+            } else {
+                trace!("Request body (Content-Type: {}) could not be parsed as UTF-8:\n{:?}", mime, data);
+            }
             req.body(data).header("Content-Type", mime)
         } else {
             req
@@ -243,11 +248,15 @@ impl Redmine {
         } else if status.is_server_error() {
             error!(%url, %method, "Redmine status error (server error): {:?}", status);
         }
-        let result = serde_json::from_slice::<R>(&response_body);
-        if let Ok(ref parsed_response_body) = result {
-            trace!("Parsed response body:\n{:?}", parsed_response_body);
+        if response_body.is_empty() {
+            Ok(None)
+        } else {
+            let result = serde_json::from_slice::<R>(&response_body);
+            if let Ok(ref parsed_response_body) = result {
+                trace!("Parsed response body:\n{:?}", parsed_response_body);
+            }
+            Ok(Some(result?))
         }
-        Ok(result?)
     }
 
     /// call the given pageable endpoint and return a type that is provided by the user
@@ -257,7 +266,7 @@ impl Redmine {
         endpoint: &E,
         offset: u64,
         limit: u64,
-    ) -> Result<ResponsePage<R>, crate::Error>
+    ) -> Result<Option<ResponsePage<R>>, crate::Error>
     where
         E: Endpoint + Pageable,
         R: DeserializeOwned + std::fmt::Debug,
@@ -284,6 +293,11 @@ impl Redmine {
             req
         };
         let req = if let Some((mime, data)) = endpoint.body()? {
+            if let Ok(request_body) = from_utf8(&data) {
+                trace!("Request body (Content-Type: {}):\n{}", mime, request_body);
+            } else {
+                trace!("Request body (Content-Type: {}) could not be parsed as UTF-8:\n{:?}", mime, data);
+            }
             req.body(data).header("Content-Type", mime)
         } else {
             req
@@ -312,25 +326,29 @@ impl Redmine {
         } else if status.is_server_error() {
             error!(%url, %method, "Redmine status error (server error): {:?}", status);
         }
-        let response_counts = serde_json::from_slice(&response_body);
-        if let Err(ref e) = response_counts {
-            error!(%url, %method, %offset, %limit, "Failed parsing the response counts supplied by Redmine: {}", e);
+        if response_body.is_empty() {
+            Ok(None)
+        } else {
+            let response_counts = serde_json::from_slice(&response_body);
+            if let Err(ref e) = response_counts {
+                error!(%url, %method, %offset, %limit, "Failed parsing the response counts supplied by Redmine: {}", e);
+            }
+            let ResponseCounts {
+                total_count,
+                offset,
+                limit,
+            } = response_counts?;
+            let result = serde_json::from_slice::<R>(&response_body);
+            if let Ok(ref parsed_response_body) = result {
+                trace!("Parsed response body:\n{:?}", parsed_response_body);
+            }
+            Ok(Some(ResponsePage {
+                value: result?,
+                total_count,
+                offset,
+                limit,
+            }))
         }
-        let ResponseCounts {
-            total_count,
-            offset,
-            limit,
-        } = response_counts?;
-        let result = serde_json::from_slice::<R>(&response_body);
-        if let Ok(ref parsed_response_body) = result {
-            trace!("Parsed response body:\n{:?}", parsed_response_body);
-        }
-        Ok(ResponsePage {
-            value: result?,
-            total_count,
-            offset,
-            limit,
-        })
     }
 }
 
