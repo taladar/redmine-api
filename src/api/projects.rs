@@ -19,9 +19,44 @@ use serde::Serialize;
 use serde_with::skip_serializing_none;
 use std::collections::HashMap;
 
+/// a type for projects to use as an API return type
+///
+/// alternatively you can use your own type limited to the fields you need
+#[derive(Debug, PartialEq, Eq, serde::Deserialize)]
+struct Project {
+    /// numeric id
+    id: u64,
+    /// display name
+    name: String,
+    /// URL slug
+    identifier: String,
+    /// description
+    description: Option<String>,
+    /// the project homepage
+    homepage: Option<String>,
+    /// is the project public (visible to anonymous users)
+    is_public: Option<bool>,
+    /// the parent project id
+    parent_id: Option<u64>,
+    /// will the project inherit members from its ancestors
+    inherit_members: Option<bool>,
+    /// ID of the default user. It works only when the new project is a subproject and it inherits the members
+    default_assigned_to_id: Option<u64>,
+    /// ID of the default version. It works only with existing shared versions
+    default_version_id: Option<u64>,
+    /// trackers to enable in the project
+    tracker_ids: Option<Vec<u64>>,
+    /// modules to enable in the project
+    enabled_module_names: Option<Vec<String>>,
+    /// custom issue fields to enable in the project
+    issue_custom_field_id: Option<Vec<u64>>,
+    /// values for custom fields
+    custom_field_values: Option<HashMap<u64, String>>,
+}
+
 /// The types of associated data which can be fetched along with a project
 #[derive(Debug, Clone)]
-pub enum ProjectListInclude {
+pub enum ListProjectsInclude {
     /// Trackers enabled in the project
     Trackers,
     /// Issue categories in the project
@@ -30,7 +65,7 @@ pub enum ProjectListInclude {
     EnabledModules,
 }
 
-impl std::fmt::Display for ProjectListInclude {
+impl std::fmt::Display for ListProjectsInclude {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Trackers => {
@@ -49,27 +84,27 @@ impl std::fmt::Display for ProjectListInclude {
 /// The endpoint for all Redmine projects
 #[derive(Debug, Builder)]
 #[builder(setter(strip_option))]
-pub struct Projects {
+pub struct ListProjects {
     /// the types of associate data to include
     #[builder(default)]
-    include: Option<Vec<ProjectInclude>>,
+    include: Option<Vec<ListProjectsInclude>>,
 }
 
-impl ReturnsJsonResponse for Projects {}
-impl Pageable for Projects {
+impl ReturnsJsonResponse for ListProjects {}
+impl Pageable for ListProjects {
     fn response_wrapper_key(&self) -> String {
         "projects".to_string()
     }
 }
 
-impl Projects {
+impl ListProjects {
     /// Create a builder for the endpoint.
-    pub fn builder() -> ProjectsBuilder {
-        ProjectsBuilder::default()
+    pub fn builder() -> ListProjectsBuilder {
+        ListProjectsBuilder::default()
     }
 }
 
-impl<'a> Endpoint for Projects {
+impl<'a> Endpoint for ListProjects {
     fn method(&self) -> Method {
         Method::GET
     }
@@ -87,7 +122,7 @@ impl<'a> Endpoint for Projects {
 
 /// The types of associated data which can be fetched along with a project
 #[derive(Debug, Clone)]
-pub enum ProjectInclude {
+pub enum GetProjectInclude {
     /// Trackers enabled in the project
     Trackers,
     /// Issue categories in the project
@@ -98,7 +133,7 @@ pub enum ProjectInclude {
     TimeEntryActivities,
 }
 
-impl std::fmt::Display for ProjectInclude {
+impl std::fmt::Display for GetProjectInclude {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Trackers => {
@@ -120,25 +155,25 @@ impl std::fmt::Display for ProjectInclude {
 /// The endpoint for a specific Redmine project
 #[derive(Debug, Builder)]
 #[builder(setter(strip_option))]
-pub struct Project<'a> {
+pub struct GetProject<'a> {
     /// the project id or name as it appears in the URL
     #[builder(setter(into))]
     project_id_or_name: Cow<'a, str>,
     /// the types of associate data to include
     #[builder(default)]
-    include: Option<Vec<ProjectInclude>>,
+    include: Option<Vec<GetProjectInclude>>,
 }
 
-impl<'a> ReturnsJsonResponse for Project<'a> {}
+impl<'a> ReturnsJsonResponse for GetProject<'a> {}
 
-impl<'a> Project<'a> {
+impl<'a> GetProject<'a> {
     /// Create a builder for the endpoint.
-    pub fn builder() -> ProjectBuilder<'a> {
-        ProjectBuilder::default()
+    pub fn builder() -> GetProjectBuilder<'a> {
+        GetProjectBuilder::default()
     }
 }
 
-impl<'a> Endpoint for Project<'a> {
+impl<'a> Endpoint for GetProject<'a> {
     fn method(&self) -> Method {
         Method::GET
     }
@@ -372,7 +407,6 @@ impl<'a> Endpoint for DeleteProject<'a> {
     }
 }
 
-/// A lot of APIs in Redmine wrap their data in an extra layer, this is a
 /// helper struct for outer layers with a projects field holding the inner data
 #[derive(Debug, PartialEq, Eq, Serialize, serde::Deserialize)]
 pub struct ProjectsWrapper<T> {
@@ -394,17 +428,12 @@ mod test {
     use tracing_test::traced_test;
     use tracing::trace;
 
-    #[derive(Debug, PartialEq, Eq, serde::Deserialize)]
-    struct Project {
-        id: u64,
-    }
-
     #[traced_test]
     #[test]
     fn test_list_projects_no_pagination() -> Result<(), Box<dyn Error>> {
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
-        let endpoint = Projects::builder().build()?;
+        let endpoint = ListProjects::builder().build()?;
         redmine.json_response_body::<_, ProjectsWrapper<Project>>(&endpoint)?;
         Ok(())
     }
@@ -414,7 +443,7 @@ mod test {
     fn test_list_projects_first_page() -> Result<(), Box<dyn Error>> {
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
-        let endpoint = Projects::builder().build()?;
+        let endpoint = ListProjects::builder().build()?;
         redmine.json_response_body_page::<_, Project>(&endpoint, 0, 25)?;
         Ok(())
     }
@@ -424,7 +453,7 @@ mod test {
     fn test_list_projects_all_pages() -> Result<(), Box<dyn Error>> {
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
-        let endpoint = Projects::builder().build()?;
+        let endpoint = ListProjects::builder().build()?;
         redmine.json_response_body_all_pages::<_, Project>(&endpoint)?;
         Ok(())
     }
@@ -434,7 +463,7 @@ mod test {
     fn test_get_project() -> Result<(), Box<dyn Error>> {
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
-        let endpoint = super::Project::builder().project_id_or_name("sandbox").build()?;
+        let endpoint = GetProject::builder().project_id_or_name("sandbox").build()?;
         redmine.json_response_body::<_, ProjectWrapper<Project>>(&endpoint)?;
         Ok(())
     }
@@ -444,25 +473,25 @@ mod test {
     {
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
-        let get_endpoint = super::Project::builder()
+        let get_endpoint = GetProject::builder()
             .project_id_or_name(name)
             .build()?;
         let get_result = redmine.json_response_body::<_, ProjectWrapper<Project>>(&get_endpoint);
         trace!("Get result in {} test:\n{:?}", name, get_result);
         if get_result.is_ok() {
-            let delete_endpoint = super::DeleteProject::builder()
+            let delete_endpoint = DeleteProject::builder()
                 .project_id_or_name(name)
                 .build()?;
             redmine.ignore_response_body::<_>(&delete_endpoint)?;
         }
-        let create_endpoint = super::CreateProject::builder()
+        let create_endpoint = CreateProject::builder()
             .name(format!("Unittest redmine-api {}", name))
             .identifier(name)
             .build()?;
         redmine.json_response_body::<_, ProjectWrapper<Project>>(&create_endpoint)?;
         let _fb = finally_block::finally(|| {
             trace!(%name, "Deleting test project");
-            let delete_endpoint = super::DeleteProject::builder()
+            let delete_endpoint = DeleteProject::builder()
                 .project_id_or_name(name)
                 .build().expect(&format!("Building delete enedpoint for {} failed", name));
             redmine.ignore_response_body::<_>(&delete_endpoint).expect(&format!("Delete project {} failed", name));
