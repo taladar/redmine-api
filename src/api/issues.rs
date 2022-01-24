@@ -157,7 +157,11 @@ pub struct Issues {
     status_id: Option<Vec<u64>>,
 }
 
-impl Pageable for Issues {}
+impl Pageable for Issues {
+    fn response_wrapper_key(&self) -> String {
+        "issues".to_string()
+    }
+}
 
 impl<'a> Issues {
     /// Create a builder for the endpoint.

@@ -14,7 +14,7 @@ use derive_builder::Builder;
 use http::Method;
 use std::borrow::Cow;
 
-use crate::api::{Endpoint, Pageable, QueryParams};
+use crate::api::{Endpoint, Pageable, ReturnsJsonResponse, QueryParams};
 use serde::Serialize;
 use serde_with::skip_serializing_none;
 use std::collections::HashMap;
@@ -55,7 +55,12 @@ pub struct Projects {
     include: Option<Vec<ProjectInclude>>,
 }
 
-impl Pageable for Projects {}
+impl ReturnsJsonResponse for Projects {}
+impl Pageable for Projects {
+    fn response_wrapper_key(&self) -> String {
+        "projects".to_string()
+    }
+}
 
 impl Projects {
     /// Create a builder for the endpoint.
@@ -123,6 +128,8 @@ pub struct Project<'a> {
     #[builder(default)]
     include: Option<Vec<ProjectInclude>>,
 }
+
+impl<'a> ReturnsJsonResponse for Project<'a> {}
 
 impl<'a> Project<'a> {
     /// Create a builder for the endpoint.
@@ -244,6 +251,8 @@ pub struct CreateProject<'a> {
     #[builder(default)]
     custom_field_values: Option<HashMap<u64, Cow<'a, str>>>,
 }
+
+impl<'a> ReturnsJsonResponse for CreateProject<'a> {}
 
 impl<'a> CreateProject<'a> {
     /// Create a builder for the endpoint.
@@ -396,7 +405,27 @@ mod test {
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = Projects::builder().build()?;
-        redmine.rest::<_, ProjectsWrapper<Project>>(&endpoint)?;
+        redmine.json_response_body::<_, ProjectsWrapper<Project>>(&endpoint)?;
+        Ok(())
+    }
+
+    #[traced_test]
+    #[test]
+    fn test_list_projects_first_page() -> Result<(), Box<dyn Error>> {
+        dotenv::dotenv()?;
+        let redmine = crate::api::Redmine::from_env()?;
+        let endpoint = Projects::builder().build()?;
+        redmine.json_response_body_page::<_, Project>(&endpoint, 0, 25)?;
+        Ok(())
+    }
+
+    #[traced_test]
+    #[test]
+    fn test_list_projects_all_pages() -> Result<(), Box<dyn Error>> {
+        dotenv::dotenv()?;
+        let redmine = crate::api::Redmine::from_env()?;
+        let endpoint = Projects::builder().build()?;
+        redmine.json_response_body_all_pages::<_, Project>(&endpoint)?;
         Ok(())
     }
 
@@ -406,7 +435,7 @@ mod test {
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = super::Project::builder().project_id_or_name("sandbox").build()?;
-        redmine.rest::<_, ProjectWrapper<Project>>(&endpoint)?;
+        redmine.json_response_body::<_, ProjectWrapper<Project>>(&endpoint)?;
         Ok(())
     }
 
@@ -418,25 +447,25 @@ mod test {
         let get_endpoint = super::Project::builder()
             .project_id_or_name(name)
             .build()?;
-        let get_result = redmine.rest::<_, ProjectWrapper<Project>>(&get_endpoint);
+        let get_result = redmine.json_response_body::<_, ProjectWrapper<Project>>(&get_endpoint);
         trace!("Get result in {} test:\n{:?}", name, get_result);
         if get_result.is_ok() {
             let delete_endpoint = super::DeleteProject::builder()
                 .project_id_or_name(name)
                 .build()?;
-            redmine.rest::<_, ()>(&delete_endpoint)?;
+            redmine.ignore_response_body::<_>(&delete_endpoint)?;
         }
         let create_endpoint = super::CreateProject::builder()
             .name(format!("Unittest redmine-api {}", name))
             .identifier(name)
             .build()?;
-        redmine.rest::<_, ProjectWrapper<Project>>(&create_endpoint)?;
+        redmine.json_response_body::<_, ProjectWrapper<Project>>(&create_endpoint)?;
         let _fb = finally_block::finally(|| {
             trace!(%name, "Deleting test project");
             let delete_endpoint = super::DeleteProject::builder()
                 .project_id_or_name(name)
                 .build().expect(&format!("Building delete enedpoint for {} failed", name));
-            redmine.rest::<_, ()>(&delete_endpoint).expect(&format!("Delete project {} failed", name));
+            redmine.ignore_response_body::<_>(&delete_endpoint).expect(&format!("Delete project {} failed", name));
         });
         trace!(%name, "Actual test body starts here");
         f(&redmine, name)?;
@@ -465,7 +494,7 @@ mod test {
                 .project_id_or_name(name)
                 .description("Test-Description")
                 .build()?;
-            redmine.rest::<_, ProjectWrapper<Project>>(&update_endpoint)?;
+            redmine.ignore_response_body::<_>(&update_endpoint)?;
             Ok(())
         })?;
         Ok(())

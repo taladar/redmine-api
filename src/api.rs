@@ -89,23 +89,12 @@ struct EnvOptions {
     redmine_url: url::Url,
 }
 
-/// A structure we use to deserialize the response counts in a paged query response
-#[derive(Debug, Clone, Deserialize)]
-struct ResponseCounts {
-    /// the total number of results Redmine has for our API call
-    total_count: u64,
-    /// the offset from the start
-    offset: u64,
-    /// the number of results returned in one call
-    limit: u64,
-}
-
 /// Return value from paged requests, includes the actual value as well as
 /// pagination data
 #[derive(Debug, Clone)]
 pub struct ResponsePage<T> {
     /// The actual value returned by Redmine deserialized into a user provided type
-    pub value: T,
+    pub values: Vec<T>,
     /// The total number of values that could be returned by requesting all pages
     pub total_count: u64,
     /// The offset from the start (zero-based)
@@ -158,43 +147,9 @@ impl Redmine {
         redmine_url.join(&format!("/issues/{}", issue_id)).unwrap()
     }
 
-    /// call the given endpoint and return a type that is provided by the user
-    /// and deserializes the JSON returned by the API
-    ///
-    /// The advantage of this is that the user can skip any fields they do not
-    /// care about.
-    ///
-    /// a typical use could look like this
-    ///
-    /// ```
-    /// use redmine_api::api::Redmine;
-    ///
-    /// #[derive(Debug, serde::Deserialize)]
-    /// pub struct User {
-    ///    pub id: u64,
-    /// }
-    ///
-    /// #[derive(Debug, serde::Deserialize)]
-    /// pub struct MyAccountResponse {
-    ///     pub user: User,
-    /// }
-    ///
-    /// pub fn whoami(
-    ///     redmine : &Redmine,
-    /// ) -> Result<u64, Box<dyn std::error::Error>> {
-    ///     let endpoint = redmine_api::api::my_account::MyAccount::builder().build()?;
-    ///
-    ///     Ok(redmine.rest::<_, MyAccountResponse>(&endpoint)?.expect("non-empty body").user.id)
-    /// }
-    /// ```
-    ///
-    /// If this is used with an [Endpoint] which is [Pageable] this will
-    /// only return the first page by whatever is set as the default page
-    /// size in Redmine. Use [Redmine::rest_page] instead.
-    pub fn rest<E, R>(&self, endpoint: &E) -> Result<Option<R>, crate::Error>
-    where
-        E: Endpoint,
-        R: DeserializeOwned + std::fmt::Debug,
+    /// internal method for shared logic between the methods below which
+    /// diff in how they parse the response body and how often they call this
+    fn rest(&self, method: http::Method, endpoint: &str, parameters: QueryParams, mime_type_and_body: Option<(&str, Vec<u8>)>) -> Result<(reqwest::StatusCode, bytes::Bytes), crate::Error>
     {
         let Redmine {
             client,
@@ -202,9 +157,8 @@ impl Redmine {
             api_key,
             impersonate_user_id,
         } = self;
-        let mut url = redmine_url.join(&endpoint.endpoint())?;
-        endpoint.parameters().add_to_url(&mut url);
-        let method = endpoint.method();
+        let mut url = redmine_url.join(&endpoint)?;
+        parameters.add_to_url(&mut url);
         debug!(%url, %method, "Calling redmine");
         let req = client
             .request(method.clone(), url.clone())
@@ -214,7 +168,7 @@ impl Redmine {
         } else {
             req
         };
-        let req = if let Some((mime, data)) = endpoint.body()? {
+        let req = if let Some((mime, data)) = mime_type_and_body {
             if let Ok(request_body) = from_utf8(&data) {
                 trace!("Request body (Content-Type: {}):\n{}", mime, request_body);
             } else {
@@ -248,107 +202,157 @@ impl Redmine {
         } else if status.is_server_error() {
             error!(%url, %method, "Redmine status error (server error): {:?}", status);
         }
-        if response_body.is_empty() {
-            Ok(None)
-        } else {
-            let result = serde_json::from_slice::<R>(&response_body);
-            if let Ok(ref parsed_response_body) = result {
-                trace!("Parsed response body:\n{:?}", parsed_response_body);
-            }
-            Ok(Some(result?))
-        }
+        Ok((status, response_body))
     }
 
-    /// call the given pageable endpoint and return a type that is provided by the user
-    /// as well as the total_count, offset and limit values returned by Redmine
-    pub fn rest_page<E, R>(
-        &self,
-        endpoint: &E,
-        offset: u64,
-        limit: u64,
-    ) -> Result<Option<ResponsePage<R>>, crate::Error>
-    where
-        E: Endpoint + Pageable,
-        R: DeserializeOwned + std::fmt::Debug,
+    /// use this with endpoints that have no response body, e.g. those just deleting
+    /// a Redmine object
+    pub fn ignore_response_body<E>(&self, endpoint: &E) -> Result<(), crate::Error>
+        where E: Endpoint
     {
-        let Redmine {
-            client,
-            redmine_url,
-            api_key,
-            impersonate_user_id,
-        } = self;
-        let mut url = redmine_url.join(&endpoint.endpoint())?;
-        let mut parameters = endpoint.parameters();
-        parameters.push("offset", offset);
-        parameters.push("limit", limit);
-        parameters.add_to_url(&mut url);
-        let method = endpoint.method();
-        debug!(%url, %method, %offset, %limit, "Calling redmine");
-        let req = client
-            .request(method.clone(), url.clone())
-            .header("x-redmine-api-key", api_key);
-        let req = if let Some(user_id) = impersonate_user_id {
-            req.header("X-Redmine-Switch-User", format!("{}", user_id))
-        } else {
-            req
-        };
-        let req = if let Some((mime, data)) = endpoint.body()? {
-            if let Ok(request_body) = from_utf8(&data) {
-                trace!("Request body (Content-Type: {}):\n{}", mime, request_body);
-            } else {
-                trace!("Request body (Content-Type: {}) could not be parsed as UTF-8:\n{:?}", mime, data);
-            }
-            req.body(data).header("Content-Type", mime)
-        } else {
-            req
-        };
-        let result = req.send();
-        if let Err(ref e) = result {
-            error!(%url, %method, %offset, %limit, "Redmine send error: {:?}", e);
-        }
-        let result = result?;
-        let status = result.status();
-        let response_body = result.bytes()?;
-        match from_utf8(&response_body) {
-            Ok(response_body) => {
-                trace!("Response body:\n{}", &response_body);
-            }
-            Err(e) => {
-                trace!(
-                    "Response body that could not be parsed as utf8 because of {}:\n{:?}",
-                    &e,
-                    &response_body
-                );
-            }
-        }
-        if status.is_client_error() {
-            error!(%url, %method, "Redmine status error (client error): {:?}", status);
-        } else if status.is_server_error() {
-            error!(%url, %method, "Redmine status error (server error): {:?}", status);
-        }
-        if response_body.is_empty() {
-            Ok(None)
-        } else {
-            let response_counts = serde_json::from_slice(&response_body);
-            if let Err(ref e) = response_counts {
-                error!(%url, %method, %offset, %limit, "Failed parsing the response counts supplied by Redmine: {}", e);
-            }
-            let ResponseCounts {
-                total_count,
-                offset,
-                limit,
-            } = response_counts?;
-            let result = serde_json::from_slice::<R>(&response_body);
-            if let Ok(ref parsed_response_body) = result {
-                trace!("Parsed response body:\n{:?}", parsed_response_body);
-            }
-            Ok(Some(ResponsePage {
-                value: result?,
-                total_count,
-                offset,
-                limit,
-            }))
-        }
+       let method = endpoint.method();
+       let url = endpoint.endpoint();
+       let parameters = endpoint.parameters();
+       let mime_type_and_body = endpoint.body()?;
+       self.rest(method, &url, parameters, mime_type_and_body)?;
+       Ok(())
+    }
+
+    /// use this with endpoints which return a JSON response but do not support pagination
+    ///
+    /// you can use it with those that support pagination but they will only return the first page
+    pub fn json_response_body<E, R>(&self, endpoint: &E) -> Result<R, crate::Error>
+        where E: Endpoint + ReturnsJsonResponse,
+              R: DeserializeOwned + std::fmt::Debug
+    {
+       let method = endpoint.method();
+       let url = endpoint.endpoint();
+       let parameters = endpoint.parameters();
+       let mime_type_and_body = endpoint.body()?;
+       let (status, response_body) = self.rest(method, &url, parameters, mime_type_and_body)?;
+       if response_body.is_empty() {
+           Err(crate::Error::EmptyResponseBody(status))
+       } else {
+           let result = serde_json::from_slice::<R>(&response_body);
+           if let Ok(ref parsed_response_body) = result {
+               trace!("Parsed response body:\n{:?}", parsed_response_body);
+           }
+           Ok(result?)
+       }
+    }
+
+    /// use this to get a single page of a paginated JSON response
+    pub fn json_response_body_page<E, R>(&self, endpoint: &E, offset: u64, limit: u64) -> Result<ResponsePage<R>, crate::Error>
+        where E: Endpoint + ReturnsJsonResponse + Pageable,
+              R: DeserializeOwned + std::fmt::Debug
+    {
+       let method = endpoint.method();
+       let url = endpoint.endpoint();
+       let mut parameters = endpoint.parameters();
+       parameters.push("offset", offset);
+       parameters.push("limit", limit);
+       let mime_type_and_body = endpoint.body()?;
+       let (status, response_body) = self.rest(method.clone(), &url, parameters, mime_type_and_body)?;
+       if response_body.is_empty() {
+           Err(crate::Error::EmptyResponseBody(status))
+       } else {
+           let json_value_response_body : serde_json::Value =
+               serde_json::from_slice(&response_body)?;
+           let json_object_response_body = json_value_response_body.as_object();
+           if let Some(json_object_response_body) = json_object_response_body {
+               let total_count = json_object_response_body
+                   .get("total_count")
+                   .ok_or(crate::Error::PaginationKeyMissing("total_count".to_string()))?
+                   .as_u64()
+                   .ok_or(crate::Error::PaginationKeyHasWrongType("total_count".to_string()))?;
+               let offset = json_object_response_body
+                   .get("offset")
+                   .ok_or(crate::Error::PaginationKeyMissing("offset".to_string()))?
+                   .as_u64()
+                   .ok_or(crate::Error::PaginationKeyHasWrongType("total_count".to_string()))?;
+               let limit = json_object_response_body
+                   .get("limit")
+                   .ok_or(crate::Error::PaginationKeyMissing("limit".to_string()))?
+                   .as_u64()
+                   .ok_or(crate::Error::PaginationKeyHasWrongType("total_count".to_string()))?;
+               let response_wrapper_key = endpoint.response_wrapper_key();
+               let inner_response_body = json_object_response_body
+                   .get(&response_wrapper_key)
+                   .ok_or(crate::Error::PaginationKeyMissing(response_wrapper_key))?;
+               let result = serde_json::from_value::<Vec<R>>(inner_response_body.to_owned());
+               if let Ok(ref parsed_response_body) = result {
+                   trace!(%total_count, %offset, %limit, "Parsed response body:\n{:?}", parsed_response_body);
+               }
+               Ok(ResponsePage {
+                   values: result?,
+                   total_count,
+                   offset,
+                   limit,
+               })
+           } else {
+               Err(crate::Error::NonObjectResponseBody(status))
+           }
+       }
+    }
+
+    /// use this to get the results for all pages of a paginated JSON response
+    pub fn json_response_body_all_pages<E, R>(&self, endpoint: &E) -> Result<Vec<R>, crate::Error>
+        where E: Endpoint + ReturnsJsonResponse + Pageable,
+              R: DeserializeOwned + std::fmt::Debug
+    {
+       let method = endpoint.method();
+       let url = endpoint.endpoint();
+       let mut offset = 0;
+       let limit = 100;
+       let mut total_results = vec![];
+       loop {
+           let mut page_parameters = endpoint.parameters();
+           page_parameters.push("offset", offset);
+           page_parameters.push("limit", limit);
+           let mime_type_and_body = endpoint.body()?;
+           let (status, response_body) = self.rest(method.clone(), &url, page_parameters, mime_type_and_body)?;
+           if response_body.is_empty() {
+               return Err(crate::Error::EmptyResponseBody(status))
+           } else {
+               let json_value_response_body : serde_json::Value =
+                   serde_json::from_slice(&response_body)?;
+               let json_object_response_body = json_value_response_body.as_object();
+               if let Some(json_object_response_body) = json_object_response_body {
+                   let total_count : u64 = json_object_response_body
+                       .get("total_count")
+                       .ok_or(crate::Error::PaginationKeyMissing("total_count".to_string()))?
+                       .as_u64()
+                       .ok_or(crate::Error::PaginationKeyHasWrongType("total_count".to_string()))?;
+                   let response_offset : u64 = json_object_response_body
+                       .get("offset")
+                       .ok_or(crate::Error::PaginationKeyMissing("offset".to_string()))?
+                       .as_u64()
+                       .ok_or(crate::Error::PaginationKeyHasWrongType("total_count".to_string()))?;
+                   let response_limit : u64 = json_object_response_body
+                       .get("limit")
+                       .ok_or(crate::Error::PaginationKeyMissing("limit".to_string()))?
+                       .as_u64()
+                       .ok_or(crate::Error::PaginationKeyHasWrongType("total_count".to_string()))?;
+                   let response_wrapper_key = endpoint.response_wrapper_key();
+                   let inner_response_body = json_object_response_body
+                       .get(&response_wrapper_key)
+                       .ok_or(crate::Error::PaginationKeyMissing(response_wrapper_key))?;
+                   let result = serde_json::from_value::<Vec<R>>(inner_response_body.to_owned());
+                   if let Ok(ref parsed_response_body) = result {
+                       trace!(%total_count, %offset, %limit, "Parsed response body:\n{:?}", parsed_response_body);
+                   }
+                   total_results.extend(result?);
+                   if total_count < (response_offset + response_limit) {
+                       break;
+                   } else {
+                       offset+=limit;
+                   }
+               } else {
+                   return Err(crate::Error::NonObjectResponseBody(status))
+               }
+           }
+       }
+       Ok(total_results)
     }
 }
 
@@ -528,5 +532,11 @@ pub trait Endpoint {
     }
 }
 
+/// A trait to indicate that an endpoint is expected to return a JSON result
+pub trait ReturnsJsonResponse {}
+
 /// A trait to indicate that an endpoint is pageable.
-pub trait Pageable {}
+pub trait Pageable {
+    /// returns the name of the key in the response that contains the list of results
+    fn response_wrapper_key(&self) -> String;
+}

@@ -68,7 +68,11 @@ pub struct Users<'a> {
     group_id: Option<u64>,
 }
 
-impl<'a> Pageable for Users<'a> {}
+impl<'a> Pageable for Users<'a> {
+    fn response_wrapper_key(&self) -> String {
+        "users".to_string()
+    }
+}
 
 impl<'a> Users<'a> {
     /// Create a builder for the endpoint.

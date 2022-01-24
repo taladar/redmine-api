@@ -39,4 +39,16 @@ pub enum Error {
     /// An error occurred when reading configuration from environment variables
     #[error("error when reading environment variables: {0}")]
     EnvyError(#[from] envy::Error),
+    /// Response body was empty so we can not deserialize it as JSON
+    #[error("empty response body with status: {0}")]
+    EmptyResponseBody(reqwest::StatusCode),
+    /// Response body was valid JSON but not an object
+    #[error("JSON but non-object response body with status: {0}")]
+    NonObjectResponseBody(reqwest::StatusCode),
+    /// Missing response pagination key (total_counts, offset, limit or the wrapper key)
+    #[error("JSON wrapper pagination key missing: {0}")]
+    PaginationKeyMissing(String),
+    /// Response pagination key has the wrong type (total_counts, offset, limit)
+    #[error("JSON wrapper pagination key has an unexpected type: {0}")]
+    PaginationKeyHasWrongType(String),
 }
