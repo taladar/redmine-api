@@ -12,26 +12,55 @@ use derive_builder::Builder;
 use http::Method;
 use std::borrow::Cow;
 
-use crate::api::Endpoint;
+use crate::api::projects::ProjectEssentials;
+use crate::api::{Endpoint, ReturnsJsonResponse};
 use serde::Serialize;
+
+/// a minimal type for Redmine users or groups used in lists of assignees included in
+/// other Redmine objects
+#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct AssigneeEssentials {
+    /// numeric id
+    pub id: u64,
+    /// display name
+    pub name: String,
+}
+
+/// a type for issue categories to use as an API return type
+///
+/// alternatively you can use your own type limited to the fields you need
+#[derive(Debug, PartialEq, Eq, Serialize, serde::Deserialize)]
+pub struct IssueCategory {
+    /// numeric id
+    pub id: u64,
+    /// display name
+    pub name: String,
+    /// project
+    pub project: ProjectEssentials,
+    /// issues in this category are assigned to this user or group by default
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub assigned_to: Option<AssigneeEssentials>,
+}
 
 /// The endpoint for all issue categories in a Redmine project
 #[derive(Debug, Builder)]
 #[builder(setter(strip_option))]
-pub struct IssueCategories<'a> {
+pub struct ListIssueCategories<'a> {
     /// the project id or name as it appears in the URL
     #[builder(setter(into))]
     project_id_or_name: Cow<'a, str>,
 }
 
-impl<'a> IssueCategories<'a> {
+impl<'a> ReturnsJsonResponse for ListIssueCategories<'a> {}
+
+impl<'a> ListIssueCategories<'a> {
     /// Create a builder for the endpoint.
-    pub fn builder() -> IssueCategoriesBuilder<'a> {
-        IssueCategoriesBuilder::default()
+    pub fn builder() -> ListIssueCategoriesBuilder<'a> {
+        ListIssueCategoriesBuilder::default()
     }
 }
 
-impl<'a> Endpoint for IssueCategories<'a> {
+impl<'a> Endpoint for ListIssueCategories<'a> {
     fn method(&self) -> Method {
         Method::GET
     }
@@ -44,19 +73,21 @@ impl<'a> Endpoint for IssueCategories<'a> {
 /// The endpoint for a specific issue category
 #[derive(Debug, Builder)]
 #[builder(setter(strip_option))]
-pub struct IssueCategory {
+pub struct GetIssueCategory {
     /// the id of the issue category to retrieve
     id: u64,
 }
 
-impl<'a> IssueCategory {
+impl ReturnsJsonResponse for GetIssueCategory {}
+
+impl<'a> GetIssueCategory {
     /// Create a builder for the endpoint.
-    pub fn builder() -> IssueCategoryBuilder {
-        IssueCategoryBuilder::default()
+    pub fn builder() -> GetIssueCategoryBuilder {
+        GetIssueCategoryBuilder::default()
     }
 }
 
-impl<'a> Endpoint for IssueCategory {
+impl<'a> Endpoint for GetIssueCategory {
     fn method(&self) -> Method {
         Method::GET
     }
@@ -67,12 +98,14 @@ impl<'a> Endpoint for IssueCategory {
 }
 
 /// The endpoint to create a Redmine issue category
-#[derive(Debug, Builder, Serialize)]
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, Builder, Serialize)]
 #[builder(setter(strip_option))]
 pub struct CreateIssueCategory<'a> {
     /// project id or name as it appears in the URL for the project where we want to create the new issue category
     #[serde(skip_serializing)]
-    project_id_or_name: u64,
+    #[builder(setter(into))]
+    project_id_or_name: Cow<'a, str>,
     /// the name of the new issue category
     #[builder(setter(into))]
     name: Cow<'a, str>,
@@ -80,6 +113,8 @@ pub struct CreateIssueCategory<'a> {
     #[builder(default)]
     assigned_to_id: Option<u64>,
 }
+
+impl<'a> ReturnsJsonResponse for CreateIssueCategory<'a> {}
 
 impl<'a> CreateIssueCategory<'a> {
     /// Create a builder for the endpoint.
@@ -94,16 +129,22 @@ impl<'a> Endpoint for CreateIssueCategory<'a> {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-        format!("issues/{}/issue_categories.json", self.project_id_or_name).into()
+        format!("projects/{}/issue_categories.json", self.project_id_or_name).into()
     }
 
     fn body(&self) -> Result<Option<(&'static str, Vec<u8>)>, crate::Error> {
-        Ok(Some(("application/json", serde_json::to_vec(self)?)))
+        Ok(Some((
+            "application/json",
+            serde_json::to_vec(&IssueCategoryWrapper::<CreateIssueCategory> {
+                issue_category: (*self).to_owned(),
+            })?,
+        )))
     }
 }
 
 /// The endpoint to update an existing Redmine issue category
-#[derive(Debug, Builder, Serialize)]
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, Builder, Serialize)]
 #[builder(setter(strip_option))]
 pub struct UpdateIssueCategory<'a> {
     /// the id of the issue category to update
@@ -134,7 +175,12 @@ impl<'a> Endpoint for UpdateIssueCategory<'a> {
     }
 
     fn body(&self) -> Result<Option<(&'static str, Vec<u8>)>, crate::Error> {
-        Ok(Some(("application/json", serde_json::to_vec(self)?)))
+        Ok(Some((
+            "application/json",
+            serde_json::to_vec(&IssueCategoryWrapper::<UpdateIssueCategory> {
+                issue_category: (*self).to_owned(),
+            })?,
+        )))
     }
 }
 
@@ -160,5 +206,134 @@ impl<'a> Endpoint for DeleteIssueCategory {
 
     fn endpoint(&self) -> Cow<'static, str> {
         format!("issue_categories/{}.json", &self.id).into()
+    }
+}
+
+/// helper struct for outer layers with a issue_categories field holding the inner data
+#[derive(Debug, PartialEq, Eq, Serialize, serde::Deserialize)]
+pub struct IssueCategoriesWrapper<T> {
+    /// to parse JSON with issue_categories key
+    pub issue_categories: Vec<T>,
+}
+
+/// A lot of APIs in Redmine wrap their data in an extra layer, this is a
+/// helper struct for outer layers with a issue_category field holding the inner data
+#[derive(Debug, PartialEq, Eq, Serialize, serde::Deserialize)]
+pub struct IssueCategoryWrapper<T> {
+    /// to parse JSON with an issue_category key
+    pub issue_category: T,
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::api::test_helpers::with_project;
+    use pretty_assertions::assert_eq;
+    use std::error::Error;
+    use tracing_test::traced_test;
+
+    #[traced_test]
+    #[test]
+    fn test_list_issue_categories_no_pagination() -> Result<(), Box<dyn Error>> {
+        dotenv::dotenv()?;
+        let redmine = crate::api::Redmine::from_env()?;
+        let endpoint = ListIssueCategories::builder()
+            .project_id_or_name("336")
+            .build()?;
+        redmine.json_response_body::<_, IssueCategoriesWrapper<IssueCategory>>(&endpoint)?;
+        Ok(())
+    }
+
+    #[traced_test]
+    #[test]
+    fn test_get_project() -> Result<(), Box<dyn Error>> {
+        dotenv::dotenv()?;
+        let redmine = crate::api::Redmine::from_env()?;
+        let endpoint = GetIssueCategory::builder().id(10).build()?;
+        redmine.json_response_body::<_, IssueCategoryWrapper<IssueCategory>>(&endpoint)?;
+        Ok(())
+    }
+
+    #[function_name::named]
+    #[traced_test]
+    #[test]
+    fn test_create_issue_category() -> Result<(), Box<dyn Error>> {
+        let name = format!("unittest_{}", function_name!());
+        with_project(&name, |redmine, name| {
+            let create_endpoint = super::CreateIssueCategory::builder()
+                .project_id_or_name(name)
+                .name("Unittest Issue Category")
+                .build()?;
+            redmine.ignore_response_body::<_>(&create_endpoint)?;
+            Ok(())
+        })?;
+        Ok(())
+    }
+
+    #[function_name::named]
+    #[traced_test]
+    #[test]
+    fn test_update_issue_category() -> Result<(), Box<dyn Error>> {
+        let name = format!("unittest_{}", function_name!());
+        with_project(&name, |redmine, name| {
+            let create_endpoint = super::CreateIssueCategory::builder()
+                .project_id_or_name(name)
+                .name("Unittest Issue Category")
+                .build()?;
+            let IssueCategoryWrapper { issue_category }: IssueCategoryWrapper<IssueCategory> =
+                redmine.json_response_body::<_, _>(&create_endpoint)?;
+            let id = issue_category.id;
+            let update_endpoint = super::UpdateIssueCategory::builder()
+                .id(id)
+                .name("Renamed Unit-Test name")
+                .build()?;
+            redmine.ignore_response_body::<_>(&update_endpoint)?;
+            Ok(())
+        })?;
+        Ok(())
+    }
+
+    #[function_name::named]
+    #[traced_test]
+    #[test]
+    fn test_delete_issue_category() -> Result<(), Box<dyn Error>> {
+        let name = format!("unittest_{}", function_name!());
+        with_project(&name, |redmine, name| {
+            let create_endpoint = super::CreateIssueCategory::builder()
+                .project_id_or_name(name)
+                .name("Unittest Issue Category")
+                .build()?;
+            let IssueCategoryWrapper { issue_category }: IssueCategoryWrapper<IssueCategory> =
+                redmine.json_response_body::<_, _>(&create_endpoint)?;
+            let id = issue_category.id;
+            let delete_endpoint = super::DeleteIssueCategory::builder().id(id).build()?;
+            redmine.ignore_response_body::<_>(&delete_endpoint)?;
+            Ok(())
+        })?;
+        Ok(())
+    }
+
+    /// this tests if any of the results contain a field we are not deserializing
+    ///
+    /// this will only catch fields we missed if they are part of the response but
+    /// it is better than nothing
+    #[traced_test]
+    #[test]
+    fn test_completeness_project_type() -> Result<(), Box<dyn Error>> {
+        dotenv::dotenv()?;
+        let redmine = crate::api::Redmine::from_env()?;
+        let endpoint = ListIssueCategories::builder()
+            .project_id_or_name("336")
+            .build()?;
+        let IssueCategoriesWrapper {
+            issue_categories: values,
+        } = redmine
+            .json_response_body::<_, IssueCategoriesWrapper<serde_json::Value>>(&endpoint)?;
+        for value in values {
+            let o: IssueCategory = serde_json::from_value(value.clone())?;
+            let reserialized = serde_json::to_value(o)?;
+            assert_eq!(value, reserialized);
+        }
+        Ok(())
     }
 }
