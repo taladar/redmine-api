@@ -16,13 +16,24 @@ use std::borrow::Cow;
 
 use crate::api::{Endpoint, Pageable, QueryParams, ReturnsJsonResponse};
 use serde::Serialize;
-use serde_with::skip_serializing_none;
 use std::collections::HashMap;
+
+/// a minimal type for Redmine projects used in lists of projects included in
+/// other Redmine objects (e.g. custom fields)
+#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct ProjectEssentials {
+    /// numeric id
+    id: u64,
+    /// display name
+    name: String,
+    /// URL slug
+    identifier: String,
+}
 
 /// a type for projects to use as an API return type
 ///
 /// alternatively you can use your own type limited to the fields you need
-#[derive(Debug, PartialEq, Eq, serde::Deserialize)]
+#[derive(Debug, PartialEq, Eq, Serialize, serde::Deserialize)]
 pub struct Project {
     /// numeric id
     id: u64,
@@ -242,7 +253,7 @@ impl<'a> Endpoint for UnarchiveProject<'a> {
 }
 
 /// The endpoint to create a Redmine project
-#[skip_serializing_none]
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Builder, Serialize)]
 #[builder(setter(strip_option))]
 pub struct CreateProject<'a> {
@@ -316,7 +327,7 @@ impl<'a> Endpoint for CreateProject<'a> {
 }
 
 /// The endpoint to update an existing Redmine project
-#[skip_serializing_none]
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Builder, Serialize)]
 #[builder(setter(strip_option))]
 pub struct UpdateProject<'a> {

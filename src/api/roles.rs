@@ -11,6 +11,16 @@ use std::borrow::Cow;
 
 use crate::api::Endpoint;
 
+/// a minimal type for Redmine roles used in lists of roles included in
+/// other Redmine objects (e.g. custom fields)
+#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct RoleEssentials {
+    /// numeric id
+    id: u64,
+    /// display name
+    name: String,
+}
+
 /// The endpoint for all roles
 #[derive(Debug, Builder)]
 #[builder(setter(strip_option))]
