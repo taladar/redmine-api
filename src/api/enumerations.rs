@@ -18,11 +18,11 @@ use crate::api::{Endpoint, ReturnsJsonResponse};
 #[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct IssuePriority {
     /// numeric id
-    id: u64,
+    pub id: u64,
     /// display name
-    name: String,
+    pub name: String,
     /// whether this value is the default value
-    is_default: bool,
+    pub is_default: bool,
 }
 
 /// The endpoint for all issue priorities
@@ -53,7 +53,7 @@ impl<'a> Endpoint for ListIssuePriorities {
 #[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct IssuePrioritiesWrapper<T> {
     /// to parse JSON with issue_priorities key
-    issue_priorities: Vec<T>,
+    pub issue_priorities: Vec<T>,
 }
 
 /// a type for time entry activity to use as an API return type
@@ -62,11 +62,11 @@ pub struct IssuePrioritiesWrapper<T> {
 #[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct TimeEntryActvity {
     /// numeric id
-    id: u64,
+    pub id: u64,
     /// display name
-    name: String,
+    pub name: String,
     /// whether this value is the default value
-    is_default: bool,
+    pub is_default: bool,
 }
 
 /// The endpoint for all time entry activities
@@ -97,7 +97,7 @@ impl<'a> Endpoint for ListTimeEntryActivities {
 #[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct TimeEntryActivitiesWrapper<T> {
     /// to parse JSON with time_entry_activities key
-    time_entry_activities: Vec<T>,
+    pub time_entry_activities: Vec<T>,
 }
 
 /// a type for document category to use as an API return type
@@ -106,11 +106,11 @@ pub struct TimeEntryActivitiesWrapper<T> {
 #[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct DocumentCategory {
     /// numeric id
-    id: u64,
+    pub id: u64,
     /// display name
-    name: String,
+    pub name: String,
     /// whether this value is the default value
-    is_default: bool,
+    pub is_default: bool,
 }
 
 /// The endpoint for all document categories
@@ -141,7 +141,7 @@ impl<'a> Endpoint for ListDocumentCategories {
 #[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct DocumentCategoriesWrapper<T> {
     /// to parse JSON with document_categories key
-    document_categories: Vec<T>,
+    pub document_categories: Vec<T>,
 }
 
 #[cfg(test)]

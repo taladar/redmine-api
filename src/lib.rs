@@ -51,4 +51,7 @@ pub enum Error {
     /// Response pagination key has the wrong type (total_counts, offset, limit)
     #[error("JSON wrapper pagination key has an unexpected type: {0}")]
     PaginationKeyHasWrongType(String),
+    /// Parsing a time string to a time object (OffsetDateTime) failed
+    #[error("Parsing string {0} to time object failed")]
+    TimeParseError(String, time::error::Parse),
 }

@@ -26,8 +26,6 @@ pub struct ProjectEssentials {
     id: u64,
     /// display name
     name: String,
-    /// URL slug
-    identifier: String,
 }
 
 /// a type for projects to use as an API return type
@@ -44,25 +42,47 @@ pub struct Project {
     /// description
     description: Option<String>,
     /// the project homepage
+    #[serde(skip_serializing_if = "Option::is_none")]
     homepage: Option<String>,
     /// is the project public (visible to anonymous users)
     is_public: Option<bool>,
-    /// the parent project id
-    parent_id: Option<u64>,
+    /// the parent project (id and name)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    parent: Option<ProjectEssentials>,
     /// will the project inherit members from its ancestors
     inherit_members: Option<bool>,
     /// ID of the default user. It works only when the new project is a subproject and it inherits the members
+    #[serde(skip_serializing_if = "Option::is_none")]
     default_assigned_to_id: Option<u64>,
     /// ID of the default version. It works only with existing shared versions
+    #[serde(skip_serializing_if = "Option::is_none")]
     default_version_id: Option<u64>,
     /// trackers to enable in the project
+    #[serde(skip_serializing_if = "Option::is_none")]
     tracker_ids: Option<Vec<u64>>,
     /// modules to enable in the project
+    #[serde(skip_serializing_if = "Option::is_none")]
     enabled_module_names: Option<Vec<String>>,
     /// custom issue fields to enable in the project
+    #[serde(skip_serializing_if = "Option::is_none")]
     issue_custom_field_id: Option<Vec<u64>>,
     /// values for custom fields
+    #[serde(skip_serializing_if = "Option::is_none")]
     custom_field_values: Option<HashMap<u64, String>>,
+    /// archived or not?
+    status: u64,
+    /// The time when this project was created
+    #[serde(
+        serialize_with = "crate::api::serialize_rfc3339",
+        deserialize_with = "crate::api::deserialize_rfc3339"
+    )]
+    created_on: time::OffsetDateTime,
+    /// The time when this project was last updated
+    #[serde(
+        serialize_with = "crate::api::serialize_rfc3339",
+        deserialize_with = "crate::api::deserialize_rfc3339"
+    )]
+    updated_on: time::OffsetDateTime,
 }
 
 /// The types of associated data which can be fetched along with a project
@@ -328,7 +348,7 @@ impl<'a> Endpoint for CreateProject<'a> {
 
 /// The endpoint to update an existing Redmine project
 #[serde_with::skip_serializing_none]
-#[derive(Debug, Builder, Serialize)]
+#[derive(Debug, Clone, Builder, Serialize)]
 #[builder(setter(strip_option))]
 pub struct UpdateProject<'a> {
     /// the project id or name as it appears in the URL of the project to update
@@ -393,7 +413,12 @@ impl<'a> Endpoint for UpdateProject<'a> {
     }
 
     fn body(&self) -> Result<Option<(&'static str, Vec<u8>)>, crate::Error> {
-        Ok(Some(("application/json", serde_json::to_vec(self)?)))
+        Ok(Some((
+            "application/json",
+            serde_json::to_vec(&ProjectWrapper::<UpdateProject> {
+                project: (*self).to_owned(),
+            })?,
+        )))
     }
 }
 
@@ -427,7 +452,7 @@ impl<'a> Endpoint for DeleteProject<'a> {
 #[derive(Debug, PartialEq, Eq, Serialize, serde::Deserialize)]
 pub struct ProjectsWrapper<T> {
     /// to parse JSON with projects key
-    projects: Vec<T>,
+    pub projects: Vec<T>,
 }
 
 /// A lot of APIs in Redmine wrap their data in an extra layer, this is a
@@ -435,15 +460,15 @@ pub struct ProjectsWrapper<T> {
 #[derive(Debug, PartialEq, Eq, Serialize, serde::Deserialize)]
 pub struct ProjectWrapper<T> {
     /// to parse JSON with project key
-    project: T,
+    pub project: T,
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
-    use std::error::Error;
-    //use pretty_assertions::{assert_eq,assert_ne};
     use crate::api::test_helpers::with_project;
+    use pretty_assertions::assert_eq;
+    use std::error::Error;
     use tracing_test::traced_test;
 
     #[traced_test]
@@ -510,6 +535,26 @@ mod test {
             redmine.ignore_response_body::<_>(&update_endpoint)?;
             Ok(())
         })?;
+        Ok(())
+    }
+
+    /// this tests if any of the results contain a field we are not deserializing
+    ///
+    /// this will only catch fields we missed if they are part of the response but
+    /// it is better than nothing
+    #[traced_test]
+    #[test]
+    fn test_completeness_project_type() -> Result<(), Box<dyn Error>> {
+        dotenv::dotenv()?;
+        let redmine = crate::api::Redmine::from_env()?;
+        let endpoint = ListProjects::builder().build()?;
+        let ProjectsWrapper { projects: values } =
+            redmine.json_response_body::<_, ProjectsWrapper<serde_json::Value>>(&endpoint)?;
+        for value in values {
+            let o: Project = serde_json::from_value(value.clone())?;
+            let reserialized = serde_json::to_value(o)?;
+            assert_eq!(value, reserialized);
+        }
         Ok(())
     }
 }

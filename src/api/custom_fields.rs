@@ -73,9 +73,9 @@ pub enum FieldFormat {
 #[serde(rename_all = "snake_case")]
 pub struct PossibleValue {
     /// label for the value in a select box
-    label: String,
+    pub label: String,
     /// actual value
-    value: String,
+    pub value: String,
 }
 
 /// a type for custom fields to use as an API return type
@@ -84,41 +84,41 @@ pub struct PossibleValue {
 #[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct CustomField {
     /// numeric id
-    id: u64,
+    pub id: u64,
     /// display name
-    name: String,
+    pub name: String,
     /// type of Redmine object this field is customizing
-    customized_type: CustomizedType,
+    pub customized_type: CustomizedType,
     /// data type of the field
-    field_format: FieldFormat,
+    pub field_format: FieldFormat,
     /// a regular expression to constrain possible string values
-    regexp: Option<String>,
+    pub regexp: Option<String>,
     /// a minimum length for the field
-    min_length: Option<usize>,
+    pub min_length: Option<usize>,
     /// a maximum length for the field
-    max_length: Option<usize>,
+    pub max_length: Option<usize>,
     /// is this field required when creating/updating an object of the customized type
-    is_required: Option<bool>,
+    pub is_required: Option<bool>,
     /// can this field be used as a filter
-    is_filter: Option<bool>,
+    pub is_filter: Option<bool>,
     /// will this field be indexed for the search
-    searchable: bool,
+    pub searchable: bool,
     /// can this field be added more than once
-    multiple: bool,
+    pub multiple: bool,
     /// default value for the field
-    default_value: Option<String>,
+    pub default_value: Option<String>,
     /// visibility of the custom field
-    visible: bool,
+    pub visible: bool,
     /// which roles can see the custom field
-    roles: Vec<RoleEssentials>,
+    pub roles: Vec<RoleEssentials>,
     /// limit possible values to an explicit list of values
     #[serde(skip_serializing_if = "Option::is_none")]
-    possible_values: Option<Vec<PossibleValue>>,
+    pub possible_values: Option<Vec<PossibleValue>>,
     /// this field is useable in these trackers
-    trackers: Vec<TrackerEssentials>,
+    pub trackers: Vec<TrackerEssentials>,
     /// this field is useable in these projects (None means all projects)
     #[serde(skip_serializing_if = "Option::is_none")]
-    projects: Option<Vec<ProjectEssentials>>,
+    pub projects: Option<Vec<ProjectEssentials>>,
 }
 
 /// The endpoint for all custom fields
@@ -149,7 +149,7 @@ impl<'a> Endpoint for ListCustomFields {
 #[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct CustomFieldsWrapper<T> {
     /// to parse JSON with custom_fields key
-    custom_fields: Vec<T>,
+    pub custom_fields: Vec<T>,
 }
 
 #[cfg(test)]

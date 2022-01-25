@@ -1,6 +1,7 @@
 use std::error::Error;
 use tracing::trace;
 
+use crate::api::groups::{CreateGroup, DeleteGroup, Group, GroupWrapper};
 use crate::api::projects::{CreateProject, DeleteProject, GetProject, Project, ProjectWrapper};
 
 pub fn with_project<F>(name: &str, f: F) -> Result<(), Box<dyn Error>>
@@ -26,13 +27,42 @@ where
         let delete_endpoint = DeleteProject::builder()
             .project_id_or_name(name)
             .build()
-            .expect(&format!("Building delete enedpoint for {} failed", name));
+            .expect(&format!(
+                "Building delete enedpoint for project {} failed",
+                name
+            ));
         redmine
             .ignore_response_body::<_>(&delete_endpoint)
             .expect(&format!("Delete project {} failed", name));
     });
     trace!(%name, "Actual test body starts here");
     f(&redmine, name)?;
+    trace!(%name, "Actual test body ends here");
+    Ok(())
+}
+
+pub fn with_group<F>(name: &str, f: F) -> Result<(), Box<dyn Error>>
+where
+    F: FnOnce(&crate::api::Redmine, u64, &str) -> Result<(), Box<dyn Error>>,
+{
+    dotenv::dotenv()?;
+    let redmine = crate::api::Redmine::from_env()?;
+    let create_endpoint = CreateGroup::builder().name(name).build()?;
+    let GroupWrapper { group } =
+        redmine.json_response_body::<_, GroupWrapper<Group>>(&create_endpoint)?;
+    let id = group.id;
+    let _fb = finally_block::finally(|| {
+        trace!(%name, "Deleting test group");
+        let delete_endpoint = DeleteGroup::builder().id(id).build().expect(&format!(
+            "Building delete endpoint for group {} failed",
+            name
+        ));
+        redmine
+            .ignore_response_body::<_>(&delete_endpoint)
+            .expect(&format!("Delete group {} failed", name));
+    });
+    trace!(%name, "Actual test body starts here");
+    f(&redmine, id, name)?;
     trace!(%name, "Actual test body ends here");
     Ok(())
 }

@@ -138,6 +138,13 @@ license-files = [
   { path = "COPYRIGHT", hash = 0x39f8ad31 }
 ]
 
+[[licenses.clarify]]
+name = "function_name-proc-macro"
+version = "0.2.0"
+expression = "MIT"
+license-files = [
+]
+
 [licenses.private]
 # If true, ignores workspace crates that aren't published, or are only
 # published to private registries.

@@ -48,6 +48,7 @@ use std::str::from_utf8;
 use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use serde::Deserializer;
+use serde::Serialize;
 
 use http::Method;
 use std::borrow::Cow;
@@ -574,4 +575,29 @@ pub trait ReturnsJsonResponse {}
 pub trait Pageable {
     /// returns the name of the key in the response that contains the list of results
     fn response_wrapper_key(&self) -> String;
+}
+
+/// helper to parse created_on and updated_on in the correct format
+/// (default time serde implementation seems to use a different format)
+pub fn deserialize_rfc3339<'de, D>(deserializer: D) -> Result<time::OffsetDateTime, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let s = String::deserialize(deserializer)?;
+
+    time::OffsetDateTime::parse(&s, &time::format_description::well_known::Rfc3339)
+        .map_err(serde::de::Error::custom)
+}
+
+/// helper to serialize created_on and updated_on in the correct format
+/// (default time serde implementation seems to use a different format)
+pub fn serialize_rfc3339<S>(t: &time::OffsetDateTime, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    let s = t
+        .format(&time::format_description::well_known::Rfc3339)
+        .map_err(serde::ser::Error::custom)?;
+
+    s.serialize(serializer)
 }

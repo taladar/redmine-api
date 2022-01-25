@@ -14,22 +14,45 @@ use derive_builder::Builder;
 use http::Method;
 use std::borrow::Cow;
 
-use crate::api::{Endpoint, QueryParams};
+use crate::api::{Endpoint, QueryParams, ReturnsJsonResponse};
 use serde::Serialize;
+
+/// a minimal type for Redmine groups used in lists of groups included in
+/// other Redmine objects
+#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct GroupEssentials {
+    /// numeric id
+    pub id: u64,
+    /// display name
+    pub name: String,
+}
+
+/// a type for groups to use as an API return type
+///
+/// alternatively you can use your own type limited to the fields you need
+#[derive(Debug, PartialEq, Eq, Serialize, serde::Deserialize)]
+pub struct Group {
+    /// numeric id
+    pub id: u64,
+    /// display name
+    pub name: String,
+}
 
 /// The endpoint for all Redmine groups
 #[derive(Debug, Builder)]
 #[builder(setter(strip_option))]
-pub struct Groups {}
+pub struct ListGroups {}
 
-impl Groups {
+impl ReturnsJsonResponse for ListGroups {}
+
+impl ListGroups {
     /// Create a builder for the endpoint.
-    pub fn builder() -> GroupsBuilder {
-        GroupsBuilder::default()
+    pub fn builder() -> ListGroupsBuilder {
+        ListGroupsBuilder::default()
     }
 }
 
-impl<'a> Endpoint for Groups {
+impl<'a> Endpoint for ListGroups {
     fn method(&self) -> Method {
         Method::GET
     }
@@ -64,7 +87,7 @@ impl std::fmt::Display for GroupInclude {
 /// The endpoint for a specific Redmine group
 #[derive(Debug, Builder)]
 #[builder(setter(strip_option))]
-pub struct Group {
+pub struct GetGroup {
     /// id of the group
     id: u64,
     /// associated data to include
@@ -72,14 +95,16 @@ pub struct Group {
     include: Option<Vec<GroupInclude>>,
 }
 
-impl Group {
+impl ReturnsJsonResponse for GetGroup {}
+
+impl GetGroup {
     /// Create a builder for the endpoint.
-    pub fn builder() -> GroupBuilder {
-        GroupBuilder::default()
+    pub fn builder() -> GetGroupBuilder {
+        GetGroupBuilder::default()
     }
 }
 
-impl<'a> Endpoint for Group {
+impl<'a> Endpoint for GetGroup {
     fn method(&self) -> Method {
         Method::GET
     }
@@ -96,15 +121,18 @@ impl<'a> Endpoint for Group {
 }
 
 /// The endpoint to create a Redmine group
-#[derive(Debug, Builder, Serialize)]
+#[derive(Debug, Clone, Builder, Serialize)]
 #[builder(setter(strip_option))]
 pub struct CreateGroup<'a> {
     /// name of the group
+    #[builder(setter(into))]
     name: Cow<'a, str>,
     /// user ids of users to put in the group initially
     #[builder(default)]
     user_ids: Option<Vec<u64>>,
 }
+
+impl<'a> ReturnsJsonResponse for CreateGroup<'a> {}
 
 impl<'a> CreateGroup<'a> {
     /// Create a builder for the endpoint.
@@ -123,18 +151,24 @@ impl<'a> Endpoint for CreateGroup<'a> {
     }
 
     fn body(&self) -> Result<Option<(&'static str, Vec<u8>)>, crate::Error> {
-        Ok(Some(("application/json", serde_json::to_vec(self)?)))
+        Ok(Some((
+            "application/json",
+            serde_json::to_vec(&GroupWrapper::<CreateGroup> {
+                group: (*self).to_owned(),
+            })?,
+        )))
     }
 }
 
 /// The endpoint to update an existing Redmine group
-#[derive(Debug, Builder, Serialize)]
+#[derive(Debug, Clone, Builder, Serialize)]
 #[builder(setter(strip_option))]
 pub struct UpdateGroup<'a> {
     /// id of the group to update
     #[serde(skip_serializing)]
     id: u64,
     /// name of the group
+    #[builder(setter(into))]
     name: Cow<'a, str>,
     /// user ids of the group members
     #[builder(default)]
@@ -158,7 +192,12 @@ impl<'a> Endpoint for UpdateGroup<'a> {
     }
 
     fn body(&self) -> Result<Option<(&'static str, Vec<u8>)>, crate::Error> {
-        Ok(Some(("application/json", serde_json::to_vec(self)?)))
+        Ok(Some((
+            "application/json",
+            serde_json::to_vec(&GroupWrapper::<UpdateGroup> {
+                group: (*self).to_owned(),
+            })?,
+        )))
     }
 }
 
@@ -243,5 +282,94 @@ impl<'a> Endpoint for RemoveUserFromGroup {
 
     fn endpoint(&self) -> Cow<'static, str> {
         format!("groups/{}/users/{}.json", &self.group_id, &self.user_id).into()
+    }
+}
+
+/// helper struct for outer layers with a groups field holding the inner data
+#[derive(Debug, PartialEq, Eq, Serialize, serde::Deserialize)]
+pub struct GroupsWrapper<T> {
+    /// to parse JSON with groups key
+    pub groups: Vec<T>,
+}
+
+/// A lot of APIs in Redmine wrap their data in an extra layer, this is a
+/// helper struct for outer layers with a group field holding the inner data
+#[derive(Debug, PartialEq, Eq, Serialize, serde::Deserialize)]
+pub struct GroupWrapper<T> {
+    /// to parse JSON with group key
+    pub group: T,
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::api::test_helpers::with_group;
+    use pretty_assertions::assert_eq;
+    use std::error::Error;
+    use tracing_test::traced_test;
+
+    #[traced_test]
+    #[test]
+    fn test_list_groups_no_pagination() -> Result<(), Box<dyn Error>> {
+        dotenv::dotenv()?;
+        let redmine = crate::api::Redmine::from_env()?;
+        let endpoint = ListGroups::builder().build()?;
+        redmine.json_response_body::<_, GroupsWrapper<Group>>(&endpoint)?;
+        Ok(())
+    }
+
+    #[traced_test]
+    #[test]
+    fn test_get_group() -> Result<(), Box<dyn Error>> {
+        dotenv::dotenv()?;
+        let redmine = crate::api::Redmine::from_env()?;
+        let endpoint = GetGroup::builder().id(338).build()?;
+        redmine.json_response_body::<_, GroupWrapper<Group>>(&endpoint)?;
+        Ok(())
+    }
+
+    #[function_name::named]
+    #[traced_test]
+    #[test]
+    fn test_create_group() -> Result<(), Box<dyn Error>> {
+        let name = format!("unittest_{}", function_name!());
+        with_group(&name, |_, _, _| Ok(()))?;
+        Ok(())
+    }
+
+    #[function_name::named]
+    #[traced_test]
+    #[test]
+    fn test_update_project() -> Result<(), Box<dyn Error>> {
+        let name = format!("unittest_{}", function_name!());
+        with_group(&name, |redmine, id, _name| {
+            let update_endpoint = super::UpdateGroup::builder()
+                .id(id)
+                .name("unittest_rename_test")
+                .build()?;
+            redmine.ignore_response_body::<_>(&update_endpoint)?;
+            Ok(())
+        })?;
+        Ok(())
+    }
+
+    /// this tests if any of the results contain a field we are not deserializing
+    ///
+    /// this will only catch fields we missed if they are part of the response but
+    /// it is better than nothing
+    #[traced_test]
+    #[test]
+    fn test_completeness_group_type() -> Result<(), Box<dyn Error>> {
+        dotenv::dotenv()?;
+        let redmine = crate::api::Redmine::from_env()?;
+        let endpoint = ListGroups::builder().build()?;
+        let GroupsWrapper { groups: values } =
+            redmine.json_response_body::<_, GroupsWrapper<serde_json::Value>>(&endpoint)?;
+        for value in values {
+            let o: Group = serde_json::from_value(value.clone())?;
+            let reserialized = serde_json::to_value(o)?;
+            assert_eq!(value, reserialized);
+        }
+        Ok(())
     }
 }
