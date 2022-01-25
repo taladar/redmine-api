@@ -14,7 +14,7 @@ use derive_builder::Builder;
 use http::Method;
 use std::borrow::Cow;
 
-use crate::api::{Endpoint, Pageable, ReturnsJsonResponse, QueryParams};
+use crate::api::{Endpoint, Pageable, QueryParams, ReturnsJsonResponse};
 use serde::Serialize;
 use serde_with::skip_serializing_none;
 use std::collections::HashMap;
@@ -23,7 +23,7 @@ use std::collections::HashMap;
 ///
 /// alternatively you can use your own type limited to the fields you need
 #[derive(Debug, PartialEq, Eq, serde::Deserialize)]
-struct Project {
+pub struct Project {
     /// numeric id
     id: u64,
     /// display name
@@ -306,7 +306,12 @@ impl<'a> Endpoint for CreateProject<'a> {
     }
 
     fn body(&self) -> Result<Option<(&'static str, Vec<u8>)>, crate::Error> {
-        Ok(Some(("application/json", serde_json::to_vec(&ProjectWrapper::<CreateProject> { project: (*self).to_owned() })?)))
+        Ok(Some((
+            "application/json",
+            serde_json::to_vec(&ProjectWrapper::<CreateProject> {
+                project: (*self).to_owned(),
+            })?,
+        )))
     }
 }
 
@@ -410,6 +415,7 @@ impl<'a> Endpoint for DeleteProject<'a> {
 /// helper struct for outer layers with a projects field holding the inner data
 #[derive(Debug, PartialEq, Eq, Serialize, serde::Deserialize)]
 pub struct ProjectsWrapper<T> {
+    /// to parse JSON with projects key
     projects: Vec<T>,
 }
 
@@ -417,6 +423,7 @@ pub struct ProjectsWrapper<T> {
 /// helper struct for outer layers with a project field holding the inner data
 #[derive(Debug, PartialEq, Eq, Serialize, serde::Deserialize)]
 pub struct ProjectWrapper<T> {
+    /// to parse JSON with project key
     project: T,
 }
 
@@ -425,8 +432,8 @@ mod test {
     use super::*;
     use std::error::Error;
     //use pretty_assertions::{assert_eq,assert_ne};
+    use crate::api::test_helpers::with_project;
     use tracing_test::traced_test;
-    use tracing::trace;
 
     #[traced_test]
     #[test]
@@ -463,42 +470,10 @@ mod test {
     fn test_get_project() -> Result<(), Box<dyn Error>> {
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
-        let endpoint = GetProject::builder().project_id_or_name("sandbox").build()?;
+        let endpoint = GetProject::builder()
+            .project_id_or_name("sandbox")
+            .build()?;
         redmine.json_response_body::<_, ProjectWrapper<Project>>(&endpoint)?;
-        Ok(())
-    }
-
-    fn with_project<F>(name: &str, f: F) -> Result<(), Box<dyn Error>>
-        where F: FnOnce(&crate::api::Redmine, &str) -> Result<(), Box<dyn Error>>
-    {
-        dotenv::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
-        let get_endpoint = GetProject::builder()
-            .project_id_or_name(name)
-            .build()?;
-        let get_result = redmine.json_response_body::<_, ProjectWrapper<Project>>(&get_endpoint);
-        trace!("Get result in {} test:\n{:?}", name, get_result);
-        if get_result.is_ok() {
-            let delete_endpoint = DeleteProject::builder()
-                .project_id_or_name(name)
-                .build()?;
-            redmine.ignore_response_body::<_>(&delete_endpoint)?;
-        }
-        let create_endpoint = CreateProject::builder()
-            .name(format!("Unittest redmine-api {}", name))
-            .identifier(name)
-            .build()?;
-        redmine.json_response_body::<_, ProjectWrapper<Project>>(&create_endpoint)?;
-        let _fb = finally_block::finally(|| {
-            trace!(%name, "Deleting test project");
-            let delete_endpoint = DeleteProject::builder()
-                .project_id_or_name(name)
-                .build().expect(&format!("Building delete enedpoint for {} failed", name));
-            redmine.ignore_response_body::<_>(&delete_endpoint).expect(&format!("Delete project {} failed", name));
-        });
-        trace!(%name, "Actual test body starts here");
-        f(&redmine, name)?;
-        trace!(%name, "Actual test body ends here");
         Ok(())
     }
 
@@ -507,9 +482,7 @@ mod test {
     #[test]
     fn test_create_project() -> Result<(), Box<dyn Error>> {
         let name = format!("unittest_{}", function_name!());
-        with_project(&name, |_, _| {
-            Ok(())
-        })?;
+        with_project(&name, |_, _| Ok(()))?;
         Ok(())
     }
 

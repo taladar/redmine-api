@@ -35,6 +35,8 @@ pub mod projects;
 pub mod queries;
 pub mod roles;
 pub mod search;
+#[cfg(test)]
+pub mod test_helpers;
 pub mod time_entries;
 pub mod trackers;
 pub mod users;
@@ -149,15 +151,20 @@ impl Redmine {
 
     /// internal method for shared logic between the methods below which
     /// diff in how they parse the response body and how often they call this
-    fn rest(&self, method: http::Method, endpoint: &str, parameters: QueryParams, mime_type_and_body: Option<(&str, Vec<u8>)>) -> Result<(reqwest::StatusCode, bytes::Bytes), crate::Error>
-    {
+    fn rest(
+        &self,
+        method: http::Method,
+        endpoint: &str,
+        parameters: QueryParams,
+        mime_type_and_body: Option<(&str, Vec<u8>)>,
+    ) -> Result<(reqwest::StatusCode, bytes::Bytes), crate::Error> {
         let Redmine {
             client,
             redmine_url,
             api_key,
             impersonate_user_id,
         } = self;
-        let mut url = redmine_url.join(&endpoint)?;
+        let mut url = redmine_url.join(endpoint)?;
         parameters.add_to_url(&mut url);
         debug!(%url, %method, "Calling redmine");
         let req = client
@@ -172,7 +179,11 @@ impl Redmine {
             if let Ok(request_body) = from_utf8(&data) {
                 trace!("Request body (Content-Type: {}):\n{}", mime, request_body);
             } else {
-                trace!("Request body (Content-Type: {}) could not be parsed as UTF-8:\n{:?}", mime, data);
+                trace!(
+                    "Request body (Content-Type: {}) could not be parsed as UTF-8:\n{:?}",
+                    mime,
+                    data
+                );
             }
             req.body(data).header("Content-Type", mime)
         } else {
@@ -208,151 +219,175 @@ impl Redmine {
     /// use this with endpoints that have no response body, e.g. those just deleting
     /// a Redmine object
     pub fn ignore_response_body<E>(&self, endpoint: &E) -> Result<(), crate::Error>
-        where E: Endpoint
+    where
+        E: Endpoint,
     {
-       let method = endpoint.method();
-       let url = endpoint.endpoint();
-       let parameters = endpoint.parameters();
-       let mime_type_and_body = endpoint.body()?;
-       self.rest(method, &url, parameters, mime_type_and_body)?;
-       Ok(())
+        let method = endpoint.method();
+        let url = endpoint.endpoint();
+        let parameters = endpoint.parameters();
+        let mime_type_and_body = endpoint.body()?;
+        self.rest(method, &url, parameters, mime_type_and_body)?;
+        Ok(())
     }
 
     /// use this with endpoints which return a JSON response but do not support pagination
     ///
     /// you can use it with those that support pagination but they will only return the first page
     pub fn json_response_body<E, R>(&self, endpoint: &E) -> Result<R, crate::Error>
-        where E: Endpoint + ReturnsJsonResponse,
-              R: DeserializeOwned + std::fmt::Debug
+    where
+        E: Endpoint + ReturnsJsonResponse,
+        R: DeserializeOwned + std::fmt::Debug,
     {
-       let method = endpoint.method();
-       let url = endpoint.endpoint();
-       let parameters = endpoint.parameters();
-       let mime_type_and_body = endpoint.body()?;
-       let (status, response_body) = self.rest(method, &url, parameters, mime_type_and_body)?;
-       if response_body.is_empty() {
-           Err(crate::Error::EmptyResponseBody(status))
-       } else {
-           let result = serde_json::from_slice::<R>(&response_body);
-           if let Ok(ref parsed_response_body) = result {
-               trace!("Parsed response body:\n{:?}", parsed_response_body);
-           }
-           Ok(result?)
-       }
+        let method = endpoint.method();
+        let url = endpoint.endpoint();
+        let parameters = endpoint.parameters();
+        let mime_type_and_body = endpoint.body()?;
+        let (status, response_body) = self.rest(method, &url, parameters, mime_type_and_body)?;
+        if response_body.is_empty() {
+            Err(crate::Error::EmptyResponseBody(status))
+        } else {
+            let result = serde_json::from_slice::<R>(&response_body);
+            if let Ok(ref parsed_response_body) = result {
+                trace!("Parsed response body:\n{:?}", parsed_response_body);
+            }
+            Ok(result?)
+        }
     }
 
     /// use this to get a single page of a paginated JSON response
-    pub fn json_response_body_page<E, R>(&self, endpoint: &E, offset: u64, limit: u64) -> Result<ResponsePage<R>, crate::Error>
-        where E: Endpoint + ReturnsJsonResponse + Pageable,
-              R: DeserializeOwned + std::fmt::Debug
+    pub fn json_response_body_page<E, R>(
+        &self,
+        endpoint: &E,
+        offset: u64,
+        limit: u64,
+    ) -> Result<ResponsePage<R>, crate::Error>
+    where
+        E: Endpoint + ReturnsJsonResponse + Pageable,
+        R: DeserializeOwned + std::fmt::Debug,
     {
-       let method = endpoint.method();
-       let url = endpoint.endpoint();
-       let mut parameters = endpoint.parameters();
-       parameters.push("offset", offset);
-       parameters.push("limit", limit);
-       let mime_type_and_body = endpoint.body()?;
-       let (status, response_body) = self.rest(method.clone(), &url, parameters, mime_type_and_body)?;
-       if response_body.is_empty() {
-           Err(crate::Error::EmptyResponseBody(status))
-       } else {
-           let json_value_response_body : serde_json::Value =
-               serde_json::from_slice(&response_body)?;
-           let json_object_response_body = json_value_response_body.as_object();
-           if let Some(json_object_response_body) = json_object_response_body {
-               let total_count = json_object_response_body
-                   .get("total_count")
-                   .ok_or(crate::Error::PaginationKeyMissing("total_count".to_string()))?
-                   .as_u64()
-                   .ok_or(crate::Error::PaginationKeyHasWrongType("total_count".to_string()))?;
-               let offset = json_object_response_body
-                   .get("offset")
-                   .ok_or(crate::Error::PaginationKeyMissing("offset".to_string()))?
-                   .as_u64()
-                   .ok_or(crate::Error::PaginationKeyHasWrongType("total_count".to_string()))?;
-               let limit = json_object_response_body
-                   .get("limit")
-                   .ok_or(crate::Error::PaginationKeyMissing("limit".to_string()))?
-                   .as_u64()
-                   .ok_or(crate::Error::PaginationKeyHasWrongType("total_count".to_string()))?;
-               let response_wrapper_key = endpoint.response_wrapper_key();
-               let inner_response_body = json_object_response_body
-                   .get(&response_wrapper_key)
-                   .ok_or(crate::Error::PaginationKeyMissing(response_wrapper_key))?;
-               let result = serde_json::from_value::<Vec<R>>(inner_response_body.to_owned());
-               if let Ok(ref parsed_response_body) = result {
-                   trace!(%total_count, %offset, %limit, "Parsed response body:\n{:?}", parsed_response_body);
-               }
-               Ok(ResponsePage {
-                   values: result?,
-                   total_count,
-                   offset,
-                   limit,
-               })
-           } else {
-               Err(crate::Error::NonObjectResponseBody(status))
-           }
-       }
+        let method = endpoint.method();
+        let url = endpoint.endpoint();
+        let mut parameters = endpoint.parameters();
+        parameters.push("offset", offset);
+        parameters.push("limit", limit);
+        let mime_type_and_body = endpoint.body()?;
+        let (status, response_body) = self.rest(method, &url, parameters, mime_type_and_body)?;
+        if response_body.is_empty() {
+            Err(crate::Error::EmptyResponseBody(status))
+        } else {
+            let json_value_response_body: serde_json::Value =
+                serde_json::from_slice(&response_body)?;
+            let json_object_response_body = json_value_response_body.as_object();
+            if let Some(json_object_response_body) = json_object_response_body {
+                let total_count = json_object_response_body
+                    .get("total_count")
+                    .ok_or_else(|| crate::Error::PaginationKeyMissing("total_count".to_string()))?
+                    .as_u64()
+                    .ok_or_else(|| {
+                        crate::Error::PaginationKeyHasWrongType("total_count".to_string())
+                    })?;
+                let offset = json_object_response_body
+                    .get("offset")
+                    .ok_or_else(|| crate::Error::PaginationKeyMissing("offset".to_string()))?
+                    .as_u64()
+                    .ok_or_else(|| {
+                        crate::Error::PaginationKeyHasWrongType("total_count".to_string())
+                    })?;
+                let limit = json_object_response_body
+                    .get("limit")
+                    .ok_or_else(|| crate::Error::PaginationKeyMissing("limit".to_string()))?
+                    .as_u64()
+                    .ok_or_else(|| {
+                        crate::Error::PaginationKeyHasWrongType("total_count".to_string())
+                    })?;
+                let response_wrapper_key = endpoint.response_wrapper_key();
+                let inner_response_body = json_object_response_body
+                    .get(&response_wrapper_key)
+                    .ok_or(crate::Error::PaginationKeyMissing(response_wrapper_key))?;
+                let result = serde_json::from_value::<Vec<R>>(inner_response_body.to_owned());
+                if let Ok(ref parsed_response_body) = result {
+                    trace!(%total_count, %offset, %limit, "Parsed response body:\n{:?}", parsed_response_body);
+                }
+                Ok(ResponsePage {
+                    values: result?,
+                    total_count,
+                    offset,
+                    limit,
+                })
+            } else {
+                Err(crate::Error::NonObjectResponseBody(status))
+            }
+        }
     }
 
     /// use this to get the results for all pages of a paginated JSON response
     pub fn json_response_body_all_pages<E, R>(&self, endpoint: &E) -> Result<Vec<R>, crate::Error>
-        where E: Endpoint + ReturnsJsonResponse + Pageable,
-              R: DeserializeOwned + std::fmt::Debug
+    where
+        E: Endpoint + ReturnsJsonResponse + Pageable,
+        R: DeserializeOwned + std::fmt::Debug,
     {
-       let method = endpoint.method();
-       let url = endpoint.endpoint();
-       let mut offset = 0;
-       let limit = 100;
-       let mut total_results = vec![];
-       loop {
-           let mut page_parameters = endpoint.parameters();
-           page_parameters.push("offset", offset);
-           page_parameters.push("limit", limit);
-           let mime_type_and_body = endpoint.body()?;
-           let (status, response_body) = self.rest(method.clone(), &url, page_parameters, mime_type_and_body)?;
-           if response_body.is_empty() {
-               return Err(crate::Error::EmptyResponseBody(status))
-           } else {
-               let json_value_response_body : serde_json::Value =
-                   serde_json::from_slice(&response_body)?;
-               let json_object_response_body = json_value_response_body.as_object();
-               if let Some(json_object_response_body) = json_object_response_body {
-                   let total_count : u64 = json_object_response_body
-                       .get("total_count")
-                       .ok_or(crate::Error::PaginationKeyMissing("total_count".to_string()))?
-                       .as_u64()
-                       .ok_or(crate::Error::PaginationKeyHasWrongType("total_count".to_string()))?;
-                   let response_offset : u64 = json_object_response_body
-                       .get("offset")
-                       .ok_or(crate::Error::PaginationKeyMissing("offset".to_string()))?
-                       .as_u64()
-                       .ok_or(crate::Error::PaginationKeyHasWrongType("total_count".to_string()))?;
-                   let response_limit : u64 = json_object_response_body
-                       .get("limit")
-                       .ok_or(crate::Error::PaginationKeyMissing("limit".to_string()))?
-                       .as_u64()
-                       .ok_or(crate::Error::PaginationKeyHasWrongType("total_count".to_string()))?;
-                   let response_wrapper_key = endpoint.response_wrapper_key();
-                   let inner_response_body = json_object_response_body
-                       .get(&response_wrapper_key)
-                       .ok_or(crate::Error::PaginationKeyMissing(response_wrapper_key))?;
-                   let result = serde_json::from_value::<Vec<R>>(inner_response_body.to_owned());
-                   if let Ok(ref parsed_response_body) = result {
-                       trace!(%total_count, %offset, %limit, "Parsed response body:\n{:?}", parsed_response_body);
-                   }
-                   total_results.extend(result?);
-                   if total_count < (response_offset + response_limit) {
-                       break;
-                   } else {
-                       offset+=limit;
-                   }
-               } else {
-                   return Err(crate::Error::NonObjectResponseBody(status))
-               }
-           }
-       }
-       Ok(total_results)
+        let method = endpoint.method();
+        let url = endpoint.endpoint();
+        let mut offset = 0;
+        let limit = 100;
+        let mut total_results = vec![];
+        loop {
+            let mut page_parameters = endpoint.parameters();
+            page_parameters.push("offset", offset);
+            page_parameters.push("limit", limit);
+            let mime_type_and_body = endpoint.body()?;
+            let (status, response_body) =
+                self.rest(method.clone(), &url, page_parameters, mime_type_and_body)?;
+            if response_body.is_empty() {
+                return Err(crate::Error::EmptyResponseBody(status));
+            } else {
+                let json_value_response_body: serde_json::Value =
+                    serde_json::from_slice(&response_body)?;
+                let json_object_response_body = json_value_response_body.as_object();
+                if let Some(json_object_response_body) = json_object_response_body {
+                    let total_count: u64 = json_object_response_body
+                        .get("total_count")
+                        .ok_or_else(|| {
+                            crate::Error::PaginationKeyMissing("total_count".to_string())
+                        })?
+                        .as_u64()
+                        .ok_or_else(|| {
+                            crate::Error::PaginationKeyHasWrongType("total_count".to_string())
+                        })?;
+                    let response_offset: u64 = json_object_response_body
+                        .get("offset")
+                        .ok_or_else(|| crate::Error::PaginationKeyMissing("offset".to_string()))?
+                        .as_u64()
+                        .ok_or_else(|| {
+                            crate::Error::PaginationKeyHasWrongType("total_count".to_string())
+                        })?;
+                    let response_limit: u64 = json_object_response_body
+                        .get("limit")
+                        .ok_or_else(|| crate::Error::PaginationKeyMissing("limit".to_string()))?
+                        .as_u64()
+                        .ok_or_else(|| {
+                            crate::Error::PaginationKeyHasWrongType("total_count".to_string())
+                        })?;
+                    let response_wrapper_key = endpoint.response_wrapper_key();
+                    let inner_response_body = json_object_response_body
+                        .get(&response_wrapper_key)
+                        .ok_or(crate::Error::PaginationKeyMissing(response_wrapper_key))?;
+                    let result = serde_json::from_value::<Vec<R>>(inner_response_body.to_owned());
+                    if let Ok(ref parsed_response_body) = result {
+                        trace!(%total_count, %offset, %limit, "Parsed response body:\n{:?}", parsed_response_body);
+                    }
+                    total_results.extend(result?);
+                    if total_count < (response_offset + response_limit) {
+                        break;
+                    } else {
+                        offset += limit;
+                    }
+                } else {
+                    return Err(crate::Error::NonObjectResponseBody(status));
+                }
+            }
+        }
+        Ok(total_results)
     }
 }
 
