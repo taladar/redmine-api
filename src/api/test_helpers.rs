@@ -27,13 +27,10 @@ where
         let delete_endpoint = DeleteProject::builder()
             .project_id_or_name(name)
             .build()
-            .expect(&format!(
-                "Building delete enedpoint for project {} failed",
-                name
-            ));
+            .unwrap_or_else(|_| panic!("Building delete enedpoint for project {} failed", name));
         redmine
             .ignore_response_body::<_>(&delete_endpoint)
-            .expect(&format!("Delete project {} failed", name));
+            .unwrap_or_else(|_| panic!("Delete project {} failed", name));
     });
     trace!(%name, "Actual test body starts here");
     f(&redmine, name)?;
@@ -53,13 +50,13 @@ where
     let id = group.id;
     let _fb = finally_block::finally(|| {
         trace!(%name, "Deleting test group");
-        let delete_endpoint = DeleteGroup::builder().id(id).build().expect(&format!(
-            "Building delete endpoint for group {} failed",
-            name
-        ));
+        let delete_endpoint = DeleteGroup::builder()
+            .id(id)
+            .build()
+            .unwrap_or_else(|_| panic!("Building delete endpoint for group {} failed", name));
         redmine
             .ignore_response_body::<_>(&delete_endpoint)
-            .expect(&format!("Delete group {} failed", name));
+            .unwrap_or_else(|_| panic!("Delete group {} failed", name));
     });
     trace!(%name, "Actual test body starts here");
     f(&redmine, id, name)?;
