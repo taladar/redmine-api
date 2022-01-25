@@ -8,10 +8,10 @@ use derive_builder::Builder;
 use http::Method;
 use std::borrow::Cow;
 
-use crate::api::{Endpoint, ReturnsJsonResponse};
 use crate::api::projects::ProjectEssentials;
 use crate::api::roles::RoleEssentials;
 use crate::api::trackers::TrackerEssentials;
+use crate::api::{Endpoint, ReturnsJsonResponse};
 
 /// Represents the types of objects that can be customized with customized types
 /// in Redmine
@@ -155,8 +155,8 @@ pub struct CustomFieldsWrapper<T> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use std::error::Error;
     use pretty_assertions::assert_eq;
+    use std::error::Error;
     use tracing_test::traced_test;
 
     #[traced_test]
@@ -179,9 +179,11 @@ mod test {
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListCustomFields::builder().build()?;
-        let CustomFieldsWrapper { custom_fields: values } = redmine.json_response_body::<_, CustomFieldsWrapper<serde_json::Value>>(&endpoint)?;
+        let CustomFieldsWrapper {
+            custom_fields: values,
+        } = redmine.json_response_body::<_, CustomFieldsWrapper<serde_json::Value>>(&endpoint)?;
         for value in values {
-            let o : CustomField = serde_json::from_value(value.clone())?;
+            let o: CustomField = serde_json::from_value(value.clone())?;
             let reserialized = serde_json::to_value(o)?;
             assert_eq!(value, reserialized);
         }
