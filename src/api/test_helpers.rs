@@ -6,7 +6,7 @@ use crate::api::projects::{CreateProject, DeleteProject, GetProject, Project, Pr
 
 pub fn with_project<F>(name: &str, f: F) -> Result<(), Box<dyn Error>>
 where
-    F: FnOnce(&crate::api::Redmine, &str) -> Result<(), Box<dyn Error>>,
+    F: FnOnce(&crate::api::Redmine, u64, &str) -> Result<(), Box<dyn Error>>,
 {
     dotenv::dotenv()?;
     let redmine = crate::api::Redmine::from_env()?;
@@ -21,7 +21,8 @@ where
         .name(format!("Unittest redmine-api {}", name))
         .identifier(name)
         .build()?;
-    redmine.json_response_body::<_, ProjectWrapper<Project>>(&create_endpoint)?;
+    let ProjectWrapper { project } =
+        redmine.json_response_body::<_, ProjectWrapper<Project>>(&create_endpoint)?;
     let _fb = finally_block::finally(|| {
         trace!(%name, "Deleting test project");
         let delete_endpoint = DeleteProject::builder()
@@ -33,7 +34,7 @@ where
             .unwrap_or_else(|_| panic!("Delete project {} failed", name));
     });
     trace!(%name, "Actual test body starts here");
-    f(&redmine, name)?;
+    f(&redmine, project.id, name)?;
     trace!(%name, "Actual test body ends here");
     Ok(())
 }

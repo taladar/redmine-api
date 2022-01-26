@@ -77,8 +77,23 @@ use derive_builder::Builder;
 use http::Method;
 use std::borrow::Cow;
 
-use crate::api::{Endpoint, Pageable, QueryParams};
+use crate::api::projects::ProjectEssentials;
+use crate::api::trackers::TrackerEssentials;
+use crate::api::{Endpoint, Pageable, QueryParams, ReturnsJsonResponse};
 use serde::Serialize;
+
+/// a type for issue to use as an API return type
+///
+/// alternatively you can use your own type limited to the fields you need
+#[derive(Debug, PartialEq, Eq, Serialize, serde::Deserialize)]
+pub struct Issue {
+    /// numeric id
+    pub id: u64,
+    /// the project of the issue
+    pub project: ProjectEssentials,
+    /// the tracker of the issue
+    pub tracker: TrackerEssentials,
+}
 
 /// Sort by this column
 #[derive(Debug, Clone)]
@@ -133,7 +148,7 @@ impl std::fmt::Display for IssueListInclude {
 /// The endpoint for all Redmine issues
 #[derive(Debug, Builder)]
 #[builder(setter(strip_option))]
-pub struct Issues {
+pub struct ListIssues {
     /// Include associated data
     #[builder(default)]
     include: Option<Vec<IssueListInclude>>,
@@ -157,20 +172,22 @@ pub struct Issues {
     status_id: Option<Vec<u64>>,
 }
 
-impl Pageable for Issues {
+impl<'a> ReturnsJsonResponse for ListIssues {}
+
+impl Pageable for ListIssues {
     fn response_wrapper_key(&self) -> String {
         "issues".to_string()
     }
 }
 
-impl<'a> Issues {
+impl<'a> ListIssues {
     /// Create a builder for the endpoint.
-    pub fn builder() -> IssuesBuilder {
-        IssuesBuilder::default()
+    pub fn builder() -> ListIssuesBuilder {
+        ListIssuesBuilder::default()
     }
 }
 
-impl<'a> Endpoint for Issues {
+impl<'a> Endpoint for ListIssues {
     fn method(&self) -> Method {
         Method::GET
     }
@@ -253,7 +270,7 @@ impl std::fmt::Display for IssueInclude {
 /// The endpoint for a specific Redmine issue
 #[derive(Debug, Builder)]
 #[builder(setter(strip_option))]
-pub struct Issue {
+pub struct GetIssue {
     /// id of the issue to retrieve
     id: u64,
     /// associated data to include
@@ -261,14 +278,16 @@ pub struct Issue {
     include: Option<Vec<IssueInclude>>,
 }
 
-impl<'a> Issue {
+impl<'a> ReturnsJsonResponse for GetIssue {}
+
+impl<'a> GetIssue {
     /// Create a builder for the endpoint.
-    pub fn builder() -> IssueBuilder {
-        IssueBuilder::default()
+    pub fn builder() -> GetIssueBuilder {
+        GetIssueBuilder::default()
     }
 }
 
-impl Endpoint for Issue {
+impl Endpoint for GetIssue {
     fn method(&self) -> Method {
         Method::GET
     }
@@ -296,7 +315,8 @@ pub struct CustomField<'a> {
 }
 
 /// The endpoint to create a Redmine issue
-#[derive(Debug, Builder, Serialize)]
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, Builder, Serialize)]
 #[builder(setter(strip_option))]
 pub struct CreateIssue<'a> {
     /// project for the issue
@@ -349,6 +369,8 @@ impl<'a> CreateIssue<'a> {
     }
 }
 
+impl<'a> ReturnsJsonResponse for CreateIssue<'a> {}
+
 impl<'a> Endpoint for CreateIssue<'a> {
     fn method(&self) -> Method {
         Method::POST
@@ -359,12 +381,18 @@ impl<'a> Endpoint for CreateIssue<'a> {
     }
 
     fn body(&self) -> Result<Option<(&'static str, Vec<u8>)>, crate::Error> {
-        Ok(Some(("application/json", serde_json::to_vec(self)?)))
+        Ok(Some((
+            "application/json",
+            serde_json::to_vec(&IssueWrapper::<CreateIssue> {
+                issue: (*self).to_owned(),
+            })?,
+        )))
     }
 }
 
 /// The endpoint to update an existing Redmine issue
-#[derive(Debug, Builder, Serialize)]
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, Builder, Serialize)]
 #[builder(setter(strip_option))]
 pub struct UpdateIssue<'a> {
     /// id of the issue to update
@@ -437,7 +465,12 @@ impl<'a> Endpoint for UpdateIssue<'a> {
     }
 
     fn body(&self) -> Result<Option<(&'static str, Vec<u8>)>, crate::Error> {
-        Ok(Some(("application/json", serde_json::to_vec(self)?)))
+        Ok(Some((
+            "application/json",
+            serde_json::to_vec(&IssueWrapper::<UpdateIssue> {
+                issue: (*self).to_owned(),
+            })?,
+        )))
     }
 }
 
@@ -523,4 +556,19 @@ impl<'a> Endpoint for RemoveWatcher {
     fn endpoint(&self) -> Cow<'static, str> {
         format!("issues/{}/watchers/{}.json", &self.issue_id, &self.user_id).into()
     }
+}
+
+/// helper struct for outer layers with a issues field holding the inner data
+#[derive(Debug, PartialEq, Eq, Serialize, serde::Deserialize)]
+pub struct IssuesWrapper<T> {
+    /// to parse JSON with issues key
+    pub issues: Vec<T>,
+}
+
+/// A lot of APIs in Redmine wrap their data in an extra layer, this is a
+/// helper struct for outer layers with a issue field holding the inner data
+#[derive(Debug, PartialEq, Eq, Serialize, serde::Deserialize)]
+pub struct IssueWrapper<T> {
+    /// to parse JSON with an issue key
+    pub issue: T,
 }

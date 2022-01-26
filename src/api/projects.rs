@@ -23,9 +23,9 @@ use std::collections::HashMap;
 #[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct ProjectEssentials {
     /// numeric id
-    id: u64,
+    pub id: u64,
     /// display name
-    name: String,
+    pub name: String,
 }
 
 /// a type for projects to use as an API return type
@@ -34,55 +34,55 @@ pub struct ProjectEssentials {
 #[derive(Debug, PartialEq, Eq, Serialize, serde::Deserialize)]
 pub struct Project {
     /// numeric id
-    id: u64,
+    pub id: u64,
     /// display name
-    name: String,
+    pub name: String,
     /// URL slug
-    identifier: String,
+    pub identifier: String,
     /// description
-    description: Option<String>,
+    pub description: Option<String>,
     /// the project homepage
     #[serde(skip_serializing_if = "Option::is_none")]
-    homepage: Option<String>,
+    pub homepage: Option<String>,
     /// is the project public (visible to anonymous users)
-    is_public: Option<bool>,
+    pub is_public: Option<bool>,
     /// the parent project (id and name)
     #[serde(skip_serializing_if = "Option::is_none")]
-    parent: Option<ProjectEssentials>,
+    pub parent: Option<ProjectEssentials>,
     /// will the project inherit members from its ancestors
-    inherit_members: Option<bool>,
+    pub inherit_members: Option<bool>,
     /// ID of the default user. It works only when the new project is a subproject and it inherits the members
     #[serde(skip_serializing_if = "Option::is_none")]
-    default_assigned_to_id: Option<u64>,
+    pub default_assigned_to_id: Option<u64>,
     /// ID of the default version. It works only with existing shared versions
     #[serde(skip_serializing_if = "Option::is_none")]
-    default_version_id: Option<u64>,
+    pub default_version_id: Option<u64>,
     /// trackers to enable in the project
     #[serde(skip_serializing_if = "Option::is_none")]
-    tracker_ids: Option<Vec<u64>>,
+    pub tracker_ids: Option<Vec<u64>>,
     /// modules to enable in the project
     #[serde(skip_serializing_if = "Option::is_none")]
-    enabled_module_names: Option<Vec<String>>,
+    pub enabled_module_names: Option<Vec<String>>,
     /// custom issue fields to enable in the project
     #[serde(skip_serializing_if = "Option::is_none")]
-    issue_custom_field_id: Option<Vec<u64>>,
+    pub issue_custom_field_id: Option<Vec<u64>>,
     /// values for custom fields
     #[serde(skip_serializing_if = "Option::is_none")]
-    custom_field_values: Option<HashMap<u64, String>>,
+    pub custom_field_values: Option<HashMap<u64, String>>,
     /// archived or not?
-    status: u64,
+    pub status: u64,
     /// The time when this project was created
     #[serde(
         serialize_with = "crate::api::serialize_rfc3339",
         deserialize_with = "crate::api::deserialize_rfc3339"
     )]
-    created_on: time::OffsetDateTime,
+    pub created_on: time::OffsetDateTime,
     /// The time when this project was last updated
     #[serde(
         serialize_with = "crate::api::serialize_rfc3339",
         deserialize_with = "crate::api::deserialize_rfc3339"
     )]
-    updated_on: time::OffsetDateTime,
+    pub updated_on: time::OffsetDateTime,
 }
 
 /// The types of associated data which can be fetched along with a project
@@ -518,7 +518,7 @@ mod test {
     #[test]
     fn test_create_project() -> Result<(), Box<dyn Error>> {
         let name = format!("unittest_{}", function_name!());
-        with_project(&name, |_, _| Ok(()))?;
+        with_project(&name, |_, _, _| Ok(()))?;
         Ok(())
     }
 
@@ -527,7 +527,7 @@ mod test {
     #[test]
     fn test_update_project() -> Result<(), Box<dyn Error>> {
         let name = format!("unittest_{}", function_name!());
-        with_project(&name, |redmine, name| {
+        with_project(&name, |redmine, _id, name| {
             let update_endpoint = super::UpdateProject::builder()
                 .project_id_or_name(name)
                 .description("Test-Description")

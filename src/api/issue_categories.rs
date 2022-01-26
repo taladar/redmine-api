@@ -246,7 +246,7 @@ mod test {
 
     #[traced_test]
     #[test]
-    fn test_get_project() -> Result<(), Box<dyn Error>> {
+    fn test_get_issue_category() -> Result<(), Box<dyn Error>> {
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = GetIssueCategory::builder().id(10).build()?;
@@ -259,7 +259,7 @@ mod test {
     #[test]
     fn test_create_issue_category() -> Result<(), Box<dyn Error>> {
         let name = format!("unittest_{}", function_name!());
-        with_project(&name, |redmine, name| {
+        with_project(&name, |redmine, _id, name| {
             let create_endpoint = super::CreateIssueCategory::builder()
                 .project_id_or_name(name)
                 .name("Unittest Issue Category")
@@ -275,7 +275,7 @@ mod test {
     #[test]
     fn test_update_issue_category() -> Result<(), Box<dyn Error>> {
         let name = format!("unittest_{}", function_name!());
-        with_project(&name, |redmine, name| {
+        with_project(&name, |redmine, _id, name| {
             let create_endpoint = super::CreateIssueCategory::builder()
                 .project_id_or_name(name)
                 .name("Unittest Issue Category")
@@ -298,7 +298,7 @@ mod test {
     #[test]
     fn test_delete_issue_category() -> Result<(), Box<dyn Error>> {
         let name = format!("unittest_{}", function_name!());
-        with_project(&name, |redmine, name| {
+        with_project(&name, |redmine, _id, name| {
             let create_endpoint = super::CreateIssueCategory::builder()
                 .project_id_or_name(name)
                 .name("Unittest Issue Category")
@@ -319,7 +319,7 @@ mod test {
     /// it is better than nothing
     #[traced_test]
     #[test]
-    fn test_completeness_project_type() -> Result<(), Box<dyn Error>> {
+    fn test_completeness_issue_category_type() -> Result<(), Box<dyn Error>> {
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListIssueCategories::builder()
