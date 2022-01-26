@@ -17,7 +17,8 @@ use derive_builder::Builder;
 use http::Method;
 use std::borrow::Cow;
 
-use crate::api::{Endpoint, Pageable, QueryParams};
+use crate::api::custom_fields::CustomFieldEssentialsWithValue;
+use crate::api::{Endpoint, Pageable, QueryParams, ReturnsJsonResponse};
 use serde::Serialize;
 
 /// a minimal type for Redmine users used in
@@ -28,6 +29,60 @@ pub struct UserEssentials {
     pub id: u64,
     /// display name
     pub name: String,
+}
+
+/// a type for user to use as an API return type
+///
+/// alternatively you can use your own type limited to the fields you need
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+pub struct User {
+    /// numeric id
+    pub id: u64,
+    /// login name
+    pub login: String,
+    /// is this user an admin
+    pub admin: bool,
+    /// user's firstname
+    pub firstname: String,
+    /// user's lastname
+    pub lastname: String,
+    /// primary email of the user
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mail: Option<String>,
+    /// user's 2FA scheme
+    #[serde(default)]
+    pub twofa_scheme: Option<String>,
+    /// allows setting users to be e.g. LDAP users
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    auth_source_id: Option<u64>,
+    /// The time when this user was created
+    #[serde(
+        serialize_with = "crate::api::serialize_rfc3339",
+        deserialize_with = "crate::api::deserialize_rfc3339"
+    )]
+    pub created_on: time::OffsetDateTime,
+    /// The time when this user was last updated
+    #[serde(
+        serialize_with = "crate::api::serialize_rfc3339",
+        deserialize_with = "crate::api::deserialize_rfc3339"
+    )]
+    pub updated_on: time::OffsetDateTime,
+    /// The time when this user's password was last changed
+    #[serde(
+        serialize_with = "crate::api::serialize_optional_rfc3339",
+        deserialize_with = "crate::api::deserialize_optional_rfc3339"
+    )]
+    pub passwd_changed_on: Option<time::OffsetDateTime>,
+    /// the time when this user last logged in
+    #[serde(
+        serialize_with = "crate::api::serialize_optional_rfc3339",
+        deserialize_with = "crate::api::deserialize_optional_rfc3339"
+    )]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub last_login_on: Option<time::OffsetDateTime>,
+    /// custom fields with values
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub custom_fields: Option<Vec<CustomFieldEssentialsWithValue>>,
 }
 
 /// The user status values for filtering
@@ -65,33 +120,35 @@ impl std::fmt::Display for UserStatus {
 /// The endpoint for all users
 #[derive(Debug, Builder)]
 #[builder(setter(strip_option))]
-pub struct Users<'a> {
+pub struct ListUsers<'a> {
     /// Filter by user status
     #[builder(default)]
     /// The status of the users (locked, registered but not confirmed yet,...)
     status: Option<UserStatus>,
     #[builder(default)]
     /// Filter by name, this matches login, firstname, lastname and if it contains a space also firstname and lastname
+    #[builder(setter(into))]
     name: Option<Cow<'a, str>>,
     /// Users need to be members of this group
     #[builder(default)]
     group_id: Option<u64>,
 }
 
-impl<'a> Pageable for Users<'a> {
+impl<'a> ReturnsJsonResponse for ListUsers<'a> {}
+impl<'a> Pageable for ListUsers<'a> {
     fn response_wrapper_key(&self) -> String {
         "users".to_string()
     }
 }
 
-impl<'a> Users<'a> {
+impl<'a> ListUsers<'a> {
     /// Create a builder for the endpoint.
-    pub fn builder() -> UsersBuilder<'a> {
-        UsersBuilder::default()
+    pub fn builder() -> ListUsersBuilder<'a> {
+        ListUsersBuilder::default()
     }
 }
 
-impl<'a> Endpoint for Users<'a> {
+impl<'a> Endpoint for ListUsers<'a> {
     fn method(&self) -> Method {
         Method::GET
     }
@@ -134,7 +191,7 @@ impl std::fmt::Display for UserInclude {
 /// The endpoint for a specific user
 #[derive(Debug, Builder)]
 #[builder(setter(strip_option))]
-pub struct User {
+pub struct GetUser {
     /// User id to fetch, if not specified will fetch the current user
     id: Option<u64>,
     /// Include associated data
@@ -142,14 +199,16 @@ pub struct User {
     include: Option<Vec<UserInclude>>,
 }
 
-impl User {
+impl ReturnsJsonResponse for GetUser {}
+
+impl GetUser {
     /// Create a builder for the endpoint.
-    pub fn builder() -> UserBuilder {
-        UserBuilder::default()
+    pub fn builder() -> GetUserBuilder {
+        GetUserBuilder::default()
     }
 }
 
-impl<'a> Endpoint for User {
+impl<'a> Endpoint for GetUser {
     fn method(&self) -> Method {
         Method::GET
     }
@@ -188,7 +247,8 @@ pub enum MailNotificationOptions {
 }
 
 /// The endpoint to create a Redmine user
-#[derive(Debug, Builder, Serialize)]
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, Builder, Serialize)]
 #[builder(setter(strip_option))]
 pub struct CreateUser<'a> {
     /// The login for the user
@@ -228,6 +288,8 @@ pub struct CreateUser<'a> {
     admin: Option<bool>,
 }
 
+impl<'a> ReturnsJsonResponse for CreateUser<'a> {}
+
 impl<'a> CreateUser<'a> {
     /// Create a builder for the endpoint.
     pub fn builder() -> CreateUserBuilder<'a> {
@@ -245,12 +307,18 @@ impl<'a> Endpoint for CreateUser<'a> {
     }
 
     fn body(&self) -> Result<Option<(&'static str, Vec<u8>)>, crate::Error> {
-        Ok(Some(("application/json", serde_json::to_vec(self)?)))
+        Ok(Some((
+            "application/json",
+            serde_json::to_vec(&UserWrapper::<CreateUser> {
+                user: (*self).to_owned(),
+            })?,
+        )))
     }
 }
 
 /// The endpoint to update an existing Redmine user
-#[derive(Debug, Builder, Serialize)]
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, Builder, Serialize)]
 #[builder(setter(strip_option))]
 pub struct UpdateUser<'a> {
     /// The id of the user to update
@@ -265,14 +333,14 @@ pub struct UpdateUser<'a> {
     #[builder(setter(into), default)]
     password: Option<Cow<'a, str>>,
     /// The user's firstname
-    #[builder(setter(into))]
-    firstname: Cow<'a, str>,
+    #[builder(default, setter(into))]
+    firstname: Option<Cow<'a, str>>,
     /// The user's lastname
-    #[builder(setter(into))]
-    lastname: Cow<'a, str>,
+    #[builder(default, setter(into))]
+    lastname: Option<Cow<'a, str>>,
     /// The users primary email address
-    #[builder(setter(into))]
-    mail: Cow<'a, str>,
+    #[builder(default, setter(into))]
+    mail: Option<Cow<'a, str>>,
     /// allows setting users to be e.g. LDAP users
     #[builder(default)]
     auth_source_id: Option<u64>,
@@ -310,7 +378,12 @@ impl<'a> Endpoint for UpdateUser<'a> {
     }
 
     fn body(&self) -> Result<Option<(&'static str, Vec<u8>)>, crate::Error> {
-        Ok(Some(("application/json", serde_json::to_vec(self)?)))
+        Ok(Some((
+            "application/json",
+            serde_json::to_vec(&UserWrapper::<UpdateUser> {
+                user: (*self).to_owned(),
+            })?,
+        )))
     }
 }
 
@@ -352,4 +425,131 @@ pub struct UsersWrapper<T> {
 pub struct UserWrapper<T> {
     /// to parse JSON with user key
     pub user: T,
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use pretty_assertions::assert_eq;
+    use std::error::Error;
+    use tracing_test::traced_test;
+
+    #[traced_test]
+    #[test]
+    fn test_list_users_no_pagination() -> Result<(), Box<dyn Error>> {
+        dotenv::dotenv()?;
+        let redmine = crate::api::Redmine::from_env()?;
+        let endpoint = ListUsers::builder().build()?;
+        redmine.json_response_body::<_, UsersWrapper<User>>(&endpoint)?;
+        Ok(())
+    }
+
+    #[traced_test]
+    #[test]
+    fn test_list_users_first_page() -> Result<(), Box<dyn Error>> {
+        dotenv::dotenv()?;
+        let redmine = crate::api::Redmine::from_env()?;
+        let endpoint = ListUsers::builder().build()?;
+        redmine.json_response_body_page::<_, User>(&endpoint, 0, 25)?;
+        Ok(())
+    }
+
+    #[traced_test]
+    #[test]
+    fn test_list_users_all_pages() -> Result<(), Box<dyn Error>> {
+        dotenv::dotenv()?;
+        let redmine = crate::api::Redmine::from_env()?;
+        let endpoint = ListUsers::builder().build()?;
+        redmine.json_response_body_all_pages::<_, User>(&endpoint)?;
+        Ok(())
+    }
+
+    #[traced_test]
+    #[test]
+    fn test_get_user() -> Result<(), Box<dyn Error>> {
+        dotenv::dotenv()?;
+        let redmine = crate::api::Redmine::from_env()?;
+        let endpoint = GetUser::builder().id(1).build()?;
+        redmine.json_response_body::<_, UserWrapper<User>>(&endpoint)?;
+        Ok(())
+    }
+
+    #[function_name::named]
+    #[traced_test]
+    #[test]
+    fn test_create_user() -> Result<(), Box<dyn Error>> {
+        let name = format!("unittest_{}", function_name!());
+        dotenv::dotenv()?;
+        let redmine = crate::api::Redmine::from_env()?;
+        let list_endpoint = ListUsers::builder().name(name.clone()).build()?;
+        let UsersWrapper { users } =
+            redmine.json_response_body::<_, UsersWrapper<User>>(&list_endpoint)?;
+        for user in users {
+            let delete_endpoint = DeleteUser::builder().id(user.id).build()?;
+            redmine.ignore_response_body::<_>(&delete_endpoint)?;
+        }
+        let create_endpoint = CreateUser::builder()
+            .login(name.clone())
+            .firstname("Unit")
+            .lastname("Test")
+            .mail(format!("unit-test_{}@example.org", name))
+            .build()?;
+        let UserWrapper { user } =
+            redmine.json_response_body::<_, UserWrapper<User>>(&create_endpoint)?;
+        let delete_endpoint = DeleteUser::builder().id(user.id).build()?;
+        redmine.ignore_response_body::<_>(&delete_endpoint)?;
+        Ok(())
+    }
+
+    #[function_name::named]
+    #[traced_test]
+    #[test]
+    fn test_update_user() -> Result<(), Box<dyn Error>> {
+        let name = format!("unittest_{}", function_name!());
+        dotenv::dotenv()?;
+        let redmine = crate::api::Redmine::from_env()?;
+        let list_endpoint = ListUsers::builder().name(name.clone()).build()?;
+        let UsersWrapper { users } =
+            redmine.json_response_body::<_, UsersWrapper<User>>(&list_endpoint)?;
+        for user in users {
+            let delete_endpoint = DeleteUser::builder().id(user.id).build()?;
+            redmine.ignore_response_body::<_>(&delete_endpoint)?;
+        }
+        let create_endpoint = CreateUser::builder()
+            .login(name.clone())
+            .firstname("Unit")
+            .lastname("Test")
+            .mail(format!("unit-test_{}@example.org", name))
+            .build()?;
+        let UserWrapper { user } =
+            redmine.json_response_body::<_, UserWrapper<User>>(&create_endpoint)?;
+        let update_endpoint = super::UpdateUser::builder()
+            .id(user.id)
+            .login(format!("new_{}", name))
+            .build()?;
+        redmine.ignore_response_body::<_>(&update_endpoint)?;
+        let delete_endpoint = DeleteUser::builder().id(user.id).build()?;
+        redmine.ignore_response_body::<_>(&delete_endpoint)?;
+        Ok(())
+    }
+
+    /// this tests if any of the results contain a field we are not deserializing
+    ///
+    /// this will only catch fields we missed if they are part of the response but
+    /// it is better than nothing
+    #[traced_test]
+    #[test]
+    fn test_completeness_user_type() -> Result<(), Box<dyn Error>> {
+        dotenv::dotenv()?;
+        let redmine = crate::api::Redmine::from_env()?;
+        let endpoint = ListUsers::builder().build()?;
+        let UsersWrapper { users: values } =
+            redmine.json_response_body::<_, UsersWrapper<serde_json::Value>>(&endpoint)?;
+        for value in values {
+            let o: User = serde_json::from_value(value.clone())?;
+            let reserialized = serde_json::to_value(o)?;
+            assert_eq!(value, reserialized);
+        }
+        Ok(())
+    }
 }
