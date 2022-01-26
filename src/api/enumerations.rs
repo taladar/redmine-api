@@ -12,6 +12,16 @@ use std::borrow::Cow;
 
 use crate::api::{Endpoint, ReturnsJsonResponse};
 
+/// a minimal type for Redmine issue priorities included in
+/// other Redmine objects
+#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct IssuePriorityEssentials {
+    /// numeric id
+    pub id: u64,
+    /// display name
+    pub name: String,
+}
+
 /// a type for issue priority to use as an API return type
 ///
 /// alternatively you can use your own type limited to the fields you need
@@ -56,6 +66,16 @@ pub struct IssuePrioritiesWrapper<T> {
     pub issue_priorities: Vec<T>,
 }
 
+/// a minimal type for Redmine time entry activities included in
+/// other Redmine objects
+#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct TimeEntryActivityEssentials {
+    /// numeric id
+    pub id: u64,
+    /// display name
+    pub name: String,
+}
+
 /// a type for time entry activity to use as an API return type
 ///
 /// alternatively you can use your own type limited to the fields you need
@@ -98,6 +118,16 @@ impl<'a> Endpoint for ListTimeEntryActivities {
 pub struct TimeEntryActivitiesWrapper<T> {
     /// to parse JSON with time_entry_activities key
     pub time_entry_activities: Vec<T>,
+}
+
+/// a minimal type for Redmine document categories included in
+/// other Redmine objects
+#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct DocumentCategoryEssentials {
+    /// numeric id
+    pub id: u64,
+    /// display name
+    pub name: String,
 }
 
 /// a type for document category to use as an API return type

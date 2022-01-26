@@ -15,6 +15,16 @@ use std::borrow::Cow;
 use crate::api::Endpoint;
 use serde::Serialize;
 
+/// a minimal type for Redmine versions included in
+/// other Redmine objects
+#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct VersionEssentials {
+    /// numeric id
+    pub id: u64,
+    /// display name
+    pub name: String,
+}
+
 /// The endpoint for all versions in a Redmine project
 #[derive(Debug, Builder)]
 #[builder(setter(strip_option))]

@@ -77,22 +77,99 @@ use derive_builder::Builder;
 use http::Method;
 use std::borrow::Cow;
 
+use crate::api::custom_fields::CustomFieldEssentialsWithValue;
+use crate::api::enumerations::IssuePriorityEssentials;
+use crate::api::issue_categories::IssueCategoryEssentials;
+use crate::api::issue_statuses::IssueStatusEssentials;
 use crate::api::projects::ProjectEssentials;
 use crate::api::trackers::TrackerEssentials;
+use crate::api::users::UserEssentials;
+use crate::api::versions::VersionEssentials;
 use crate::api::{Endpoint, Pageable, QueryParams, ReturnsJsonResponse};
 use serde::Serialize;
+
+/// a minimal type for Redmine users or groups used in lists of assignees included in
+/// other Redmine objects
+#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct AssigneeEssentials {
+    /// numeric id
+    pub id: u64,
+    /// display name
+    pub name: String,
+}
+
+/// a minimal type for Redmine issues included in
+/// other Redmine objects
+#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct IssueEssentials {
+    /// numeric id
+    pub id: u64,
+}
 
 /// a type for issue to use as an API return type
 ///
 /// alternatively you can use your own type limited to the fields you need
-#[derive(Debug, PartialEq, Eq, Serialize, serde::Deserialize)]
+#[derive(Debug, Serialize, serde::Deserialize)]
 pub struct Issue {
     /// numeric id
     pub id: u64,
+    /// parent issue
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub parent: Option<IssueEssentials>,
     /// the project of the issue
     pub project: ProjectEssentials,
     /// the tracker of the issue
     pub tracker: TrackerEssentials,
+    /// the issue status
+    pub status: IssueStatusEssentials,
+    /// the issue priority
+    pub priority: IssuePriorityEssentials,
+    /// the issue author
+    pub author: UserEssentials,
+    /// the user or group the issue is assigned to
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub assigned_to: Option<AssigneeEssentials>,
+    /// the issue category
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub category: Option<IssueCategoryEssentials>,
+    /// the version the issue is assigned to
+    #[serde(rename = "fixed_version", skip_serializing_if = "Option::is_none")]
+    pub version: Option<VersionEssentials>,
+    /// the issue subject
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub subject: Option<String>,
+    /// the issue description
+    pub description: Option<String>,
+    /// is the issue private (only visible to roles that have the relevant permission enabled)
+    is_private: Option<bool>,
+    /// the start date for the issue
+    pub start_date: Option<time::Date>,
+    /// the due date for the issue
+    pub due_date: Option<time::Date>,
+    /// the time when the issue was closed
+    #[serde(
+        serialize_with = "crate::api::serialize_optional_rfc3339",
+        deserialize_with = "crate::api::deserialize_optional_rfc3339"
+    )]
+    pub closed_on: Option<time::OffsetDateTime>,
+    /// the percentage done
+    pub done_ratio: u64,
+    /// custom fields with values
+    pub custom_fields: Vec<CustomFieldEssentialsWithValue>,
+    /// estimated hours it will take to implement this isssue
+    pub estimated_hours: Option<f64>,
+    /// The time when this issue was created
+    #[serde(
+        serialize_with = "crate::api::serialize_rfc3339",
+        deserialize_with = "crate::api::deserialize_rfc3339"
+    )]
+    pub created_on: time::OffsetDateTime,
+    /// The time when this issue was last updated
+    #[serde(
+        serialize_with = "crate::api::serialize_rfc3339",
+        deserialize_with = "crate::api::deserialize_rfc3339"
+    )]
+    pub updated_on: time::OffsetDateTime,
 }
 
 /// Sort by this column
@@ -571,4 +648,158 @@ pub struct IssuesWrapper<T> {
 pub struct IssueWrapper<T> {
     /// to parse JSON with an issue key
     pub issue: T,
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::api::test_helpers::with_project;
+    use pretty_assertions::assert_eq;
+    use std::error::Error;
+    use tracing_test::traced_test;
+
+    #[traced_test]
+    #[test]
+    fn test_list_issues_no_pagination() -> Result<(), Box<dyn Error>> {
+        dotenv::dotenv()?;
+        let redmine = crate::api::Redmine::from_env()?;
+        let endpoint = ListIssues::builder().build()?;
+        redmine.json_response_body::<_, IssuesWrapper<Issue>>(&endpoint)?;
+        Ok(())
+    }
+
+    #[traced_test]
+    #[test]
+    fn test_list_issues_first_page() -> Result<(), Box<dyn Error>> {
+        dotenv::dotenv()?;
+        let redmine = crate::api::Redmine::from_env()?;
+        let endpoint = ListIssues::builder().build()?;
+        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
+        Ok(())
+    }
+
+    /// this version of the test will load all pages of issues which means it
+    /// can take a while (a minute or more) so you need to use --include-ignored
+    /// or --ignored to run it
+    #[traced_test]
+    #[test]
+    #[ignore]
+    fn test_list_issues_all_pages() -> Result<(), Box<dyn Error>> {
+        dotenv::dotenv()?;
+        let redmine = crate::api::Redmine::from_env()?;
+        let endpoint = ListIssues::builder().build()?;
+        redmine.json_response_body_all_pages::<_, Issue>(&endpoint)?;
+        Ok(())
+    }
+
+    #[traced_test]
+    #[test]
+    fn test_get_issue() -> Result<(), Box<dyn Error>> {
+        dotenv::dotenv()?;
+        let redmine = crate::api::Redmine::from_env()?;
+        let endpoint = GetIssue::builder().id(40000).build()?;
+        redmine.json_response_body::<_, IssueWrapper<Issue>>(&endpoint)?;
+        Ok(())
+    }
+
+    #[function_name::named]
+    #[traced_test]
+    #[test]
+    fn test_create_issue() -> Result<(), Box<dyn Error>> {
+        let name = format!("unittest_{}", function_name!());
+        with_project(&name, |redmine, project_id, _| {
+            let create_endpoint = super::CreateIssue::builder()
+                .project_id(project_id)
+                .subject("old test subject")
+                .build()?;
+            redmine.json_response_body::<_, IssueWrapper<Issue>>(&create_endpoint)?;
+            Ok(())
+        })?;
+        Ok(())
+    }
+
+    #[function_name::named]
+    #[traced_test]
+    #[test]
+    fn test_update_issue() -> Result<(), Box<dyn Error>> {
+        let name = format!("unittest_{}", function_name!());
+        with_project(&name, |redmine, project_id, _name| {
+            let create_endpoint = super::CreateIssue::builder()
+                .project_id(project_id)
+                .subject("old test subject")
+                .build()?;
+            let IssueWrapper { issue }: IssueWrapper<Issue> =
+                redmine.json_response_body::<_, _>(&create_endpoint)?;
+            let update_endpoint = super::UpdateIssue::builder()
+                .id(issue.id)
+                .subject("New test subject")
+                .build()?;
+            redmine.ignore_response_body::<_>(&update_endpoint)?;
+            Ok(())
+        })?;
+        Ok(())
+    }
+
+    #[function_name::named]
+    #[traced_test]
+    #[test]
+    fn test_delete_issue() -> Result<(), Box<dyn Error>> {
+        let name = format!("unittest_{}", function_name!());
+        with_project(&name, |redmine, project_id, _name| {
+            let create_endpoint = super::CreateIssue::builder()
+                .project_id(project_id)
+                .subject("test subject")
+                .build()?;
+            let IssueWrapper { issue }: IssueWrapper<Issue> =
+                redmine.json_response_body::<_, _>(&create_endpoint)?;
+            let delete_endpoint = super::DeleteIssue::builder().id(issue.id).build()?;
+            redmine.ignore_response_body::<_>(&delete_endpoint)?;
+            Ok(())
+        })?;
+        Ok(())
+    }
+
+    /// this tests if any of the results contain a field we are not deserializing
+    ///
+    /// this will only catch fields we missed if they are part of the response but
+    /// it is better than nothing
+    #[traced_test]
+    #[test]
+    fn test_completeness_issue_type() -> Result<(), Box<dyn Error>> {
+        dotenv::dotenv()?;
+        let redmine = crate::api::Redmine::from_env()?;
+        let endpoint = ListIssues::builder().build()?;
+        let IssuesWrapper { issues: values } =
+            redmine.json_response_body::<_, IssuesWrapper<serde_json::Value>>(&endpoint)?;
+        for value in values {
+            let o: Issue = serde_json::from_value(value.clone())?;
+            let reserialized = serde_json::to_value(o)?;
+            assert_eq!(value, reserialized);
+        }
+        Ok(())
+    }
+
+    /// this tests if any of the results contain a field we are not deserializing
+    ///
+    /// this will only catch fields we missed if they are part of the response but
+    /// it is better than nothing
+    ///
+    /// this version of the test will load all pages of issues which means it
+    /// can take a while (a minute or more) so you need to use --include-ignored
+    /// or --ignored to run it
+    #[traced_test]
+    #[test]
+    #[ignore]
+    fn test_completeness_issue_type_all_pages() -> Result<(), Box<dyn Error>> {
+        dotenv::dotenv()?;
+        let redmine = crate::api::Redmine::from_env()?;
+        let endpoint = ListIssues::builder().build()?;
+        let values = redmine.json_response_body_all_pages::<_, serde_json::Value>(&endpoint)?;
+        for value in values {
+            let o: Issue = serde_json::from_value(value.clone())?;
+            let reserialized = serde_json::to_value(o)?;
+            assert_eq!(value, reserialized);
+        }
+        Ok(())
+    }
 }

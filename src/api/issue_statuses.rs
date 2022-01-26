@@ -10,6 +10,16 @@ use std::borrow::Cow;
 
 use crate::api::{Endpoint, ReturnsJsonResponse};
 
+/// a minimal type for Redmine issue status used in
+/// other Redmine objects (e.g. issue)
+#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct IssueStatusEssentials {
+    /// numeric id
+    pub id: u64,
+    /// display name
+    pub name: String,
+}
+
 /// a type for issue status to use as an API return type
 ///
 /// alternatively you can use your own type limited to the fields you need

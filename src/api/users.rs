@@ -20,6 +20,16 @@ use std::borrow::Cow;
 use crate::api::{Endpoint, Pageable, QueryParams};
 use serde::Serialize;
 
+/// a minimal type for Redmine users used in
+/// other Redmine objects (e.g. issue author)
+#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct UserEssentials {
+    /// numeric id
+    pub id: u64,
+    /// display name
+    pub name: String,
+}
+
 /// The user status values for filtering
 #[derive(Debug, Clone)]
 pub enum UserStatus {

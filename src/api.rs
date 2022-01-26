@@ -601,3 +601,44 @@ where
 
     s.serialize(serializer)
 }
+
+/// helper to parse created_on and updated_on in the correct format
+/// (default time serde implementation seems to use a different format)
+pub fn deserialize_optional_rfc3339<'de, D>(
+    deserializer: D,
+) -> Result<Option<time::OffsetDateTime>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let s = <Option<String> as Deserialize<'de>>::deserialize(deserializer)?;
+
+    if let Some(s) = s {
+        Ok(Some(
+            time::OffsetDateTime::parse(&s, &time::format_description::well_known::Rfc3339)
+                .map_err(serde::de::Error::custom)?,
+        ))
+    } else {
+        Ok(None)
+    }
+}
+
+/// helper to serialize created_on and updated_on in the correct format
+/// (default time serde implementation seems to use a different format)
+pub fn serialize_optional_rfc3339<S>(
+    t: &Option<time::OffsetDateTime>,
+    serializer: S,
+) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    if let Some(t) = t {
+        let s = t
+            .format(&time::format_description::well_known::Rfc3339)
+            .map_err(serde::ser::Error::custom)?;
+
+        s.serialize(serializer)
+    } else {
+        let n: Option<String> = None;
+        n.serialize(serializer)
+    }
+}

@@ -12,14 +12,15 @@ use derive_builder::Builder;
 use http::Method;
 use std::borrow::Cow;
 
+use crate::api::issues::AssigneeEssentials;
 use crate::api::projects::ProjectEssentials;
 use crate::api::{Endpoint, ReturnsJsonResponse};
 use serde::Serialize;
 
-/// a minimal type for Redmine users or groups used in lists of assignees included in
-/// other Redmine objects
+/// a minimal type for Redmine issue categories used in
+/// other Redmine objects (e.g. issue)
 #[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
-pub struct AssigneeEssentials {
+pub struct IssueCategoryEssentials {
     /// numeric id
     pub id: u64,
     /// display name
