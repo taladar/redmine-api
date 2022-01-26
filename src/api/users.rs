@@ -338,3 +338,18 @@ impl<'a> Endpoint for DeleteUser {
         format!("users/{}.json", &self.id).into()
     }
 }
+
+/// helper struct for outer layers with a users field holding the inner data
+#[derive(Debug, PartialEq, Eq, Serialize, serde::Deserialize)]
+pub struct UsersWrapper<T> {
+    /// to parse JSON with users key
+    pub users: Vec<T>,
+}
+
+/// A lot of APIs in Redmine wrap their data in an extra layer, this is a
+/// helper struct for outer layers with a user field holding the inner data
+#[derive(Debug, PartialEq, Eq, Serialize, serde::Deserialize)]
+pub struct UserWrapper<T> {
+    /// to parse JSON with user key
+    pub user: T,
+}
