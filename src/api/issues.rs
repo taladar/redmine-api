@@ -8,7 +8,7 @@
 //! - [ ] all issues endpoint
 //!   - [x] sort
 //!     - [ ] limit sort to the existing columns only instead of a string value
-//!   - [ ] query_id parameter
+//!   - [x] query_id parameter
 //!   - [x] pagination
 //!   - [x] issue_id filter
 //!     - [x] issue id (multiple are possible, comma separated)
@@ -27,14 +27,19 @@
 //!     - [x] category id (multiple are possible, comma separated)
 //!   - [ ] priority_id filter
 //!     - [ ] less than, greater than
-//!   - [ ] author_id filter
-//!     - [ ] me
-//!     - [ ] user/group id (multiple are possible, comma separated)
-//!     - [ ] negation
-//!   - [ ] assigned_to_id filter
-//!     - [ ] me
-//!     - [ ] user/group id (multiple are possible, comma separated)
-//!     - [ ] negation
+//!   - [x] author_id filter
+//!     - [x] any
+//!     - [x] me
+//!     - [x] !me
+//!     - [x] user/group id (multiple are possible, comma separated)
+//!     - [x] negation of list
+//!   - [x] assigned_to_id filter
+//!     - [x] any
+//!     - [x] me
+//!     - [x] !me
+//!     - [x] user/group id (multiple are possible, comma separated)
+//!     - [x] negation of list
+//!     - [x] none (!*)
 //!   - [ ] fixed_version_id filter (Target version, API uses old name)
 //!     - [ ] version id (multiple are possible, comma separated)
 //!   - [ ] is_private filter
@@ -265,6 +270,109 @@ pub struct Issue {
     pub total_estimated_hours: Option<f64>,
 }
 
+/// ways to filter for users in author (always a user (not group), never !*)
+#[derive(Debug, Clone)]
+pub enum AuthorFilter {
+    /// match any user
+    AnyAuthor,
+    /// match the current API user
+    Me,
+    /// match any author but the current API user
+    NotMe,
+    /// match a specific list of users
+    TheseAuthors(Vec<u64>),
+    /// match a negated specific list of users
+    NotTheseAuthors(Vec<u64>),
+}
+
+impl std::fmt::Display for AuthorFilter {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            AuthorFilter::AnyAuthor => {
+                write!(f, "*")
+            }
+            AuthorFilter::Me => {
+                write!(f, "me")
+            }
+            AuthorFilter::NotMe => {
+                write!(f, "!me")
+            }
+            AuthorFilter::TheseAuthors(ids) => {
+                let s: String = ids
+                    .iter()
+                    .map(|e| e.to_string())
+                    .collect::<Vec<_>>()
+                    .join(",")
+                    .into();
+                write!(f, "{}", s)
+            }
+            AuthorFilter::NotTheseAuthors(ids) => {
+                let s: String = ids
+                    .iter()
+                    .map(|e| format!("!{}", e))
+                    .collect::<Vec<_>>()
+                    .join(",")
+                    .into();
+                write!(f, "{}", s)
+            }
+        }
+    }
+}
+
+/// ways to filter for users or groups in assignee
+#[derive(Debug, Clone)]
+pub enum AssigneeFilter {
+    /// match any user or group
+    AnyAssignee,
+    /// match the current API user
+    Me,
+    /// match any assignee but the current API user
+    NotMe,
+    /// match a specific list of users or groups
+    TheseAssignees(Vec<u64>),
+    /// match a negated specific list of users or groups
+    NotTheseAssignees(Vec<u64>),
+    /// match unassigned
+    NoAssignee,
+}
+
+impl std::fmt::Display for AssigneeFilter {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            AssigneeFilter::AnyAssignee => {
+                write!(f, "*")
+            }
+            AssigneeFilter::Me => {
+                write!(f, "me")
+            }
+            AssigneeFilter::NotMe => {
+                write!(f, "!me")
+            }
+            AssigneeFilter::TheseAssignees(ids) => {
+                let s: String = ids
+                    .iter()
+                    .map(|e| e.to_string())
+                    .collect::<Vec<_>>()
+                    .join(",")
+                    .into();
+                write!(f, "{}", s)
+            }
+            AssigneeFilter::NotTheseAssignees(ids) => {
+                let s: String = ids
+                    .iter()
+                    .map(|e| format!("!{}", e))
+                    .collect::<Vec<_>>()
+                    .join(",")
+                    .into();
+                write!(f, "{}", s)
+            }
+            AssigneeFilter::NoAssignee => {
+                write!(f, "!*")
+            }
+        }
+    }
+}
+
 /// Sort by this column
 #[derive(Debug, Clone)]
 pub enum SortByColumn {
@@ -343,6 +451,15 @@ pub struct ListIssues<'a> {
     /// Filter by subject
     #[builder(default)]
     subject: Option<Cow<'a, str>>,
+    /// Filter by author
+    #[builder(default)]
+    author: Option<AuthorFilter>,
+    /// Filter by assignee
+    #[builder(default)]
+    assignee: Option<AssigneeFilter>,
+    /// Filter by a saved query
+    #[builder(default)]
+    query_id: Option<u64>,
 }
 
 impl<'a> ReturnsJsonResponse for ListIssues<'a> {}
@@ -379,6 +496,12 @@ impl<'a> Endpoint for ListIssues<'a> {
         params.push_opt("category_id", self.category_id.as_ref());
         params.push_opt("status_id", self.status_id.as_ref());
         params.push_opt("subject", self.subject.as_ref());
+        params.push_opt("author_id", self.author.as_ref().map(|s| s.to_string()));
+        params.push_opt(
+            "assigned_to_id",
+            self.assignee.as_ref().map(|s| s.to_string()),
+        );
+        params.push_opt("query_id", self.query_id);
         params
     }
 }
@@ -748,16 +871,22 @@ pub struct IssueWrapper<T> {
 }
 
 #[cfg(test)]
-mod test {
+pub(crate) mod test {
     use super::*;
     use crate::api::test_helpers::with_project;
+    use parking_lot::{const_rwlock, RwLock};
     use pretty_assertions::assert_eq;
     use std::error::Error;
     use tracing_test::traced_test;
 
+    /// needed so we do not get 404s when listing while
+    /// creating/deleting or creating/updating/deleting
+    pub static ISSUES_LOCK: RwLock<()> = const_rwlock(());
+
     #[traced_test]
     #[test]
     fn test_list_issues_no_pagination() -> Result<(), Box<dyn Error>> {
+        let _r_issues = ISSUES_LOCK.read();
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListIssues::builder().build()?;
@@ -768,6 +897,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_first_page() -> Result<(), Box<dyn Error>> {
+        let _r_issues = ISSUES_LOCK.read();
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListIssues::builder().build()?;
@@ -782,6 +912,7 @@ mod test {
     #[test]
     #[ignore]
     fn test_list_issues_all_pages() -> Result<(), Box<dyn Error>> {
+        let _r_issues = ISSUES_LOCK.read();
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListIssues::builder().build()?;
@@ -792,6 +923,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_get_issue() -> Result<(), Box<dyn Error>> {
+        let _r_issues = ISSUES_LOCK.read();
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = GetIssue::builder().id(40000).build()?;
@@ -803,6 +935,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_create_issue() -> Result<(), Box<dyn Error>> {
+        let _w_issues = ISSUES_LOCK.write();
         let name = format!("unittest_{}", function_name!());
         with_project(&name, |redmine, project_id, _| {
             let create_endpoint = super::CreateIssue::builder()
@@ -819,6 +952,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_update_issue() -> Result<(), Box<dyn Error>> {
+        let _w_issues = ISSUES_LOCK.write();
         let name = format!("unittest_{}", function_name!());
         with_project(&name, |redmine, project_id, _name| {
             let create_endpoint = super::CreateIssue::builder()
@@ -841,6 +975,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_delete_issue() -> Result<(), Box<dyn Error>> {
+        let _w_issues = ISSUES_LOCK.write();
         let name = format!("unittest_{}", function_name!());
         with_project(&name, |redmine, project_id, _name| {
             let create_endpoint = super::CreateIssue::builder()
@@ -863,6 +998,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_completeness_issue_type() -> Result<(), Box<dyn Error>> {
+        let _r_issues = ISSUES_LOCK.read();
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListIssues::builder()
@@ -893,6 +1029,7 @@ mod test {
     #[test]
     #[ignore]
     fn test_completeness_issue_type_all_pages() -> Result<(), Box<dyn Error>> {
+        let _r_issues = ISSUES_LOCK.read();
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListIssues::builder()
@@ -923,6 +1060,7 @@ mod test {
     #[test]
     #[ignore]
     fn test_completeness_issue_type_all_pages_all_issue_details() -> Result<(), Box<dyn Error>> {
+        let _r_issues = ISSUES_LOCK.read();
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListIssues::builder()

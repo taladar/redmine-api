@@ -1,13 +1,16 @@
 use std::error::Error;
 use tracing::trace;
 
-use crate::api::groups::{CreateGroup, DeleteGroup, Group, GroupWrapper};
-use crate::api::projects::{CreateProject, DeleteProject, GetProject, Project, ProjectWrapper};
+use crate::api::groups::{test::GROUP_LOCK, CreateGroup, DeleteGroup, Group, GroupWrapper};
+use crate::api::projects::{
+    test::PROJECT_LOCK, CreateProject, DeleteProject, GetProject, Project, ProjectWrapper,
+};
 
 pub fn with_project<F>(name: &str, f: F) -> Result<(), Box<dyn Error>>
 where
     F: FnOnce(&crate::api::Redmine, u64, &str) -> Result<(), Box<dyn Error>>,
 {
+    let _w_projects = PROJECT_LOCK.write();
     dotenv::dotenv()?;
     let redmine = crate::api::Redmine::from_env()?;
     let get_endpoint = GetProject::builder().project_id_or_name(name).build()?;
@@ -43,6 +46,7 @@ pub fn with_group<F>(name: &str, f: F) -> Result<(), Box<dyn Error>>
 where
     F: FnOnce(&crate::api::Redmine, u64, &str) -> Result<(), Box<dyn Error>>,
 {
+    let _w_groups = GROUP_LOCK.write();
     dotenv::dotenv()?;
     let redmine = crate::api::Redmine::from_env()?;
     let create_endpoint = CreateGroup::builder().name(name).build()?;

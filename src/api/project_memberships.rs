@@ -247,13 +247,19 @@ pub struct MembershipWrapper<T> {
 mod test {
     use super::*;
     use crate::api::test_helpers::with_project;
+    use parking_lot::{const_rwlock, RwLock};
     use pretty_assertions::assert_eq;
     use std::error::Error;
     use tracing_test::traced_test;
 
+    /// needed so we do not get 404s when listing while
+    /// creating/deleting or creating/updating/deleting
+    static PROJECT_MEMBERSHIP_LOCK: RwLock<()> = const_rwlock(());
+
     #[traced_test]
     #[test]
     fn test_list_project_memberships_no_pagination() -> Result<(), Box<dyn Error>> {
+        let _r_project_memberships = PROJECT_MEMBERSHIP_LOCK.read();
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListProjectMemberships::builder()
@@ -266,6 +272,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_project_memberships_first_page() -> Result<(), Box<dyn Error>> {
+        let _r_project_memberships = PROJECT_MEMBERSHIP_LOCK.read();
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListProjectMemberships::builder()
@@ -278,6 +285,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_project_memberships_all_pages() -> Result<(), Box<dyn Error>> {
+        let _r_project_memberships = PROJECT_MEMBERSHIP_LOCK.read();
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListProjectMemberships::builder()
@@ -290,6 +298,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_get_project_membership() -> Result<(), Box<dyn Error>> {
+        let _r_project_memberships = PROJECT_MEMBERSHIP_LOCK.read();
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = GetProjectMembership::builder().id(238).build()?;
@@ -301,6 +310,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_create_project_membership() -> Result<(), Box<dyn Error>> {
+        let _w_project_memberships = PROJECT_MEMBERSHIP_LOCK.write();
         let name = format!("unittest_{}", function_name!());
         with_project(&name, |redmine, project_id, _| {
             let create_endpoint = super::CreateProjectMembership::builder()
@@ -319,6 +329,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_update_project_membership() -> Result<(), Box<dyn Error>> {
+        let _w_project_memberships = PROJECT_MEMBERSHIP_LOCK.write();
         let name = format!("unittest_{}", function_name!());
         with_project(&name, |redmine, project_id, _name| {
             let create_endpoint = super::CreateProjectMembership::builder()
@@ -345,6 +356,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_completeness_project_membership_type() -> Result<(), Box<dyn Error>> {
+        let _r_project_memberships = PROJECT_MEMBERSHIP_LOCK.read();
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListProjectMemberships::builder()

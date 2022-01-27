@@ -309,16 +309,22 @@ pub struct GroupWrapper<T> {
 }
 
 #[cfg(test)]
-mod test {
+pub(crate) mod test {
     use super::*;
     use crate::api::test_helpers::with_group;
+    use parking_lot::{const_rwlock, RwLock};
     use pretty_assertions::assert_eq;
     use std::error::Error;
     use tracing_test::traced_test;
 
+    /// needed so we do not get 404s when listing while
+    /// creating/deleting or creating/updating/deleting
+    pub static GROUP_LOCK: RwLock<()> = const_rwlock(());
+
     #[traced_test]
     #[test]
     fn test_list_groups_no_pagination() -> Result<(), Box<dyn Error>> {
+        let _r_groups = GROUP_LOCK.read();
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListGroups::builder().build()?;
@@ -329,6 +335,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_get_group() -> Result<(), Box<dyn Error>> {
+        let _r_groups = GROUP_LOCK.read();
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = GetGroup::builder().id(338).build()?;
@@ -368,6 +375,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_completeness_group_type() -> Result<(), Box<dyn Error>> {
+        let _r_groups = GROUP_LOCK.read();
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListGroups::builder().build()?;
@@ -391,6 +399,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_completeness_group_type_all_group_details() -> Result<(), Box<dyn Error>> {
+        let _r_groups = GROUP_LOCK.read();
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListGroups::builder().build()?;

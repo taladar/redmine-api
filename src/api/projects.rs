@@ -493,16 +493,22 @@ pub struct ProjectWrapper<T> {
 }
 
 #[cfg(test)]
-mod test {
+pub(crate) mod test {
     use super::*;
     use crate::api::test_helpers::with_project;
+    use parking_lot::{const_rwlock, RwLock};
     use pretty_assertions::assert_eq;
     use std::error::Error;
     use tracing_test::traced_test;
 
+    /// needed so we do not get 404s when listing while
+    /// creating/deleting or creating/updating/deleting
+    pub static PROJECT_LOCK: RwLock<()> = const_rwlock(());
+
     #[traced_test]
     #[test]
     fn test_list_projects_no_pagination() -> Result<(), Box<dyn Error>> {
+        let _r_project = PROJECT_LOCK.read();
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListProjects::builder().build()?;
@@ -513,6 +519,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_projects_first_page() -> Result<(), Box<dyn Error>> {
+        let _r_project = PROJECT_LOCK.read();
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListProjects::builder().build()?;
@@ -523,6 +530,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_projects_all_pages() -> Result<(), Box<dyn Error>> {
+        let _r_project = PROJECT_LOCK.read();
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListProjects::builder().build()?;
@@ -533,6 +541,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_get_project() -> Result<(), Box<dyn Error>> {
+        let _r_project = PROJECT_LOCK.read();
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = GetProject::builder()
@@ -574,6 +583,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_completeness_project_type() -> Result<(), Box<dyn Error>> {
+        let _r_project = PROJECT_LOCK.read();
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListProjects::builder().build()?;
@@ -600,6 +610,7 @@ mod test {
     #[test]
     fn test_completeness_project_type_all_pages_all_project_details() -> Result<(), Box<dyn Error>>
     {
+        let _r_project = PROJECT_LOCK.read();
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListProjects::builder()

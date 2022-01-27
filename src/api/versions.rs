@@ -301,13 +301,19 @@ pub struct VersionWrapper<T> {
 mod test {
     use super::*;
     use crate::api::test_helpers::with_project;
+    use parking_lot::{const_rwlock, RwLock};
     use pretty_assertions::assert_eq;
     use std::error::Error;
     use tracing_test::traced_test;
 
+    /// needed so we do not get 404s when listing while
+    /// creating/deleting or creating/updating/deleting
+    static VERSION_LOCK: RwLock<()> = const_rwlock(());
+
     #[traced_test]
     #[test]
     fn test_list_versions_no_pagination() -> Result<(), Box<dyn Error>> {
+        let _r_versions = VERSION_LOCK.read();
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListVersions::builder().project_id_or_name("92").build()?;
@@ -318,6 +324,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_get_version() -> Result<(), Box<dyn Error>> {
+        let _r_versions = VERSION_LOCK.read();
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = GetVersion::builder().id(1182).build()?;
@@ -329,6 +336,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_create_version() -> Result<(), Box<dyn Error>> {
+        let _w_versions = VERSION_LOCK.write();
         let name = format!("unittest_{}", function_name!());
         with_project(&name, |redmine, _, name| {
             let create_endpoint = CreateVersion::builder()
@@ -345,6 +353,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_update_version() -> Result<(), Box<dyn Error>> {
+        let _w_versions = VERSION_LOCK.write();
         let name = format!("unittest_{}", function_name!());
         with_project(&name, |redmine, _, name| {
             let create_endpoint = CreateVersion::builder()
@@ -370,6 +379,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_completeness_version_type() -> Result<(), Box<dyn Error>> {
+        let _r_versions = VERSION_LOCK.read();
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListVersions::builder().project_id_or_name("92").build()?;

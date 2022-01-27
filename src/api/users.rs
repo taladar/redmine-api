@@ -43,6 +43,7 @@ pub struct User {
     /// user status (seemingly numeric here, unlike filters)
     ///
     /// TODO: turn this into the Enum UserStatus?
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<u64>,
     /// login name
     pub login: String,
@@ -444,13 +445,19 @@ pub struct UserWrapper<T> {
 #[cfg(test)]
 mod test {
     use super::*;
+    use parking_lot::{const_rwlock, RwLock};
     use pretty_assertions::assert_eq;
     use std::error::Error;
     use tracing_test::traced_test;
 
+    /// needed so we do not get 404s when listing while
+    /// creating/deleting or creating/updating/deleting
+    static USER_LOCK: RwLock<()> = const_rwlock(());
+
     #[traced_test]
     #[test]
     fn test_list_users_no_pagination() -> Result<(), Box<dyn Error>> {
+        let _r_user = USER_LOCK.read();
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListUsers::builder().build()?;
@@ -461,6 +468,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_users_first_page() -> Result<(), Box<dyn Error>> {
+        let _r_user = USER_LOCK.read();
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListUsers::builder().build()?;
@@ -471,6 +479,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_users_all_pages() -> Result<(), Box<dyn Error>> {
+        let _r_user = USER_LOCK.read();
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListUsers::builder().build()?;
@@ -481,6 +490,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_get_user() -> Result<(), Box<dyn Error>> {
+        let _r_user = USER_LOCK.read();
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = GetUser::builder().id(1).build()?;
@@ -492,6 +502,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_create_user() -> Result<(), Box<dyn Error>> {
+        let _w_user = USER_LOCK.write();
         let name = format!("unittest_{}", function_name!());
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
@@ -519,6 +530,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_update_user() -> Result<(), Box<dyn Error>> {
+        let _w_user = USER_LOCK.write();
         let name = format!("unittest_{}", function_name!());
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
@@ -554,6 +566,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_completeness_user_type() -> Result<(), Box<dyn Error>> {
+        let _r_user = USER_LOCK.read();
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListUsers::builder().build()?;
@@ -577,6 +590,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_completeness_user_type_all_pages_all_user_details() -> Result<(), Box<dyn Error>> {
+        let _r_user = USER_LOCK.read();
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListUsers::builder().build()?;

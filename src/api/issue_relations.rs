@@ -199,15 +199,22 @@ pub struct RelationWrapper<T> {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::api::issues::test::ISSUES_LOCK;
     use crate::api::issues::{CreateIssue, Issue, IssueWrapper};
     use crate::api::test_helpers::with_project;
+    use parking_lot::{const_rwlock, RwLock};
     use pretty_assertions::assert_eq;
     use std::error::Error;
     use tracing_test::traced_test;
 
+    /// needed so we do not get 404s when listing while
+    /// creating/deleting or creating/updating/deleting
+    static ISSUE_RELATION_LOCK: RwLock<()> = const_rwlock(());
+
     #[traced_test]
     #[test]
     fn test_list_issue_relations_no_pagination() -> Result<(), Box<dyn Error>> {
+        let _r_issue_relation = ISSUE_RELATION_LOCK.read();
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListIssueRelations::builder().issue_id(50017).build()?;
@@ -218,6 +225,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_get_issue_relation() -> Result<(), Box<dyn Error>> {
+        let _r_issue_relation = ISSUE_RELATION_LOCK.read();
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = GetIssueRelation::builder().id(10).build()?;
@@ -229,6 +237,8 @@ mod test {
     #[traced_test]
     #[test]
     fn test_create_issue_relation() -> Result<(), Box<dyn Error>> {
+        let _w_issues = ISSUES_LOCK.write();
+        let _w_issue_relation = ISSUE_RELATION_LOCK.write();
         let name = format!("unittest_{}", function_name!());
         with_project(&name, |redmine, project_id, _name| {
             let create_issue1_endpoint = CreateIssue::builder()
@@ -258,6 +268,8 @@ mod test {
     #[traced_test]
     #[test]
     fn test_delete_issue_relation() -> Result<(), Box<dyn Error>> {
+        let _w_issues = ISSUES_LOCK.write();
+        let _w_issue_relation = ISSUE_RELATION_LOCK.write();
         let name = format!("unittest_{}", function_name!());
         with_project(&name, |redmine, project_id, _name| {
             let create_issue1_endpoint = CreateIssue::builder()
@@ -294,6 +306,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_completeness_issue_relation_type() -> Result<(), Box<dyn Error>> {
+        let _r_issue_relation = ISSUE_RELATION_LOCK.read();
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListIssueRelations::builder().issue_id(50017).build()?;
