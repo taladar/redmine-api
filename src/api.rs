@@ -10,6 +10,7 @@
 //! - [ ] attachments
 //! - [x] add all the wrappers I somehow missed
 //!   - [ ] check if admin and send_information truly are not part of the user hash in Create/UpdateUser or if the wiki docs are wrong
+//! - [ ] test include parameters and add relevant data to the return types
 //!
 //! Potential breaking changes ahead
 //! - [ ] use Enum for sort column
@@ -249,7 +250,7 @@ impl Redmine {
         } else {
             let result = serde_json::from_slice::<R>(&response_body);
             if let Ok(ref parsed_response_body) = result {
-                trace!("Parsed response body:\n{:?}", parsed_response_body);
+                trace!("Parsed response body:\n{:#?}", parsed_response_body);
             }
             Ok(result?)
         }

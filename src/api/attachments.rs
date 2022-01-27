@@ -25,7 +25,7 @@ pub struct Attachment {
     /// file size
     pub filesize: u64,
     /// content MIME type
-    pub content_type: String,
+    pub content_type: Option<String>,
     /// description
     #[serde(default)]
     pub description: Option<String>,

@@ -18,6 +18,8 @@ use http::Method;
 use std::borrow::Cow;
 
 use crate::api::custom_fields::CustomFieldEssentialsWithValue;
+use crate::api::groups::GroupEssentials;
+use crate::api::project_memberships::UserProjectMembership;
 use crate::api::{Endpoint, Pageable, QueryParams, ReturnsJsonResponse};
 use serde::Serialize;
 
@@ -38,6 +40,10 @@ pub struct UserEssentials {
 pub struct User {
     /// numeric id
     pub id: u64,
+    /// user status (seemingly numeric here, unlike filters)
+    ///
+    /// TODO: turn this into the Enum UserStatus?
+    pub status: Option<u64>,
     /// login name
     pub login: String,
     /// is this user an admin
@@ -49,6 +55,9 @@ pub struct User {
     /// primary email of the user
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mail: Option<String>,
+    /// the user's API key
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub api_key: Option<String>,
     /// user's 2FA scheme
     #[serde(default)]
     pub twofa_scheme: Option<String>,
@@ -78,11 +87,16 @@ pub struct User {
         serialize_with = "crate::api::serialize_optional_rfc3339",
         deserialize_with = "crate::api::deserialize_optional_rfc3339"
     )]
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub last_login_on: Option<time::OffsetDateTime>,
     /// custom fields with values
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub custom_fields: Option<Vec<CustomFieldEssentialsWithValue>>,
+    /// groups (only if include is specified)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub groups: Option<Vec<GroupEssentials>>,
+    /// memberships (only if include is specified)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub memberships: Option<Vec<UserProjectMembership>>,
 }
 
 /// The user status values for filtering
@@ -222,7 +236,7 @@ impl<'a> Endpoint for GetUser {
 
     fn parameters(&self) -> QueryParams {
         let mut params = QueryParams::default();
-        params.push_opt("includes", self.include.as_ref());
+        params.push_opt("include", self.include.as_ref());
         params
     }
 }
@@ -546,6 +560,34 @@ mod test {
         let UsersWrapper { users: values } =
             redmine.json_response_body::<_, UsersWrapper<serde_json::Value>>(&endpoint)?;
         for value in values {
+            let o: User = serde_json::from_value(value.clone())?;
+            let reserialized = serde_json::to_value(o)?;
+            assert_eq!(value, reserialized);
+        }
+        Ok(())
+    }
+
+    /// this tests if any of the results contain a field we are not deserializing
+    ///
+    /// this will only catch fields we missed if they are part of the response but
+    /// it is better than nothing
+    ///
+    /// this version of the test will load all pages of users and the individual
+    /// users for each via GetUser
+    #[traced_test]
+    #[test]
+    fn test_completeness_user_type_all_pages_all_user_details() -> Result<(), Box<dyn Error>> {
+        dotenv::dotenv()?;
+        let redmine = crate::api::Redmine::from_env()?;
+        let endpoint = ListUsers::builder().build()?;
+        let users = redmine.json_response_body_all_pages::<_, User>(&endpoint)?;
+        for user in users {
+            let get_endpoint = GetUser::builder()
+                .id(user.id)
+                .include(vec![UserInclude::Memberships, UserInclude::Groups])
+                .build()?;
+            let UserWrapper { user: value } =
+                redmine.json_response_body::<_, UserWrapper<serde_json::Value>>(&get_endpoint)?;
             let o: User = serde_json::from_value(value.clone())?;
             let reserialized = serde_json::to_value(o)?;
             assert_eq!(value, reserialized);

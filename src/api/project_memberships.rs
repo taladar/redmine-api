@@ -19,6 +19,30 @@ use crate::api::users::UserEssentials;
 use crate::api::{Endpoint, Pageable, ReturnsJsonResponse};
 use serde::Serialize;
 
+/// a minimal type for project memberships to be used in lists of memberships
+/// returned as part of the user
+#[derive(Debug, PartialEq, Eq, Serialize, serde::Deserialize)]
+pub struct UserProjectMembership {
+    /// numeric id
+    pub id: u64,
+    /// the project
+    pub project: ProjectEssentials,
+    /// the roles the user has in the project
+    pub roles: Vec<RoleEssentials>,
+}
+
+/// a minimal type for project memberships to be used in lists of memberships
+/// returned as part of the group
+#[derive(Debug, PartialEq, Eq, Serialize, serde::Deserialize)]
+pub struct GroupProjectMembership {
+    /// numeric id
+    pub id: u64,
+    /// the project
+    pub project: ProjectEssentials,
+    /// the roles the group has in the project
+    pub roles: Vec<RoleEssentials>,
+}
+
 /// a type for project memberships to use as an API return type
 ///
 /// alternatively you can use your own type limited to the fields you need

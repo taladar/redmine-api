@@ -14,6 +14,8 @@ use derive_builder::Builder;
 use http::Method;
 use std::borrow::Cow;
 
+use crate::api::project_memberships::GroupProjectMembership;
+use crate::api::users::UserEssentials;
 use crate::api::{Endpoint, QueryParams, ReturnsJsonResponse};
 use serde::Serialize;
 
@@ -36,6 +38,12 @@ pub struct Group {
     pub id: u64,
     /// display name
     pub name: String,
+    /// users (only with include parameter)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub users: Option<Vec<UserEssentials>>,
+    /// project memberships (only with include parameter)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub memberships: Option<Vec<GroupProjectMembership>>,
 }
 
 /// The endpoint for all Redmine groups
@@ -115,7 +123,7 @@ impl<'a> Endpoint for GetGroup {
 
     fn parameters(&self) -> QueryParams {
         let mut params = QueryParams::default();
-        params.push_opt("includes", self.include.as_ref());
+        params.push_opt("include", self.include.as_ref());
         params
     }
 }
@@ -366,6 +374,35 @@ mod test {
         let GroupsWrapper { groups: values } =
             redmine.json_response_body::<_, GroupsWrapper<serde_json::Value>>(&endpoint)?;
         for value in values {
+            let o: Group = serde_json::from_value(value.clone())?;
+            let reserialized = serde_json::to_value(o)?;
+            assert_eq!(value, reserialized);
+        }
+        Ok(())
+    }
+
+    /// this tests if any of the results contain a field we are not deserializing
+    ///
+    /// this will only catch fields we missed if they are part of the response but
+    /// it is better than nothing
+    ///
+    /// this version of the test will load all groups and the individual
+    /// groups for each via GetGroup
+    #[traced_test]
+    #[test]
+    fn test_completeness_group_type_all_group_details() -> Result<(), Box<dyn Error>> {
+        dotenv::dotenv()?;
+        let redmine = crate::api::Redmine::from_env()?;
+        let endpoint = ListGroups::builder().build()?;
+        let GroupsWrapper { groups } =
+            redmine.json_response_body::<_, GroupsWrapper<Group>>(&endpoint)?;
+        for group in groups {
+            let get_endpoint = GetGroup::builder()
+                .id(group.id)
+                .include(vec![GroupInclude::Users, GroupInclude::Memberships])
+                .build()?;
+            let GroupWrapper { group: value } =
+                redmine.json_response_body::<_, GroupWrapper<serde_json::Value>>(&get_endpoint)?;
             let o: Group = serde_json::from_value(value.clone())?;
             let reserialized = serde_json::to_value(o)?;
             assert_eq!(value, reserialized);

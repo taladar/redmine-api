@@ -10,20 +10,20 @@
 //!     - [ ] limit sort to the existing columns only instead of a string value
 //!   - [ ] query_id parameter
 //!   - [x] pagination
-//!   - [ ] issue_id filter
+//!   - [x] issue_id filter
 //!     - [x] issue id (multiple are possible, comma separated)
-//!   - [ ] project_id filter
+//!   - [x] project_id filter
 //!     - [x] project id (multiple are possible, comma separated)
 //!   - [ ] subproject_id filter
 //!     - [ ] !* filter to only get parent project issues
-//!   - [ ] tracker_id filter
+//!   - [x] tracker_id filter
 //!     - [x] tracker id (multiple are possible, comma separated)
 //!   - [ ] status_id filter
 //!     - [ ] open (default)
 //!     - [ ] closed
 //!     - [ ] * for both
 //!     - [x] status id (multiple are possible, comma separated)
-//!   - [ ] category_id filter
+//!   - [x] category_id filter
 //!     - [x] category id (multiple are possible, comma separated)
 //!   - [ ] priority_id filter
 //!     - [ ] less than, greater than
@@ -43,8 +43,9 @@
 //!   - [ ] custom field filter
 //!     - [ ] exact match
 //!     - [ ] substring match
-//!   - [ ] subject filter
-//!     - [ ] exact match
+//!     - [ ] what about multiple value custom fields?
+//!   - [x] subject filter
+//!     - [x] exact match
 //!     - [ ] substring match
 //!   - [ ] description filter
 //!     - [ ] exact match
@@ -78,9 +79,11 @@ use derive_builder::Builder;
 use http::Method;
 use std::borrow::Cow;
 
+use crate::api::attachments::Attachment;
 use crate::api::custom_fields::CustomFieldEssentialsWithValue;
 use crate::api::enumerations::IssuePriorityEssentials;
 use crate::api::issue_categories::IssueCategoryEssentials;
+use crate::api::issue_relations::IssueRelation;
 use crate::api::issue_statuses::IssueStatusEssentials;
 use crate::api::projects::ProjectEssentials;
 use crate::api::trackers::TrackerEssentials;
@@ -105,6 +108,71 @@ pub struct AssigneeEssentials {
 pub struct IssueEssentials {
     /// numeric id
     pub id: u64,
+}
+
+/// the type of journal change
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+pub enum ChangePropertyType {
+    /// issue attribute change
+    #[serde(rename = "attr")]
+    Attr,
+    /// TODO: not quite sure what cf stands for
+    #[serde(rename = "cf")]
+    Cf,
+    /// change in issue relations
+    #[serde(rename = "relation")]
+    Relation,
+    /// change in attachments
+    #[serde(rename = "attachment")]
+    Attachment,
+}
+
+/// a changed attribute entry in a journal entry
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+pub struct JournalChange {
+    /// name of the attribute
+    pub name: String,
+    /// old value
+    pub old_value: Option<String>,
+    /// new value
+    pub new_value: Option<String>,
+    /// what kind of property we are dealing with
+    pub property: ChangePropertyType,
+}
+
+/// journals (issue comments and changes)
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+pub struct Journal {
+    /// numeric id
+    pub id: u64,
+    /// the author of the journal entry
+    pub user: UserEssentials,
+    /// the comment content
+    pub notes: Option<String>,
+    /// is this a private comment
+    pub private_notes: bool,
+    /// The time when this comment/change was created
+    #[serde(
+        serialize_with = "crate::api::serialize_rfc3339",
+        deserialize_with = "crate::api::deserialize_rfc3339"
+    )]
+    pub created_on: time::OffsetDateTime,
+    /// changed issue attributes
+    pub details: Vec<JournalChange>,
+}
+
+/// minimal issue used e.g. in child issues
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+pub struct ChildIssue {
+    /// numeric id
+    pub id: u64,
+    /// subject
+    pub subject: String,
+    /// tracker
+    pub tracker: TrackerEssentials,
+    /// children
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub children: Option<Vec<ChildIssue>>,
 }
 
 /// a type for issue to use as an API return type
@@ -171,6 +239,30 @@ pub struct Issue {
         deserialize_with = "crate::api::deserialize_rfc3339"
     )]
     pub updated_on: time::OffsetDateTime,
+    /// issue attachments (only when include parameter is used)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub attachments: Option<Vec<Attachment>>,
+    /// issue relations (only when include parameter is used)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub relations: Option<Vec<IssueRelation>>,
+    /// journal entries (comments and changes), only when include parameter is used
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub journals: Option<Vec<Journal>>,
+    /// child issues (only when include parameter is used)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub children: Option<Vec<ChildIssue>>,
+    /// watchers
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub watchers: Option<Vec<UserEssentials>>,
+    /// the hours spent
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub spent_hours: Option<f64>,
+    /// the total hours spent on this and sub-tasks
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub total_spent_hours: Option<f64>,
+    /// the total hours estimated on this and sub-tasks
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub total_estimated_hours: Option<f64>,
 }
 
 /// Sort by this column
@@ -226,7 +318,7 @@ impl std::fmt::Display for IssueListInclude {
 /// The endpoint for all Redmine issues
 #[derive(Debug, Builder)]
 #[builder(setter(strip_option))]
-pub struct ListIssues {
+pub struct ListIssues<'a> {
     /// Include associated data
     #[builder(default)]
     include: Option<Vec<IssueListInclude>>,
@@ -248,24 +340,27 @@ pub struct ListIssues {
     /// Filter by issue status
     #[builder(default)]
     status_id: Option<Vec<u64>>,
+    /// Filter by subject
+    #[builder(default)]
+    subject: Option<Cow<'a, str>>,
 }
 
-impl<'a> ReturnsJsonResponse for ListIssues {}
+impl<'a> ReturnsJsonResponse for ListIssues<'a> {}
 
-impl Pageable for ListIssues {
+impl<'a> Pageable for ListIssues<'a> {
     fn response_wrapper_key(&self) -> String {
         "issues".to_string()
     }
 }
 
-impl<'a> ListIssues {
+impl<'a> ListIssues<'a> {
     /// Create a builder for the endpoint.
-    pub fn builder() -> ListIssuesBuilder {
+    pub fn builder() -> ListIssuesBuilder<'a> {
         ListIssuesBuilder::default()
     }
 }
 
-impl<'a> Endpoint for ListIssues {
+impl<'a> Endpoint for ListIssues<'a> {
     fn method(&self) -> Method {
         Method::GET
     }
@@ -276,13 +371,14 @@ impl<'a> Endpoint for ListIssues {
 
     fn parameters(&self) -> QueryParams {
         let mut params = QueryParams::default();
-        params.push_opt("includes", self.include.as_ref());
+        params.push_opt("include", self.include.as_ref());
         params.push_opt("sort", self.sort.as_ref());
         params.push_opt("issue_id", self.issue_id.as_ref());
         params.push_opt("project_id", self.project_id.as_ref());
         params.push_opt("tracker_id", self.tracker_id.as_ref());
         params.push_opt("category_id", self.category_id.as_ref());
         params.push_opt("status_id", self.status_id.as_ref());
+        params.push_opt("subject", self.subject.as_ref());
         params
     }
 }
@@ -376,7 +472,7 @@ impl Endpoint for GetIssue {
 
     fn parameters(&self) -> QueryParams {
         let mut params = QueryParams::default();
-        params.push_opt("includes", self.include.as_ref());
+        params.push_opt("include", self.include.as_ref());
         params
     }
 }
@@ -769,7 +865,12 @@ mod test {
     fn test_completeness_issue_type() -> Result<(), Box<dyn Error>> {
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
-        let endpoint = ListIssues::builder().build()?;
+        let endpoint = ListIssues::builder()
+            .include(vec![
+                IssueListInclude::Attachments,
+                IssueListInclude::Relations,
+            ])
+            .build()?;
         let IssuesWrapper { issues: values } =
             redmine.json_response_body::<_, IssuesWrapper<serde_json::Value>>(&endpoint)?;
         for value in values {
@@ -794,10 +895,67 @@ mod test {
     fn test_completeness_issue_type_all_pages() -> Result<(), Box<dyn Error>> {
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
-        let endpoint = ListIssues::builder().build()?;
+        let endpoint = ListIssues::builder()
+            .include(vec![
+                IssueListInclude::Attachments,
+                IssueListInclude::Relations,
+            ])
+            .build()?;
         let values = redmine.json_response_body_all_pages::<_, serde_json::Value>(&endpoint)?;
         for value in values {
             let o: Issue = serde_json::from_value(value.clone())?;
+            let reserialized = serde_json::to_value(o)?;
+            assert_eq!(value, reserialized);
+        }
+        Ok(())
+    }
+
+    /// this tests if any of the results contain a field we are not deserializing
+    ///
+    /// this will only catch fields we missed if they are part of the response but
+    /// it is better than nothing
+    ///
+    /// this version of the test will load all pages of issues and the individual
+    /// issues for each via GetIssue which means it
+    /// can take a while (about 400 seconds) so you need to use --include-ignored
+    /// or --ignored to run it
+    #[traced_test]
+    #[test]
+    #[ignore]
+    fn test_completeness_issue_type_all_pages_all_issue_details() -> Result<(), Box<dyn Error>> {
+        dotenv::dotenv()?;
+        let redmine = crate::api::Redmine::from_env()?;
+        let endpoint = ListIssues::builder()
+            .include(vec![
+                IssueListInclude::Attachments,
+                IssueListInclude::Relations,
+            ])
+            .build()?;
+        let issues = redmine.json_response_body_all_pages::<_, Issue>(&endpoint)?;
+        for issue in issues {
+            let get_endpoint = GetIssue::builder()
+                .id(issue.id)
+                .include(vec![
+                    IssueInclude::Attachments,
+                    IssueInclude::Children,
+                    IssueInclude::Changesets,
+                    IssueInclude::Relations,
+                    IssueInclude::Journals,
+                    IssueInclude::Watchers,
+                ])
+                .build()?;
+            let IssueWrapper { issue: mut value } =
+                redmine.json_response_body::<_, IssueWrapper<serde_json::Value>>(&get_endpoint)?;
+            let o: Issue = serde_json::from_value(value.clone())?;
+            // workaround for the fact that the field total_estimated_hours is put into the result
+            // when its null in the GetIssue endpoint but not in the ListIssues one
+            // we can only do one or the other in our JSON serialization unless we want to add
+            // extra fields just to keep track of the missing field vs. field with null value
+            // difference
+            let value_object = value.as_object_mut().unwrap();
+            if value_object.get("total_estimated_hours") == Some(&serde_json::Value::Null) {
+                value_object.remove("total_estimated_hours");
+            }
             let reserialized = serde_json::to_value(o)?;
             assert_eq!(value, reserialized);
         }

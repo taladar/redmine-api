@@ -14,9 +14,23 @@ use derive_builder::Builder;
 use http::Method;
 use std::borrow::Cow;
 
+use crate::api::enumerations::TimeEntryActivityEssentials;
+use crate::api::issue_categories::IssueCategoryEssentials;
+use crate::api::issues::AssigneeEssentials;
+use crate::api::trackers::TrackerEssentials;
+use crate::api::versions::VersionEssentials;
 use crate::api::{Endpoint, Pageable, QueryParams, ReturnsJsonResponse};
 use serde::Serialize;
 use std::collections::HashMap;
+
+/// a minimal type for Redmine modules used in lists enabled modules
+#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct Module {
+    /// numeric id
+    pub id: u64,
+    /// name (all lower-case and with underscores so probably not meant for display purposes)
+    pub name: String,
+}
 
 /// a minimal type for Redmine projects used in lists of projects included in
 /// other Redmine objects (e.g. custom fields)
@@ -51,9 +65,12 @@ pub struct Project {
     pub parent: Option<ProjectEssentials>,
     /// will the project inherit members from its ancestors
     pub inherit_members: Option<bool>,
-    /// ID of the default user. It works only when the new project is a subproject and it inherits the members
+    /// the default user/group issues in this project are assigned to
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub default_assigned_to_id: Option<u64>,
+    pub default_assignee: Option<AssigneeEssentials>,
+    /// the default version for issues in this project
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub default_version: Option<VersionEssentials>,
     /// ID of the default version. It works only with existing shared versions
     #[serde(skip_serializing_if = "Option::is_none")]
     pub default_version_id: Option<u64>,
@@ -83,11 +100,23 @@ pub struct Project {
         deserialize_with = "crate::api::deserialize_rfc3339"
     )]
     pub updated_on: time::OffsetDateTime,
+    /// issue categories (only with include parameter)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub issue_categories: Option<Vec<IssueCategoryEssentials>>,
+    /// time entry activities (only with include parameter)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub time_entry_activities: Option<Vec<TimeEntryActivityEssentials>>,
+    /// enabled modules in this project (only with include parameter)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub enabled_modules: Option<Vec<Module>>,
+    /// trackers in this project (only with include parameter)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub trackers: Option<Vec<TrackerEssentials>>,
 }
 
 /// The types of associated data which can be fetched along with a project
 #[derive(Debug, Clone)]
-pub enum ListProjectsInclude {
+pub enum ProjectsInclude {
     /// Trackers enabled in the project
     Trackers,
     /// Issue categories in the project
@@ -96,7 +125,7 @@ pub enum ListProjectsInclude {
     EnabledModules,
 }
 
-impl std::fmt::Display for ListProjectsInclude {
+impl std::fmt::Display for ProjectsInclude {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Trackers => {
@@ -118,7 +147,7 @@ impl std::fmt::Display for ListProjectsInclude {
 pub struct ListProjects {
     /// the types of associate data to include
     #[builder(default)]
-    include: Option<Vec<ListProjectsInclude>>,
+    include: Option<Vec<ProjectsInclude>>,
 }
 
 impl ReturnsJsonResponse for ListProjects {}
@@ -146,14 +175,14 @@ impl<'a> Endpoint for ListProjects {
 
     fn parameters(&self) -> QueryParams {
         let mut params = QueryParams::default();
-        params.push_opt("includes", self.include.as_ref());
+        params.push_opt("include", self.include.as_ref());
         params
     }
 }
 
 /// The types of associated data which can be fetched along with a project
 #[derive(Debug, Clone)]
-pub enum GetProjectInclude {
+pub enum ProjectInclude {
     /// Trackers enabled in the project
     Trackers,
     /// Issue categories in the project
@@ -164,7 +193,7 @@ pub enum GetProjectInclude {
     TimeEntryActivities,
 }
 
-impl std::fmt::Display for GetProjectInclude {
+impl std::fmt::Display for ProjectInclude {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Trackers => {
@@ -192,7 +221,7 @@ pub struct GetProject<'a> {
     project_id_or_name: Cow<'a, str>,
     /// the types of associate data to include
     #[builder(default)]
-    include: Option<Vec<GetProjectInclude>>,
+    include: Option<Vec<ProjectInclude>>,
 }
 
 impl<'a> ReturnsJsonResponse for GetProject<'a> {}
@@ -215,7 +244,7 @@ impl<'a> Endpoint for GetProject<'a> {
 
     fn parameters(&self) -> QueryParams {
         let mut params = QueryParams::default();
-        params.push_opt("includes", self.include.as_ref());
+        params.push_opt("include", self.include.as_ref());
         params
     }
 }
@@ -551,6 +580,48 @@ mod test {
         let ProjectsWrapper { projects: values } =
             redmine.json_response_body::<_, ProjectsWrapper<serde_json::Value>>(&endpoint)?;
         for value in values {
+            let o: Project = serde_json::from_value(value.clone())?;
+            let reserialized = serde_json::to_value(o)?;
+            assert_eq!(value, reserialized);
+        }
+        Ok(())
+    }
+
+    /// this tests if any of the results contain a field we are not deserializing
+    ///
+    /// this will only catch fields we missed if they are part of the response but
+    /// it is better than nothing
+    ///
+    /// this version of the test will load all pages of projects and the individual
+    /// projects for each via GetProject which means it
+    /// can take a while so you need to use --include-ignored
+    /// or --ignored to run it
+    #[traced_test]
+    #[test]
+    fn test_completeness_project_type_all_pages_all_project_details() -> Result<(), Box<dyn Error>>
+    {
+        dotenv::dotenv()?;
+        let redmine = crate::api::Redmine::from_env()?;
+        let endpoint = ListProjects::builder()
+            .include(vec![
+                ProjectsInclude::Trackers,
+                ProjectsInclude::IssueCategories,
+                ProjectsInclude::EnabledModules,
+            ])
+            .build()?;
+        let projects = redmine.json_response_body_all_pages::<_, Project>(&endpoint)?;
+        for project in projects {
+            let get_endpoint = GetProject::builder()
+                .project_id_or_name(project.id.to_string())
+                .include(vec![
+                    ProjectInclude::Trackers,
+                    ProjectInclude::IssueCategories,
+                    ProjectInclude::EnabledModules,
+                    ProjectInclude::TimeEntryActivities,
+                ])
+                .build()?;
+            let ProjectWrapper { project: value } = redmine
+                .json_response_body::<_, ProjectWrapper<serde_json::Value>>(&get_endpoint)?;
             let o: Project = serde_json::from_value(value.clone())?;
             let reserialized = serde_json::to_value(o)?;
             assert_eq!(value, reserialized);
