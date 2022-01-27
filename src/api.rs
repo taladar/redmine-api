@@ -3,12 +3,12 @@
 //! [`Redmine Documentation`](https://www.redmine.org/projects/redmine/wiki/rest_api)
 //!
 //! - [x] authentication
-//! - [ ] pagination
-//!   - [ ] add Pageable instances to all types that need them
-//!   - [ ] figure out a way to write a general "fetch all pages" function (problem is the different key name in the wrapper)
+//! - [x] pagination
+//!   - [x] add Pageable instances to all types that need them
+//!   - [x] figure out a way to write a general "fetch all pages" function (problem is the different key name in the wrapper)
 //! - [x] impersonation
 //! - [ ] attachments
-//! - [ ] add all the wrappers I somehow missed
+//! - [x] add all the wrappers I somehow missed
 //!   - [ ] check if admin and send_information truly are not part of the user hash in Create/UpdateUser or if the wiki docs are wrong
 //!
 //! Potential breaking changes ahead
