@@ -8,7 +8,8 @@
 //! - [ ] all issues endpoint
 //!   - [x] sort
 //!     - [ ] limit sort to the existing columns only instead of a string value
-//!   - [ ] pagination
+//!   - [ ] query_id parameter
+//!   - [x] pagination
 //!   - [ ] issue_id filter
 //!     - [x] issue id (multiple are possible, comma separated)
 //!   - [ ] project_id filter
