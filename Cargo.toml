@@ -4,10 +4,12 @@ description = "API for the Redmine issue tracker"
 readme = "README.md"
 license = "MIT/Apache-2.0"
 version = "0.1.0"
-authors = ["Matthias Hörmann <taladar@taladar.net>"]
+authors = ["Matthias Hörmann <mhoermann@gmail.com>"]
+repository = "https://github.com/taladar/redmine-api"
+keywords = [ "redmine", "api" ]
+categories = [ "api-bindings" ]
 edition = "2021"
-exclude = [ "init-git.sh", "push-deploy-branches.sh" ]
-publish = false
+exclude = [ ".env", "tarpaulin-report.html", "tarpaulin-report.json" ]
 
 [profile.release]
 # do not strip debug info from release builds, useful for debugging those, cargo-flamegraph profiling or similar use cases

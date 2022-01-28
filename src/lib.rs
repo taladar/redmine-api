@@ -17,6 +17,7 @@
 #![warn(clippy::missing_docs_in_private_items)]
 #![warn(clippy::cargo_common_metadata)]
 #![warn(rustdoc::missing_crate_level_docs)]
+#![deny(rustdoc::broken_intra_doc_links)]
 #![warn(missing_debug_implementations)]
 #![doc = include_str!("../README.md")]
 

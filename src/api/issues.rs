@@ -842,7 +842,7 @@ pub struct CustomField<'a> {
 }
 
 /// the information the uploader needs to supply for an attachment
-/// in [CreateIssue] or [UploadIssue]
+/// in [CreateIssue] or [UpdateIssue]
 #[derive(Debug, Clone, Serialize)]
 pub struct UploadedAttachment<'a> {
     /// the upload token from [UploadFile|crate::api::uploads::UploadFile]
