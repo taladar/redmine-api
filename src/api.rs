@@ -7,8 +7,7 @@
 //!   - [x] add Pageable instances to all types that need them
 //!   - [x] figure out a way to write a general "fetch all pages" function (problem is the different key name in the wrapper)
 //! - [x] impersonation
-//! - [ ] attachments
-//!   - [ ] listing attachments with include attachments does not seem to work properly (noticed in upload test)
+//! - [x] attachments
 //! - [x] add all the wrappers I somehow missed
 //!   - [x] check if admin and send_information truly are not part of the user hash in Create/UpdateUser or if the wiki docs are wrong (admin is, send_information is not)
 //! - [x] test include parameters and add relevant data to the return types
