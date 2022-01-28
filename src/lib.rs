@@ -54,4 +54,7 @@ pub enum Error {
     /// Parsing a time string to a time object (OffsetDateTime) failed
     #[error("Parsing string {0} to time object failed")]
     TimeParseError(String, time::error::Parse),
+    /// Error reading a file we are supposed to upload
+    #[error("Error when opening or reading file {0} to upload: {1}")]
+    UploadFileError(std::path::PathBuf, std::io::Error),
 }

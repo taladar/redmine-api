@@ -81,7 +81,9 @@
 //!     - [x] date range
 //! - [x] specific issue endpoint
 //! - [x] create issue endpoint
+//!   - [ ] attachments
 //! - [x] update issue endpoint
+//!   - [ ] attachments
 //! - [x] delete issue endpoint
 //! - [x] add watcher endpoint
 //! - [x] remove watcher endpoint
@@ -839,6 +841,21 @@ pub struct CustomField<'a> {
     value: Cow<'a, str>,
 }
 
+/// the information the uploader needs to supply for an attachment
+/// in [CreateIssue] or [UploadIssue]
+#[derive(Debug, Clone, Serialize)]
+pub struct UploadedAttachment<'a> {
+    /// the upload token from [UploadFile|crate::api::uploads::UploadFile]
+    pub token: Cow<'a, str>,
+    /// the filename
+    pub filename: Cow<'a, str>,
+    /// a description for the file
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<Cow<'a, str>>,
+    /// the MIME content type of the file
+    pub content_type: Cow<'a, str>,
+}
+
 /// The endpoint to create a Redmine issue
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Builder, Serialize)]
@@ -885,6 +902,9 @@ pub struct CreateIssue<'a> {
     /// estimated hours it will take to implement this isssue
     #[builder(default)]
     estimated_hours: Option<f64>,
+    /// attachments (files)
+    #[builder(default)]
+    uploads: Option<Vec<UploadedAttachment<'a>>>,
 }
 
 impl<'a> CreateIssue<'a> {
@@ -971,6 +991,9 @@ pub struct UpdateIssue<'a> {
     /// is the added comment/note private
     #[builder(default)]
     private_notes: Option<bool>,
+    /// attachments (files)
+    #[builder(default)]
+    uploads: Option<Vec<UploadedAttachment<'a>>>,
 }
 
 impl<'a> UpdateIssue<'a> {
