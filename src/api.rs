@@ -9,7 +9,7 @@
 //! - [x] impersonation
 //! - [ ] attachments
 //! - [x] add all the wrappers I somehow missed
-//!   - [ ] check if admin and send_information truly are not part of the user hash in Create/UpdateUser or if the wiki docs are wrong
+//!   - [x] check if admin and send_information truly are not part of the user hash in Create/UpdateUser or if the wiki docs are wrong (admin is, send_information is not)
 //! - [x] test include parameters and add relevant data to the return types
 //!
 //! Potential breaking changes ahead

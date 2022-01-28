@@ -297,6 +297,7 @@ pub struct CreateUser<'a> {
     generate_password: Option<bool>,
     /// Send account information to the user
     #[builder(default)]
+    #[serde(skip_serializing)]
     send_information: Option<bool>,
     /// Make the user a Redmine administrator
     #[builder(default)]
@@ -324,8 +325,9 @@ impl<'a> Endpoint for CreateUser<'a> {
     fn body(&self) -> Result<Option<(&'static str, Vec<u8>)>, crate::Error> {
         Ok(Some((
             "application/json",
-            serde_json::to_vec(&UserWrapper::<CreateUser> {
+            serde_json::to_vec(&UserWrapperWithSendInformation::<CreateUser> {
                 user: (*self).to_owned(),
+                send_information: self.send_information,
             })?,
         )))
     }
@@ -370,6 +372,7 @@ pub struct UpdateUser<'a> {
     generate_password: Option<bool>,
     /// Send account information to the user
     #[builder(default)]
+    #[serde(skip_serializing)]
     send_information: Option<bool>,
     /// Make the user a Redmine administrator
     #[builder(default)]
@@ -395,8 +398,9 @@ impl<'a> Endpoint for UpdateUser<'a> {
     fn body(&self) -> Result<Option<(&'static str, Vec<u8>)>, crate::Error> {
         Ok(Some((
             "application/json",
-            serde_json::to_vec(&UserWrapper::<UpdateUser> {
+            serde_json::to_vec(&UserWrapperWithSendInformation::<UpdateUser> {
                 user: (*self).to_owned(),
+                send_information: self.send_information,
             })?,
         )))
     }
@@ -440,6 +444,18 @@ pub struct UsersWrapper<T> {
 pub struct UserWrapper<T> {
     /// to parse JSON with user key
     pub user: T,
+}
+
+/// a special version of the UserWrapper to use with [CreateUser] and [UpdateUser]
+/// because Redmine puts the send_information flag outside the user object for
+/// some reason
+#[derive(Debug, PartialEq, Eq, Serialize)]
+pub struct UserWrapperWithSendInformation<T> {
+    /// to parse JSON with user key
+    pub user: T,
+    /// send information flag in [CreateUser] and [UpdateUser]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub send_information: Option<bool>,
 }
 
 #[cfg(test)]
@@ -525,6 +541,72 @@ mod test {
         redmine.ignore_response_body::<_>(&delete_endpoint)?;
         Ok(())
     }
+
+    // this test causes emails to be sent so we comment it out, mainly it was
+    // meant to check if the send_information attribute is inside or outside teh
+    // user object in CreateUser (the docs in the wiki say outside and that really
+    // seems to be the case)
+    // #[function_name::named]
+    // #[traced_test]
+    // #[test]
+    // fn test_create_user_send_account_info() -> Result<(), Box<dyn Error>> {
+    //     let _w_user = USER_LOCK.write();
+    //     let name = format!("unittest_{}", function_name!());
+    //     dotenv::dotenv()?;
+    //     let redmine = crate::api::Redmine::from_env()?;
+    //     let list_endpoint = ListUsers::builder().name(name.clone()).build()?;
+    //     let UsersWrapper { users } =
+    //         redmine.json_response_body::<_, UsersWrapper<User>>(&list_endpoint)?;
+    //     for user in users {
+    //         let delete_endpoint = DeleteUser::builder().id(user.id).build()?;
+    //         redmine.ignore_response_body::<_>(&delete_endpoint)?;
+    //     }
+    //     let create_endpoint = CreateUser::builder()
+    //         .login(name.clone())
+    //         .firstname("Unit")
+    //         .lastname("Test Send Account Info")
+    //         .mail(format!("{}@example.org", name)) // apparently there is a 60 character limit on the email in Redmine
+    //         .send_information(true)
+    //         .build()?;
+    //     let UserWrapper { user } =
+    //         redmine.json_response_body::<_, UserWrapper<User>>(&create_endpoint)?;
+    //     let delete_endpoint = DeleteUser::builder().id(user.id).build()?;
+    //     redmine.ignore_response_body::<_>(&delete_endpoint)?;
+    //     Ok(())
+    // }
+
+    // this test causes emails to be sent so we comment it out, mainly it was
+    // meant to check if the admin attribute is inside or outside the user object
+    // in CreateUser (the docs on the wiki say outside but inside seems
+    // to be correct)
+    // #[function_name::named]
+    // #[traced_test]
+    // #[test]
+    // fn test_create_admin_user() -> Result<(), Box<dyn Error>> {
+    //     let _w_user = USER_LOCK.write();
+    //     let name = format!("unittest_{}", function_name!());
+    //     dotenv::dotenv()?;
+    //     let redmine = crate::api::Redmine::from_env()?;
+    //     let list_endpoint = ListUsers::builder().name(name.clone()).build()?;
+    //     let UsersWrapper { users } =
+    //         redmine.json_response_body::<_, UsersWrapper<User>>(&list_endpoint)?;
+    //     for user in users {
+    //         let delete_endpoint = DeleteUser::builder().id(user.id).build()?;
+    //         redmine.ignore_response_body::<_>(&delete_endpoint)?;
+    //     }
+    //     let create_endpoint = CreateUser::builder()
+    //         .login(name.clone())
+    //         .firstname("Unit")
+    //         .lastname("Test Admin")
+    //         .mail(format!("unit-test_{}@example.org", name))
+    //         .admin(true)
+    //         .build()?;
+    //     let UserWrapper { user } =
+    //         redmine.json_response_body::<_, UserWrapper<User>>(&create_endpoint)?;
+    //     let delete_endpoint = DeleteUser::builder().id(user.id).build()?;
+    //     redmine.ignore_response_body::<_>(&delete_endpoint)?;
+    //     Ok(())
+    // }
 
     #[function_name::named]
     #[traced_test]

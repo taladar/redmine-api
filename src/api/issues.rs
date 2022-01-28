@@ -14,19 +14,19 @@
 //!     - [x] issue id (multiple are possible, comma separated)
 //!   - [x] project_id filter
 //!     - [x] project id (multiple are possible, comma separated)
-//!   - [ ] subproject_id filter
-//!     - [ ] !* filter to only get parent project issues
+//!   - [x] subproject_id filter
+//!     - [x] !* filter to only get parent project issues
 //!   - [x] tracker_id filter
 //!     - [x] tracker id (multiple are possible, comma separated)
-//!   - [ ] status_id filter
-//!     - [ ] open (default)
-//!     - [ ] closed
-//!     - [ ] * for both
+//!   - [x] status_id filter
+//!     - [x] open (default)
+//!     - [x] closed
+//!     - [x] * for both
 //!     - [x] status id (multiple are possible, comma separated)
 //!   - [x] category_id filter
 //!     - [x] category id (multiple are possible, comma separated)
-//!   - [ ] priority_id filter
-//!     - [ ] less than, greater than
+//!   - [x] priority_id filter
+//!     - [x] priority id (multiple are possible, comma separated)
 //!   - [x] author_id filter
 //!     - [x] any
 //!     - [x] me
@@ -40,39 +40,45 @@
 //!     - [x] user/group id (multiple are possible, comma separated)
 //!     - [x] negation of list
 //!     - [x] none (!*)
-//!   - [ ] fixed_version_id filter (Target version, API uses old name)
-//!     - [ ] version id (multiple are possible, comma separated)
+//!   - [x] fixed_version_id filter (Target version, API uses old name)
+//!     - [x] version id (multiple are possible, comma separated)
 //!   - [ ] is_private filter
-//!   - [ ] parent_id filter
-//!     - [ ] issue id (multiple are possible, comma separated)
+//!   - [x] parent_id filter
+//!     - [x] issue id (multiple are possible, comma separated)
 //!   - [ ] custom field filter
 //!     - [ ] exact match
 //!     - [ ] substring match
 //!     - [ ] what about multiple value custom fields?
 //!   - [x] subject filter
 //!     - [x] exact match
-//!     - [ ] substring match
-//!   - [ ] description filter
-//!     - [ ] exact match
-//!     - [ ] substring match
+//!     - [x] substring match
+//!   - [x] description filter
+//!     - [x] exact match
+//!     - [x] substring match
 //!   - [ ] done_ratio filter
 //!     - [ ] exact match
-//!     - [ ] less than, greater than
+//!     - [ ] less than, greater than ?
+//!     - [ ] range?
 //!   - [ ] estimated_hours filter
 //!     - [ ] exact match
-//!     - [ ] less than, greater than
-//!   - [ ] created_on filter
-//!     - [ ] exact match
-//!     - [ ] less than, greater than
-//!   - [ ] updated_on filter
-//!     - [ ] exact match
-//!     - [ ] less than, greater than
-//!   - [ ] start_date filter
-//!     - [ ] exact match
-//!     - [ ] less than, greater than
-//!   - [ ] due_date filter
-//!     - [ ] exact match
-//!     - [ ] less than, greater than
+//!     - [ ] less than, greater than ?
+//!     - [ ] range?
+//!   - [x] created_on filter
+//!     - [x] exact match
+//!     - [x] less than, greater than
+//!     - [x] date range
+//!   - [x] updated_on filter
+//!     - [x] exact match
+//!     - [x] less than, greater than
+//!     - [x] date range
+//!   - [x] start_date filter
+//!     - [x] exact match
+//!     - [x] less than, greater than
+//!     - [x] date range
+//!   - [x] due_date filter
+//!     - [x] exact match
+//!     - [x] less than, greater than
+//!     - [x] date range
 //! - [x] specific issue endpoint
 //! - [x] create issue endpoint
 //! - [x] update issue endpoint
@@ -270,6 +276,90 @@ pub struct Issue {
     pub total_estimated_hours: Option<f64>,
 }
 
+/// ways to filter for subproject
+#[derive(Debug, Clone)]
+pub enum SubProjectFilter {
+    /// return no issues from subjects
+    OnlyParentProject,
+    /// return issues from a specific list of sub project ids
+    TheseSubProjects(Vec<u64>),
+    /// return issues from any but a specific list of sub project ids
+    NotTheseSubProjects(Vec<u64>),
+}
+
+impl std::fmt::Display for SubProjectFilter {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            SubProjectFilter::OnlyParentProject => {
+                write!(f, "!*")
+            }
+            SubProjectFilter::TheseSubProjects(ids) => {
+                let s: String = ids
+                    .iter()
+                    .map(|e| e.to_string())
+                    .collect::<Vec<_>>()
+                    .join(",");
+                write!(f, "{}", s)
+            }
+            SubProjectFilter::NotTheseSubProjects(ids) => {
+                let s: String = ids
+                    .iter()
+                    .map(|e| format!("!{}", e))
+                    .collect::<Vec<_>>()
+                    .join(",");
+                write!(f, "{}", s)
+            }
+        }
+    }
+}
+
+/// ways to filter for issue status
+#[derive(Debug, Clone)]
+pub enum StatusFilter {
+    /// match all open statuses (default if no status filter is specified
+    Open,
+    /// match all closed statuses
+    Closed,
+    /// match both open and closed statuses
+    All,
+    /// match a specific list of statuses
+    TheseStatuses(Vec<u64>),
+    /// match any status but a specific list of statuses
+    NotTheseStatuses(Vec<u64>),
+}
+
+impl std::fmt::Display for StatusFilter {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            StatusFilter::Open => {
+                write!(f, "open")
+            }
+            StatusFilter::Closed => {
+                write!(f, "closed")
+            }
+            StatusFilter::All => {
+                write!(f, "*")
+            }
+            StatusFilter::TheseStatuses(ids) => {
+                let s: String = ids
+                    .iter()
+                    .map(|e| e.to_string())
+                    .collect::<Vec<_>>()
+                    .join(",");
+                write!(f, "{}", s)
+            }
+            StatusFilter::NotTheseStatuses(ids) => {
+                let s: String = ids
+                    .iter()
+                    .map(|e| format!("!{}", e))
+                    .collect::<Vec<_>>()
+                    .join(",");
+                write!(f, "{}", s)
+            }
+        }
+    }
+}
+
 /// ways to filter for users in author (always a user (not group), never !*)
 #[derive(Debug, Clone)]
 pub enum AuthorFilter {
@@ -302,8 +392,7 @@ impl std::fmt::Display for AuthorFilter {
                     .iter()
                     .map(|e| e.to_string())
                     .collect::<Vec<_>>()
-                    .join(",")
-                    .into();
+                    .join(",");
                 write!(f, "{}", s)
             }
             AuthorFilter::NotTheseAuthors(ids) => {
@@ -311,8 +400,7 @@ impl std::fmt::Display for AuthorFilter {
                     .iter()
                     .map(|e| format!("!{}", e))
                     .collect::<Vec<_>>()
-                    .join(",")
-                    .into();
+                    .join(",");
                 write!(f, "{}", s)
             }
         }
@@ -353,8 +441,7 @@ impl std::fmt::Display for AssigneeFilter {
                     .iter()
                     .map(|e| e.to_string())
                     .collect::<Vec<_>>()
-                    .join(",")
-                    .into();
+                    .join(",");
                 write!(f, "{}", s)
             }
             AssigneeFilter::NotTheseAssignees(ids) => {
@@ -362,12 +449,102 @@ impl std::fmt::Display for AssigneeFilter {
                     .iter()
                     .map(|e| format!("!{}", e))
                     .collect::<Vec<_>>()
-                    .join(",")
-                    .into();
+                    .join(",");
                 write!(f, "{}", s)
             }
             AssigneeFilter::NoAssignee => {
                 write!(f, "!*")
+            }
+        }
+    }
+}
+
+/// Filter options for subject and description
+#[derive(Debug, Clone)]
+pub enum StringFieldFilter {
+    /// match exactly this value
+    ExactMatch(String),
+    /// match this substring of the actual value
+    SubStringMatch(String),
+}
+
+impl std::fmt::Display for StringFieldFilter {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            StringFieldFilter::ExactMatch(s) => {
+                write!(f, "{}", s)
+            }
+            StringFieldFilter::SubStringMatch(s) => {
+                write!(f, "~{}", s)
+            }
+        }
+    }
+}
+
+/// a trait for comparable filter values, we do not just use Display because
+/// one of our main application is dates and we need a specific format
+pub trait ComparableFilterValue {
+    /// returns a string representation of a single value (e.g. a date)
+    /// to be combined with the comparison operators by the Display trait of
+    /// [ComparableFilter]
+    fn value_string(&self) -> Cow<'static, str>;
+}
+
+impl ComparableFilterValue for time::Date {
+    fn value_string(&self) -> Cow<'static, str> {
+        let format = time::format_description::parse("[year]-[month]-[day]").unwrap();
+        self.format(&format).unwrap().into()
+    }
+}
+
+impl ComparableFilterValue for time::OffsetDateTime {
+    fn value_string(&self) -> Cow<'static, str> {
+        self.format(&time::format_description::well_known::Rfc3339)
+            .unwrap()
+            .into()
+    }
+}
+
+/// Filter for a comparable filter (those you can use ranges, less, greater,...) on
+#[derive(Debug, Clone)]
+pub enum ComparableFilter<V> {
+    /// an exact match
+    ExactMatch(V),
+    /// a range match
+    Range(V, V),
+    /// we only want values less than the parameter
+    LessThan(V),
+    /// we only want values less than or equal to the parameter
+    LessThanOrEqual(V),
+    /// we only want values greater than the parameter
+    GreaterThan(V),
+    /// we only want values greater than or equal to the parameter
+    GreaterThanOrEqual(V),
+}
+
+impl<V> std::fmt::Display for ComparableFilter<V>
+where
+    V: ComparableFilterValue,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ComparableFilter::ExactMatch(v) => {
+                write!(f, "{}", v.value_string())
+            }
+            ComparableFilter::Range(v_start, v_end) => {
+                write!(f, "><{}|{}", v_start.value_string(), v_end.value_string())
+            }
+            ComparableFilter::LessThan(v) => {
+                write!(f, "<{}", v.value_string())
+            }
+            ComparableFilter::LessThanOrEqual(v) => {
+                write!(f, "<={}", v.value_string())
+            }
+            ComparableFilter::GreaterThan(v) => {
+                write!(f, ">{}", v.value_string())
+            }
+            ComparableFilter::GreaterThanOrEqual(v) => {
+                write!(f, ">={}", v.value_string())
             }
         }
     }
@@ -426,7 +603,7 @@ impl std::fmt::Display for IssueListInclude {
 /// The endpoint for all Redmine issues
 #[derive(Debug, Builder)]
 #[builder(setter(strip_option))]
-pub struct ListIssues<'a> {
+pub struct ListIssues {
     /// Include associated data
     #[builder(default)]
     include: Option<Vec<IssueListInclude>>,
@@ -439,18 +616,30 @@ pub struct ListIssues<'a> {
     /// Filter by project id
     #[builder(default)]
     project_id: Option<Vec<u64>>,
+    /// Filter by subproject
+    #[builder(default)]
+    subproject_id: Option<SubProjectFilter>,
     /// Filter by tracker id
     #[builder(default)]
     tracker_id: Option<Vec<u64>>,
+    /// Filter by priority id
+    #[builder(default)]
+    priority_id: Option<Vec<u64>>,
+    /// Filter by parent issue id
+    #[builder(default)]
+    parent_id: Option<Vec<u64>>,
     /// Filter by issue category id
     #[builder(default)]
     category_id: Option<Vec<u64>>,
     /// Filter by issue status
     #[builder(default)]
-    status_id: Option<Vec<u64>>,
+    status_id: Option<StatusFilter>,
     /// Filter by subject
     #[builder(default)]
-    subject: Option<Cow<'a, str>>,
+    subject: Option<StringFieldFilter>,
+    /// Filter by description
+    #[builder(default)]
+    description: Option<StringFieldFilter>,
     /// Filter by author
     #[builder(default)]
     author: Option<AuthorFilter>,
@@ -460,24 +649,39 @@ pub struct ListIssues<'a> {
     /// Filter by a saved query
     #[builder(default)]
     query_id: Option<u64>,
+    /// Filter by target version
+    #[builder(default)]
+    version_id: Option<Vec<u64>>,
+    /// Filter by creation time
+    #[builder(default)]
+    created_on: Option<ComparableFilter<time::OffsetDateTime>>,
+    /// Filter by update time
+    #[builder(default)]
+    updated_on: Option<ComparableFilter<time::OffsetDateTime>>,
+    /// Filter by start date
+    #[builder(default)]
+    start_date: Option<ComparableFilter<time::Date>>,
+    /// Filter by due date
+    #[builder(default)]
+    due_date: Option<ComparableFilter<time::Date>>,
 }
 
-impl<'a> ReturnsJsonResponse for ListIssues<'a> {}
+impl<'a> ReturnsJsonResponse for ListIssues {}
 
-impl<'a> Pageable for ListIssues<'a> {
+impl<'a> Pageable for ListIssues {
     fn response_wrapper_key(&self) -> String {
         "issues".to_string()
     }
 }
 
-impl<'a> ListIssues<'a> {
+impl<'a> ListIssues {
     /// Create a builder for the endpoint.
-    pub fn builder() -> ListIssuesBuilder<'a> {
+    pub fn builder() -> ListIssuesBuilder {
         ListIssuesBuilder::default()
     }
 }
 
-impl<'a> Endpoint for ListIssues<'a> {
+impl<'a> Endpoint for ListIssues {
     fn method(&self) -> Method {
         Method::GET
     }
@@ -492,16 +696,40 @@ impl<'a> Endpoint for ListIssues<'a> {
         params.push_opt("sort", self.sort.as_ref());
         params.push_opt("issue_id", self.issue_id.as_ref());
         params.push_opt("project_id", self.project_id.as_ref());
+        params.push_opt(
+            "subproject_id",
+            self.subproject_id.as_ref().map(|s| s.to_string()),
+        );
         params.push_opt("tracker_id", self.tracker_id.as_ref());
+        params.push_opt("priority_id", self.priority_id.as_ref());
+        params.push_opt("parent_id", self.parent_id.as_ref());
         params.push_opt("category_id", self.category_id.as_ref());
-        params.push_opt("status_id", self.status_id.as_ref());
-        params.push_opt("subject", self.subject.as_ref());
+        params.push_opt("status_id", self.status_id.as_ref().map(|s| s.to_string()));
+        params.push_opt("subject", self.subject.as_ref().map(|s| s.to_string()));
+        params.push_opt(
+            "description",
+            self.description.as_ref().map(|s| s.to_string()),
+        );
         params.push_opt("author_id", self.author.as_ref().map(|s| s.to_string()));
         params.push_opt(
             "assigned_to_id",
             self.assignee.as_ref().map(|s| s.to_string()),
         );
         params.push_opt("query_id", self.query_id);
+        params.push_opt("fixed_version_id", self.version_id.as_ref());
+        params.push_opt(
+            "created_on",
+            self.created_on.as_ref().map(|s| s.to_string()),
+        );
+        params.push_opt(
+            "updated_on",
+            self.updated_on.as_ref().map(|s| s.to_string()),
+        );
+        params.push_opt(
+            "start_date",
+            self.start_date.as_ref().map(|s| s.to_string()),
+        );
+        params.push_opt("due_date", self.due_date.as_ref().map(|s| s.to_string()));
         params
     }
 }
