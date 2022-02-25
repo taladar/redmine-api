@@ -574,7 +574,7 @@ impl std::fmt::Display for SortByColumn {
                 write!(f, "{}", column_name)
             }
             SortByColumn::Reverse { column_name } => {
-                write!(f, "{}:rev", column_name)
+                write!(f, "{}:desc", column_name)
             }
         }
     }
