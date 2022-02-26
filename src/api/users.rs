@@ -158,6 +158,7 @@ impl<'a> Pageable for ListUsers<'a> {
 
 impl<'a> ListUsers<'a> {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> ListUsersBuilder<'a> {
         ListUsersBuilder::default()
     }
@@ -218,6 +219,7 @@ impl ReturnsJsonResponse for GetUser {}
 
 impl GetUser {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> GetUserBuilder {
         GetUserBuilder::default()
     }
@@ -308,6 +310,7 @@ impl<'a> ReturnsJsonResponse for CreateUser<'a> {}
 
 impl<'a> CreateUser<'a> {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> CreateUserBuilder<'a> {
         CreateUserBuilder::default()
     }
@@ -381,6 +384,7 @@ pub struct UpdateUser<'a> {
 
 impl<'a> UpdateUser<'a> {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> UpdateUserBuilder<'a> {
         UpdateUserBuilder::default()
     }
@@ -416,6 +420,7 @@ pub struct DeleteUser {
 
 impl DeleteUser {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> DeleteUserBuilder {
         DeleteUserBuilder::default()
     }

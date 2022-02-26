@@ -55,6 +55,7 @@ impl ReturnsJsonResponse for ListGroups {}
 
 impl ListGroups {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> ListGroupsBuilder {
         ListGroupsBuilder::default()
     }
@@ -107,6 +108,7 @@ impl ReturnsJsonResponse for GetGroup {}
 
 impl GetGroup {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> GetGroupBuilder {
         GetGroupBuilder::default()
     }
@@ -144,6 +146,7 @@ impl<'a> ReturnsJsonResponse for CreateGroup<'a> {}
 
 impl<'a> CreateGroup<'a> {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> CreateGroupBuilder<'a> {
         CreateGroupBuilder::default()
     }
@@ -185,6 +188,7 @@ pub struct UpdateGroup<'a> {
 
 impl<'a> UpdateGroup<'a> {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> UpdateGroupBuilder<'a> {
         UpdateGroupBuilder::default()
     }
@@ -219,6 +223,7 @@ pub struct DeleteGroup {
 
 impl DeleteGroup {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> DeleteGroupBuilder {
         DeleteGroupBuilder::default()
     }
@@ -247,6 +252,7 @@ pub struct AddUserToGroup {
 
 impl AddUserToGroup {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> AddUserToGroupBuilder {
         AddUserToGroupBuilder::default()
     }
@@ -278,6 +284,7 @@ pub struct RemoveUserFromGroup {
 
 impl RemoveUserFromGroup {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> RemoveUserFromGroupBuilder {
         RemoveUserFromGroupBuilder::default()
     }

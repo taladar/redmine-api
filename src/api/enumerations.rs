@@ -44,6 +44,7 @@ impl ReturnsJsonResponse for ListIssuePriorities {}
 
 impl ListIssuePriorities {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> ListIssuePrioritiesBuilder {
         ListIssuePrioritiesBuilder::default()
     }
@@ -98,6 +99,7 @@ impl ReturnsJsonResponse for ListTimeEntryActivities {}
 
 impl ListTimeEntryActivities {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> ListTimeEntryActivitiesBuilder {
         ListTimeEntryActivitiesBuilder::default()
     }
@@ -152,6 +154,7 @@ impl ReturnsJsonResponse for ListDocumentCategories {}
 
 impl ListDocumentCategories {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> ListDocumentCategoriesBuilder {
         ListDocumentCategoriesBuilder::default()
     }

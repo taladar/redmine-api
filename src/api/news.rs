@@ -51,6 +51,7 @@ impl Pageable for ListNews {
 
 impl ListNews {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> ListNewsBuilder {
         ListNewsBuilder::default()
     }
@@ -84,6 +85,7 @@ impl<'a> Pageable for ListProjectNews<'a> {
 
 impl<'a> ListProjectNews<'a> {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> ListProjectNewsBuilder<'a> {
         ListProjectNewsBuilder::default()
     }

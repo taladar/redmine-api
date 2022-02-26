@@ -95,6 +95,7 @@ impl ReturnsJsonResponse for ListRoles {}
 
 impl ListRoles {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> ListRolesBuilder {
         ListRolesBuilder::default()
     }
@@ -122,6 +123,7 @@ impl ReturnsJsonResponse for GetRole {}
 
 impl GetRole {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> GetRoleBuilder {
         GetRoleBuilder::default()
     }

@@ -110,6 +110,10 @@ pub struct ResponsePage<T> {
 
 impl Redmine {
     /// create a [Redmine] object
+    ///
+    /// # Errors
+    ///
+    /// Currently this can not fail but it returns a Result for future proofing the API
     pub fn new(redmine_url: url::Url, api_key: &str) -> Result<Self, crate::Error> {
         let client = Client::new();
 
@@ -125,6 +129,11 @@ impl Redmine {
     ///
     /// REDMINE_API_KEY
     /// REDMINE_URL
+    ///
+    /// # Errors
+    ///
+    /// This will return an error if the environment variables are
+    /// missing or the URL can not be parsed
     pub fn from_env() -> Result<Self, crate::Error> {
         let env_options = envy::from_env::<EnvOptions>()?;
 
@@ -145,6 +154,8 @@ impl Redmine {
     ///
     /// this is mostly for convenience since we are already storing the
     /// redmine URL and it works entirely on the client
+    #[must_use]
+    #[allow(clippy::missing_panics_doc)]
     pub fn issue_url(&self, issue_id: u64) -> Url {
         let Redmine { redmine_url, .. } = self;
         // we can unwrap here because we know /issues/<number>
@@ -221,6 +232,11 @@ impl Redmine {
 
     /// use this with endpoints that have no response body, e.g. those just deleting
     /// a Redmine object
+    ///
+    /// # Errors
+    ///
+    /// This can return an error if the endpoint returns an error when creating the request
+    /// body or when the web request fails
     pub fn ignore_response_body<E>(&self, endpoint: &E) -> Result<(), crate::Error>
     where
         E: Endpoint,
@@ -236,6 +252,12 @@ impl Redmine {
     /// use this with endpoints which return a JSON response but do not support pagination
     ///
     /// you can use it with those that support pagination but they will only return the first page
+    ///
+    /// # Errors
+    ///
+    /// This can return an error if the endpoint returns an error when creating the request body,
+    /// when the web request fails or when the response can not be parsed as a JSON object
+    /// into the result type
     pub fn json_response_body<E, R>(&self, endpoint: &E) -> Result<R, crate::Error>
     where
         E: Endpoint + ReturnsJsonResponse,
@@ -258,6 +280,12 @@ impl Redmine {
     }
 
     /// use this to get a single page of a paginated JSON response
+    /// # Errors
+    ///
+    /// This can return an error if the endpoint returns an error when creating the
+    /// request body, when the web request fails, when the response can not be parsed
+    /// as a JSON object, when any of the pagination keys or the value key are missing
+    /// in the JSON object or when the values can not be parsed as the result type.
     pub fn json_response_body_page<E, R>(
         &self,
         endpoint: &E,
@@ -324,6 +352,14 @@ impl Redmine {
     }
 
     /// use this to get the results for all pages of a paginated JSON response
+    ///
+    /// # Errors
+    ///
+    /// This can return an error if the endpoint returns an error when creating the
+    /// request body, when any of the web requests fails, when the response can not be
+    /// parsed as a JSON object, when any of the pagination keys or the value key are missing
+    /// in the JSON object or when the values can not be parsed as the result type.
+    ///
     pub fn json_response_body_all_pages<E, R>(&self, endpoint: &E) -> Result<Vec<R>, crate::Error>
     where
         E: Endpoint + ReturnsJsonResponse + Pageable,
@@ -343,51 +379,47 @@ impl Redmine {
                 self.rest(method.clone(), &url, page_parameters, mime_type_and_body)?;
             if response_body.is_empty() {
                 return Err(crate::Error::EmptyResponseBody(status));
-            } else {
-                let json_value_response_body: serde_json::Value =
-                    serde_json::from_slice(&response_body)?;
-                let json_object_response_body = json_value_response_body.as_object();
-                if let Some(json_object_response_body) = json_object_response_body {
-                    let total_count: u64 = json_object_response_body
-                        .get("total_count")
-                        .ok_or_else(|| {
-                            crate::Error::PaginationKeyMissing("total_count".to_string())
-                        })?
-                        .as_u64()
-                        .ok_or_else(|| {
-                            crate::Error::PaginationKeyHasWrongType("total_count".to_string())
-                        })?;
-                    let response_offset: u64 = json_object_response_body
-                        .get("offset")
-                        .ok_or_else(|| crate::Error::PaginationKeyMissing("offset".to_string()))?
-                        .as_u64()
-                        .ok_or_else(|| {
-                            crate::Error::PaginationKeyHasWrongType("total_count".to_string())
-                        })?;
-                    let response_limit: u64 = json_object_response_body
-                        .get("limit")
-                        .ok_or_else(|| crate::Error::PaginationKeyMissing("limit".to_string()))?
-                        .as_u64()
-                        .ok_or_else(|| {
-                            crate::Error::PaginationKeyHasWrongType("total_count".to_string())
-                        })?;
-                    let response_wrapper_key = endpoint.response_wrapper_key();
-                    let inner_response_body = json_object_response_body
-                        .get(&response_wrapper_key)
-                        .ok_or(crate::Error::PaginationKeyMissing(response_wrapper_key))?;
-                    let result = serde_json::from_value::<Vec<R>>(inner_response_body.to_owned());
-                    if let Ok(ref parsed_response_body) = result {
-                        trace!(%total_count, %offset, %limit, "Parsed response body:\n{:?}", parsed_response_body);
-                    }
-                    total_results.extend(result?);
-                    if total_count < (response_offset + response_limit) {
-                        break;
-                    } else {
-                        offset += limit;
-                    }
-                } else {
-                    return Err(crate::Error::NonObjectResponseBody(status));
+            }
+            let json_value_response_body: serde_json::Value =
+                serde_json::from_slice(&response_body)?;
+            let json_object_response_body = json_value_response_body.as_object();
+            if let Some(json_object_response_body) = json_object_response_body {
+                let total_count: u64 = json_object_response_body
+                    .get("total_count")
+                    .ok_or_else(|| crate::Error::PaginationKeyMissing("total_count".to_string()))?
+                    .as_u64()
+                    .ok_or_else(|| {
+                        crate::Error::PaginationKeyHasWrongType("total_count".to_string())
+                    })?;
+                let response_offset: u64 = json_object_response_body
+                    .get("offset")
+                    .ok_or_else(|| crate::Error::PaginationKeyMissing("offset".to_string()))?
+                    .as_u64()
+                    .ok_or_else(|| {
+                        crate::Error::PaginationKeyHasWrongType("total_count".to_string())
+                    })?;
+                let response_limit: u64 = json_object_response_body
+                    .get("limit")
+                    .ok_or_else(|| crate::Error::PaginationKeyMissing("limit".to_string()))?
+                    .as_u64()
+                    .ok_or_else(|| {
+                        crate::Error::PaginationKeyHasWrongType("total_count".to_string())
+                    })?;
+                let response_wrapper_key = endpoint.response_wrapper_key();
+                let inner_response_body = json_object_response_body
+                    .get(&response_wrapper_key)
+                    .ok_or(crate::Error::PaginationKeyMissing(response_wrapper_key))?;
+                let result = serde_json::from_value::<Vec<R>>(inner_response_body.to_owned());
+                if let Ok(ref parsed_response_body) = result {
+                    trace!(%total_count, %offset, %limit, "Parsed response body:\n{:?}", parsed_response_body);
                 }
+                total_results.extend(result?);
+                if total_count < (response_offset + response_limit) {
+                    break;
+                }
+                offset += limit;
+            } else {
+                return Err(crate::Error::NonObjectResponseBody(status));
             }
         }
         Ok(total_results)
@@ -565,6 +597,10 @@ pub trait Endpoint {
     /// The body for the endpoint.
     ///
     /// Returns the `Content-Encoding` header for the data as well as the data itself.
+    ///
+    /// # Errors
+    ///
+    /// The default implementation will never return an error
     fn body(&self) -> Result<Option<(&'static str, Vec<u8>)>, crate::Error> {
         Ok(None)
     }
@@ -581,6 +617,11 @@ pub trait Pageable {
 
 /// helper to parse created_on and updated_on in the correct format
 /// (default time serde implementation seems to use a different format)
+///
+/// # Errors
+///
+/// This will return an error if the underlying string can not be deserialized or
+/// can not be parsed as an RFC3339 date and time
 pub fn deserialize_rfc3339<'de, D>(deserializer: D) -> Result<time::OffsetDateTime, D::Error>
 where
     D: serde::Deserializer<'de>,
@@ -593,6 +634,11 @@ where
 
 /// helper to serialize created_on and updated_on in the correct format
 /// (default time serde implementation seems to use a different format)
+///
+/// # Errors
+///
+/// This will return an error if the date time can not be formatted as an RFC3339
+/// date time or the resulting string can not be serialized
 pub fn serialize_rfc3339<S>(t: &time::OffsetDateTime, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: serde::Serializer,
@@ -606,6 +652,11 @@ where
 
 /// helper to parse created_on and updated_on in the correct format
 /// (default time serde implementation seems to use a different format)
+///
+/// # Errors
+///
+/// This will return an error if the underlying string can not be deserialized
+/// or it can not be parsed as an RFC3339 date and time
 pub fn deserialize_optional_rfc3339<'de, D>(
     deserializer: D,
 ) -> Result<Option<time::OffsetDateTime>, D::Error>
@@ -626,6 +677,11 @@ where
 
 /// helper to serialize created_on and updated_on in the correct format
 /// (default time serde implementation seems to use a different format)
+///
+/// # Errors
+///
+/// This will return an error if the parameter can not be formatted as RFC3339
+/// or the resulting string can not be serialized
 pub fn serialize_optional_rfc3339<S>(
     t: &Option<time::OffsetDateTime>,
     serializer: S,

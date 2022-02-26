@@ -98,6 +98,7 @@ impl<'a> Pageable for ListTimeEntries<'a> {
 
 impl<'a> ListTimeEntries<'a> {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> ListTimeEntriesBuilder<'a> {
         ListTimeEntriesBuilder::default()
     }
@@ -137,6 +138,7 @@ impl ReturnsJsonResponse for GetTimeEntry {}
 
 impl<'a> GetTimeEntry {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> GetTimeEntryBuilder {
         GetTimeEntryBuilder::default()
     }
@@ -194,6 +196,7 @@ impl<'a> CreateTimeEntryBuilder<'a> {
 
 impl<'a> CreateTimeEntry<'a> {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> CreateTimeEntryBuilder<'a> {
         CreateTimeEntryBuilder::default()
     }
@@ -251,6 +254,7 @@ pub struct UpdateTimeEntry<'a> {
 
 impl<'a> UpdateTimeEntry<'a> {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> UpdateTimeEntryBuilder<'a> {
         UpdateTimeEntryBuilder::default()
     }
@@ -285,6 +289,7 @@ pub struct DeleteTimeEntry {
 
 impl DeleteTimeEntry {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> DeleteTimeEntryBuilder {
         DeleteTimeEntryBuilder::default()
     }

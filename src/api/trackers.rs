@@ -48,6 +48,7 @@ impl ReturnsJsonResponse for ListTrackers {}
 
 impl ListTrackers {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> ListTrackersBuilder {
         ListTrackersBuilder::default()
     }

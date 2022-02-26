@@ -75,6 +75,7 @@ impl<'a> ReturnsJsonResponse for ListVersions<'a> {}
 
 impl<'a> ListVersions<'a> {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> ListVersionsBuilder<'a> {
         ListVersionsBuilder::default()
     }
@@ -102,6 +103,7 @@ impl ReturnsJsonResponse for GetVersion {}
 
 impl<'a> GetVersion {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> GetVersionBuilder {
         GetVersionBuilder::default()
     }
@@ -179,6 +181,7 @@ impl<'a> ReturnsJsonResponse for CreateVersion<'a> {}
 
 impl<'a> CreateVersion<'a> {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> CreateVersionBuilder<'a> {
         CreateVersionBuilder::default()
     }
@@ -233,6 +236,7 @@ pub struct UpdateVersion<'a> {
 
 impl<'a> UpdateVersion<'a> {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> UpdateVersionBuilder<'a> {
         UpdateVersionBuilder::default()
     }
@@ -267,6 +271,7 @@ pub struct DeleteVersion {
 
 impl DeleteVersion {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> DeleteVersionBuilder {
         DeleteVersionBuilder::default()
     }

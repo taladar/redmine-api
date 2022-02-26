@@ -53,6 +53,7 @@ impl<'a> ReturnsJsonResponse for GetAttachment {}
 
 impl<'a> GetAttachment {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> GetAttachmentBuilder {
         GetAttachmentBuilder::default()
     }
@@ -78,6 +79,7 @@ pub struct DeleteAttachment {
 
 impl DeleteAttachment {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> DeleteAttachmentBuilder {
         DeleteAttachmentBuilder::default()
     }

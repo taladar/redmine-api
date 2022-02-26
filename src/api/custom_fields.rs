@@ -300,6 +300,7 @@ impl ReturnsJsonResponse for ListCustomFields {}
 
 impl ListCustomFields {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> ListCustomFieldsBuilder {
         ListCustomFieldsBuilder::default()
     }

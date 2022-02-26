@@ -48,6 +48,7 @@ impl<'a> ReturnsJsonResponse for UploadFile<'a> {}
 
 impl<'a> UploadFile<'a> {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> UploadFileBuilder<'a> {
         UploadFileBuilder::default()
     }

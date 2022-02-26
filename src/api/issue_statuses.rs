@@ -42,6 +42,7 @@ impl<'a> ReturnsJsonResponse for ListIssueStatuses {}
 
 impl ListIssueStatuses {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> ListIssueStatusesBuilder {
         ListIssueStatusesBuilder::default()
     }

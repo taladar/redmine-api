@@ -41,6 +41,7 @@ impl Pageable for ListQueries {
 
 impl ListQueries {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> ListQueriesBuilder {
         ListQueriesBuilder::default()
     }

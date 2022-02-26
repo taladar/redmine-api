@@ -6,6 +6,20 @@ use crate::api::projects::{
     test::PROJECT_LOCK, CreateProject, DeleteProject, GetProject, Project, ProjectWrapper,
 };
 
+/// Create a project for testing and then call the function with the project
+/// id and name and then cleans up the project in both the error and the ok
+/// cases with a finally block
+///
+/// # Errors
+///
+/// This returns an error when it can not create the Redmine object from
+/// environment variables, can not create the project or when the function
+/// passed in fails
+///
+/// # Panics
+///
+/// This panics if deleting the project fails since we can not really return
+/// errors from the finally block
 pub fn with_project<F>(name: &str, f: F) -> Result<(), Box<dyn Error>>
 where
     F: FnOnce(&crate::api::Redmine, u64, &str) -> Result<(), Box<dyn Error>>,
@@ -31,7 +45,7 @@ where
         let delete_endpoint = DeleteProject::builder()
             .project_id_or_name(name)
             .build()
-            .unwrap_or_else(|_| panic!("Building delete enedpoint for project {} failed", name));
+            .unwrap_or_else(|_| panic!("Building delete endpoint for project {} failed", name));
         redmine
             .ignore_response_body::<_>(&delete_endpoint)
             .unwrap_or_else(|_| panic!("Delete project {} failed", name));
@@ -42,6 +56,20 @@ where
     Ok(())
 }
 
+/// Creates a group for testing, calls the function with the group id and name
+/// and then cleans up the group in both the ok and error case with a finally
+/// block
+///
+/// # Errors
+///
+/// This returns an error when it can not create the Redmine object from
+/// environment variables, can not create the group or when the function
+/// passed in fails
+///
+/// # Panics
+///
+/// This panics if deleting the group fails since we can not really return
+/// errors from the finally block
 pub fn with_group<F>(name: &str, f: F) -> Result<(), Box<dyn Error>>
 where
     F: FnOnce(&crate::api::Redmine, u64, &str) -> Result<(), Box<dyn Error>>,

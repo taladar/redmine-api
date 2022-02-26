@@ -159,6 +159,7 @@ impl Pageable for ListProjects {
 
 impl ListProjects {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> ListProjectsBuilder {
         ListProjectsBuilder::default()
     }
@@ -228,6 +229,7 @@ impl<'a> ReturnsJsonResponse for GetProject<'a> {}
 
 impl<'a> GetProject<'a> {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> GetProjectBuilder<'a> {
         GetProjectBuilder::default()
     }
@@ -260,6 +262,7 @@ pub struct ArchiveProject<'a> {
 
 impl<'a> ArchiveProject<'a> {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> ArchiveProjectBuilder<'a> {
         ArchiveProjectBuilder::default()
     }
@@ -286,6 +289,7 @@ pub struct UnarchiveProject<'a> {
 
 impl<'a> UnarchiveProject<'a> {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> UnarchiveProjectBuilder<'a> {
         UnarchiveProjectBuilder::default()
     }
@@ -351,6 +355,7 @@ impl<'a> ReturnsJsonResponse for CreateProject<'a> {}
 
 impl<'a> CreateProject<'a> {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> CreateProjectBuilder<'a> {
         CreateProjectBuilder::default()
     }
@@ -427,6 +432,7 @@ pub struct UpdateProject<'a> {
 
 impl<'a> UpdateProject<'a> {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> UpdateProjectBuilder<'a> {
         UpdateProjectBuilder::default()
     }
@@ -462,6 +468,7 @@ pub struct DeleteProject<'a> {
 
 impl<'a> DeleteProject<'a> {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> DeleteProjectBuilder<'a> {
         DeleteProjectBuilder::default()
     }

@@ -45,6 +45,7 @@ impl<'a> ReturnsJsonResponse for ListIssueRelations {}
 
 impl<'a> ListIssueRelations {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> ListIssueRelationsBuilder {
         ListIssueRelationsBuilder::default()
     }
@@ -72,6 +73,7 @@ impl<'a> ReturnsJsonResponse for GetIssueRelation {}
 
 impl<'a> GetIssueRelation {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> GetIssueRelationBuilder {
         GetIssueRelationBuilder::default()
     }
@@ -132,6 +134,7 @@ impl<'a> ReturnsJsonResponse for CreateIssueRelation {}
 
 impl<'a> CreateIssueRelation {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> CreateIssueRelationBuilder {
         CreateIssueRelationBuilder::default()
     }
@@ -166,6 +169,7 @@ pub struct DeleteIssueRelation {
 
 impl<'a> DeleteIssueRelation {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> DeleteIssueRelationBuilder {
         DeleteIssueRelationBuilder::default()
     }

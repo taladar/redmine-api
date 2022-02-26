@@ -56,6 +56,7 @@ impl<'a> ReturnsJsonResponse for ListIssueCategories<'a> {}
 
 impl<'a> ListIssueCategories<'a> {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> ListIssueCategoriesBuilder<'a> {
         ListIssueCategoriesBuilder::default()
     }
@@ -83,6 +84,7 @@ impl ReturnsJsonResponse for GetIssueCategory {}
 
 impl<'a> GetIssueCategory {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> GetIssueCategoryBuilder {
         GetIssueCategoryBuilder::default()
     }
@@ -119,6 +121,7 @@ impl<'a> ReturnsJsonResponse for CreateIssueCategory<'a> {}
 
 impl<'a> CreateIssueCategory<'a> {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> CreateIssueCategoryBuilder<'a> {
         CreateIssueCategoryBuilder::default()
     }
@@ -161,6 +164,7 @@ pub struct UpdateIssueCategory<'a> {
 
 impl<'a> UpdateIssueCategory<'a> {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> UpdateIssueCategoryBuilder<'a> {
         UpdateIssueCategoryBuilder::default()
     }
@@ -195,6 +199,7 @@ pub struct DeleteIssueCategory {
 
 impl DeleteIssueCategory {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> DeleteIssueCategoryBuilder {
         DeleteIssueCategoryBuilder::default()
     }

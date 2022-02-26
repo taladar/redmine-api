@@ -80,6 +80,7 @@ impl<'a> Pageable for ListProjectMemberships<'a> {
 
 impl<'a> ListProjectMemberships<'a> {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> ListProjectMembershipsBuilder<'a> {
         ListProjectMembershipsBuilder::default()
     }
@@ -107,6 +108,7 @@ impl ReturnsJsonResponse for GetProjectMembership {}
 
 impl<'a> GetProjectMembership {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> GetProjectMembershipBuilder {
         GetProjectMembershipBuilder::default()
     }
@@ -141,6 +143,7 @@ impl<'a> ReturnsJsonResponse for CreateProjectMembership<'a> {}
 
 impl<'a> CreateProjectMembership<'a> {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> CreateProjectMembershipBuilder<'a> {
         CreateProjectMembershipBuilder::default()
     }
@@ -179,6 +182,7 @@ pub struct UpdateProjectMembership {
 
 impl UpdateProjectMembership {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> UpdateProjectMembershipBuilder {
         UpdateProjectMembershipBuilder::default()
     }
@@ -213,6 +217,7 @@ pub struct DeleteProjectMembership {
 
 impl DeleteProjectMembership {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> DeleteProjectMembershipBuilder {
         DeleteProjectMembershipBuilder::default()
     }

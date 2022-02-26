@@ -678,6 +678,7 @@ impl<'a> Pageable for ListIssues {
 
 impl<'a> ListIssues {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> ListIssuesBuilder {
         ListIssuesBuilder::default()
     }
@@ -809,6 +810,7 @@ impl<'a> ReturnsJsonResponse for GetIssue {}
 
 impl<'a> GetIssue {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> GetIssueBuilder {
         GetIssueBuilder::default()
     }
@@ -909,6 +911,7 @@ pub struct CreateIssue<'a> {
 
 impl<'a> CreateIssue<'a> {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> CreateIssueBuilder<'a> {
         CreateIssueBuilder::default()
     }
@@ -998,6 +1001,7 @@ pub struct UpdateIssue<'a> {
 
 impl<'a> UpdateIssue<'a> {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> UpdateIssueBuilder<'a> {
         UpdateIssueBuilder::default()
     }
@@ -1032,6 +1036,7 @@ pub struct DeleteIssue {
 
 impl DeleteIssue {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> DeleteIssueBuilder {
         DeleteIssueBuilder::default()
     }
@@ -1060,6 +1065,7 @@ pub struct AddWatcher {
 
 impl AddWatcher {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> AddWatcherBuilder {
         AddWatcherBuilder::default()
     }
@@ -1091,6 +1097,7 @@ pub struct RemoveWatcher {
 
 impl RemoveWatcher {
     /// Create a builder for the endpoint.
+    #[must_use]
     pub fn builder() -> RemoveWatcherBuilder {
         RemoveWatcherBuilder::default()
     }

@@ -19,6 +19,12 @@
 #![warn(rustdoc::missing_crate_level_docs)]
 #![deny(rustdoc::broken_intra_doc_links)]
 #![warn(missing_debug_implementations)]
+#![deny(clippy::mod_module_files)]
+//#![warn(clippy::pedantic)]
+#![warn(clippy::redundant_else)]
+#![warn(clippy::must_use_candidate)]
+#![warn(clippy::missing_panics_doc)]
+#![warn(clippy::missing_errors_doc)]
 #![doc = include_str!("../README.md")]
 
 pub mod api;
