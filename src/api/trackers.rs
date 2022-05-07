@@ -16,9 +16,9 @@ use crate::api::{Endpoint, ReturnsJsonResponse};
 #[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct TrackerEssentials {
     /// numeric id
-    id: u64,
+    pub id: u64,
     /// display name
-    name: String,
+    pub name: String,
 }
 
 /// a type for tracker to use as an API return type
