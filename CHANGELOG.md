@@ -1,3 +1,9 @@
+## 0.1.2
+
+## Fixed
+
+Make fields in TrackerEssentials public
+
 ## 0.1.1
 
 ## Fixed
