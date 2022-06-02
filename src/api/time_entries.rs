@@ -173,7 +173,7 @@ pub struct CreateTimeEntry<'a> {
     /// This is required unless there is a default activity defined in Redmine
     #[builder(default)]
     activity_id: Option<u64>,
-    /// Short description for teh entry (255 characters max)
+    /// Short description for the entry (255 characters max)
     #[builder(default)]
     comments: Option<Cow<'a, str>>,
     /// User Id is only required when posting time on behalf of another user, defaults to current user
@@ -244,7 +244,7 @@ pub struct UpdateTimeEntry<'a> {
     /// This is required unless there is a default activity defined in Redmine
     #[builder(default)]
     activity_id: Option<u64>,
-    /// Short description for teh entry (255 characters max)
+    /// Short description for the entry (255 characters max)
     #[builder(default)]
     comments: Option<Cow<'a, str>>,
     /// User Id is only required when posting time on behalf of another user, defaults to current user

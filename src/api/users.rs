@@ -548,7 +548,7 @@ mod test {
     }
 
     // this test causes emails to be sent so we comment it out, mainly it was
-    // meant to check if the send_information attribute is inside or outside teh
+    // meant to check if the send_information attribute is inside or outside the
     // user object in CreateUser (the docs in the wiki say outside and that really
     // seems to be the case)
     // #[function_name::named]

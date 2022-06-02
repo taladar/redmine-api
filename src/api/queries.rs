@@ -27,7 +27,7 @@ pub struct Query {
 
 /// The endpoint to retrieve all queries visible to the current user
 ///
-/// to actualy use them pass the query_id to the ListIssues endpoint
+/// to actually use them pass the query_id to the ListIssues endpoint
 #[derive(Debug, Builder)]
 #[builder(setter(strip_option))]
 pub struct ListQueries {}

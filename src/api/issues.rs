@@ -238,7 +238,7 @@ pub struct Issue {
     pub done_ratio: u64,
     /// custom fields with values
     pub custom_fields: Vec<CustomFieldEssentialsWithValue>,
-    /// estimated hours it will take to implement this isssue
+    /// estimated hours it will take to implement this issue
     pub estimated_hours: Option<f64>,
     /// The time when this issue was created
     #[serde(
@@ -837,7 +837,7 @@ impl Endpoint for GetIssue {
 pub struct CustomField<'a> {
     /// the custom field's id
     id: u64,
-    /// is usually present in contexts where it is returned by Redmine but can be ommitted when it is sent by the client
+    /// is usually present in contexts where it is returned by Redmine but can be omitted when it is sent by the client
     name: Option<Cow<'a, str>>,
     /// the custom field's value
     value: Cow<'a, str>,
@@ -901,7 +901,7 @@ pub struct CreateIssue<'a> {
     /// is the issue private (only visible to roles that have the relevant permission enabled)
     #[builder(default)]
     is_private: Option<bool>,
-    /// estimated hours it will take to implement this isssue
+    /// estimated hours it will take to implement this issue
     #[builder(default)]
     estimated_hours: Option<f64>,
     /// attachments (files)
@@ -985,7 +985,7 @@ pub struct UpdateIssue<'a> {
     /// is the issue private (only visible to roles that have the relevant permission enabled)
     #[builder(default)]
     is_private: Option<bool>,
-    /// estimated hours it will take to implement this isssue
+    /// estimated hours it will take to implement this issue
     #[builder(default)]
     estimated_hours: Option<f64>,
     /// add a comment (note)

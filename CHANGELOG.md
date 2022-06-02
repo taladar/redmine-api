@@ -1,3 +1,8 @@
+## 0.1.3
+
+Fix typo TimeEntryActvity -> TimeEntryActivity
+Fix typos in comments
+
 ## 0.1.2
 
 ## Fixed

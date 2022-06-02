@@ -81,7 +81,7 @@ pub struct TimeEntryActivityEssentials {
 ///
 /// alternatively you can use your own type limited to the fields you need
 #[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
-pub struct TimeEntryActvity {
+pub struct TimeEntryActivity {
     /// numeric id
     pub id: u64,
     /// display name
@@ -199,7 +199,8 @@ mod test {
         dotenv::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListTimeEntryActivities::builder().build()?;
-        redmine.json_response_body::<_, TimeEntryActivitiesWrapper<TimeEntryActvity>>(&endpoint)?;
+        redmine
+            .json_response_body::<_, TimeEntryActivitiesWrapper<TimeEntryActivity>>(&endpoint)?;
         Ok(())
     }
 

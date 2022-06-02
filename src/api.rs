@@ -462,7 +462,7 @@ impl<'a> ParamValue<'a> for &'a String {
 }
 
 /// serialize a [Vec<T>] where T implements [ToString] as a string
-/// of comma-seperated values
+/// of comma-separated values
 impl<T> ParamValue<'static> for Vec<T>
 where
     T: ToString,
@@ -477,7 +477,7 @@ where
 }
 
 /// serialize a [`&Vec<T>`](Vec<T>) where T implements [ToString] as a string
-/// of comma-seperated values
+/// of comma-separated values
 impl<'a, T> ParamValue<'a> for &'a Vec<T>
 where
     T: ToString,

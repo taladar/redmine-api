@@ -9,8 +9,8 @@ be possible without too much effort if necessary.
 
 Most API endpoints are supported and each supported API endpoint is tested with
 at least one unit test though at this early stage I do make no stability
-guarrantees with regards to parameters that might need to be changed slightly
-to accomodate variants of the API endpoint I missed (e.g. different filters I
+guarantees with regards to parameters that might need to be changed slightly
+to accommodate variants of the API endpoint I missed (e.g. different filters I
 am not aware of, the documentation on the Redmine wiki is far from complete).
 
 Any such changes should not take a lot of effort when changing a client when
@@ -129,7 +129,7 @@ pagination.
 
 Since pagination queries always have an outer wrapper object which contain
 the pagination keys (total\_count, offset, limit) which have to be parsed
-anyway the explicit use of a Wrapper object is not requried on pagination
+anyway the explicit use of a Wrapper object is not required on pagination
 queries.
 
 However the call does require the offset and limit parameters and the response
