@@ -95,6 +95,7 @@ use std::borrow::Cow;
 use crate::api::attachments::Attachment;
 use crate::api::custom_fields::CustomFieldEssentialsWithValue;
 use crate::api::enumerations::IssuePriorityEssentials;
+use crate::api::groups::{Group, GroupEssentials};
 use crate::api::issue_categories::IssueCategoryEssentials;
 use crate::api::issue_relations::IssueRelation;
 use crate::api::issue_statuses::IssueStatusEssentials;
@@ -115,12 +116,45 @@ pub struct AssigneeEssentials {
     pub name: String,
 }
 
+impl From<UserEssentials> for AssigneeEssentials {
+    fn from(v: UserEssentials) -> Self {
+        AssigneeEssentials {
+            id: v.id,
+            name: v.name,
+        }
+    }
+}
+
+impl From<GroupEssentials> for AssigneeEssentials {
+    fn from(v: GroupEssentials) -> Self {
+        AssigneeEssentials {
+            id: v.id,
+            name: v.name,
+        }
+    }
+}
+
+impl From<Group> for AssigneeEssentials {
+    fn from(v: Group) -> Self {
+        AssigneeEssentials {
+            id: v.id,
+            name: v.name,
+        }
+    }
+}
+
 /// a minimal type for Redmine issues included in
 /// other Redmine objects
 #[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct IssueEssentials {
     /// numeric id
     pub id: u64,
+}
+
+impl From<Issue> for IssueEssentials {
+    fn from(v: Issue) -> Self {
+        IssueEssentials { id: v.id }
+    }
 }
 
 /// the type of journal change

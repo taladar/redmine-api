@@ -42,6 +42,15 @@ pub struct ProjectEssentials {
     pub name: String,
 }
 
+impl From<Project> for ProjectEssentials {
+    fn from(v: Project) -> Self {
+        ProjectEssentials {
+            id: v.id,
+            name: v.name,
+        }
+    }
+}
+
 /// a type for projects to use as an API return type
 ///
 /// alternatively you can use your own type limited to the fields you need

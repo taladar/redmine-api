@@ -1,3 +1,7 @@
+## 0.1.4
+
+Add From implementations for the Essentials types from the respective full types where possible
+
 ## 0.1.3
 
 Fix typo TimeEntryActvity -> TimeEntryActivity

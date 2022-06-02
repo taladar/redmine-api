@@ -22,6 +22,15 @@ pub struct IssuePriorityEssentials {
     pub name: String,
 }
 
+impl From<IssuePriority> for IssuePriorityEssentials {
+    fn from(v: IssuePriority) -> Self {
+        IssuePriorityEssentials {
+            id: v.id,
+            name: v.name,
+        }
+    }
+}
+
 /// a type for issue priority to use as an API return type
 ///
 /// alternatively you can use your own type limited to the fields you need
@@ -77,6 +86,15 @@ pub struct TimeEntryActivityEssentials {
     pub name: String,
 }
 
+impl From<TimeEntryActivity> for TimeEntryActivityEssentials {
+    fn from(v: TimeEntryActivity) -> Self {
+        TimeEntryActivityEssentials {
+            id: v.id,
+            name: v.name,
+        }
+    }
+}
+
 /// a type for time entry activity to use as an API return type
 ///
 /// alternatively you can use your own type limited to the fields you need
@@ -130,6 +148,15 @@ pub struct DocumentCategoryEssentials {
     pub id: u64,
     /// display name
     pub name: String,
+}
+
+impl From<DocumentCategory> for DocumentCategoryEssentials {
+    fn from(v: DocumentCategory) -> Self {
+        DocumentCategoryEssentials {
+            id: v.id,
+            name: v.name,
+        }
+    }
 }
 
 /// a type for document category to use as an API return type

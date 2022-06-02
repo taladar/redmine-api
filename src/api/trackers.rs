@@ -21,6 +21,15 @@ pub struct TrackerEssentials {
     pub name: String,
 }
 
+impl From<Tracker> for TrackerEssentials {
+    fn from(v: Tracker) -> Self {
+        TrackerEssentials {
+            id: v.id,
+            name: v.name,
+        }
+    }
+}
+
 /// a type for tracker to use as an API return type
 ///
 /// alternatively you can use your own type limited to the fields you need
