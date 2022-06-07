@@ -209,6 +209,7 @@ impl std::fmt::Display for UserInclude {
 #[builder(setter(strip_option))]
 pub struct GetUser {
     /// User id to fetch, if not specified will fetch the current user
+    #[builder(default)]
     id: Option<u64>,
     /// Include associated data
     #[builder(default)]
