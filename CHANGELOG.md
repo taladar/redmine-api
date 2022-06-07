@@ -1,3 +1,7 @@
+## 0.1.5
+
+Add From implementations for shared references for all existing From implementations
+
 ## 0.1.4
 
 Add From implementations for the Essentials types from the respective full types where possible

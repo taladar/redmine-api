@@ -35,6 +35,15 @@ impl From<Version> for VersionEssentials {
     }
 }
 
+impl From<&Version> for VersionEssentials {
+    fn from(v: &Version) -> Self {
+        VersionEssentials {
+            id: v.id,
+            name: v.name.to_owned(),
+        }
+    }
+}
+
 /// a type for version to use as an API return type
 ///
 /// alternatively you can use your own type limited to the fields you need

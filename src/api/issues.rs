@@ -125,6 +125,15 @@ impl From<UserEssentials> for AssigneeEssentials {
     }
 }
 
+impl From<&UserEssentials> for AssigneeEssentials {
+    fn from(v: &UserEssentials) -> Self {
+        AssigneeEssentials {
+            id: v.id,
+            name: v.name.to_owned(),
+        }
+    }
+}
+
 impl From<GroupEssentials> for AssigneeEssentials {
     fn from(v: GroupEssentials) -> Self {
         AssigneeEssentials {
@@ -134,11 +143,29 @@ impl From<GroupEssentials> for AssigneeEssentials {
     }
 }
 
+impl From<&GroupEssentials> for AssigneeEssentials {
+    fn from(v: &GroupEssentials) -> Self {
+        AssigneeEssentials {
+            id: v.id,
+            name: v.name.to_owned(),
+        }
+    }
+}
+
 impl From<Group> for AssigneeEssentials {
     fn from(v: Group) -> Self {
         AssigneeEssentials {
             id: v.id,
             name: v.name,
+        }
+    }
+}
+
+impl From<&Group> for AssigneeEssentials {
+    fn from(v: &Group) -> Self {
+        AssigneeEssentials {
+            id: v.id,
+            name: v.name.to_owned(),
         }
     }
 }
@@ -153,6 +180,12 @@ pub struct IssueEssentials {
 
 impl From<Issue> for IssueEssentials {
     fn from(v: Issue) -> Self {
+        IssueEssentials { id: v.id }
+    }
+}
+
+impl From<&Issue> for IssueEssentials {
+    fn from(v: &Issue) -> Self {
         IssueEssentials { id: v.id }
     }
 }

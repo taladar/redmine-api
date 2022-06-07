@@ -31,6 +31,15 @@ impl From<IssuePriority> for IssuePriorityEssentials {
     }
 }
 
+impl From<&IssuePriority> for IssuePriorityEssentials {
+    fn from(v: &IssuePriority) -> Self {
+        IssuePriorityEssentials {
+            id: v.id,
+            name: v.name.to_owned(),
+        }
+    }
+}
+
 /// a type for issue priority to use as an API return type
 ///
 /// alternatively you can use your own type limited to the fields you need
@@ -95,6 +104,15 @@ impl From<TimeEntryActivity> for TimeEntryActivityEssentials {
     }
 }
 
+impl From<&TimeEntryActivity> for TimeEntryActivityEssentials {
+    fn from(v: &TimeEntryActivity) -> Self {
+        TimeEntryActivityEssentials {
+            id: v.id,
+            name: v.name.to_owned(),
+        }
+    }
+}
+
 /// a type for time entry activity to use as an API return type
 ///
 /// alternatively you can use your own type limited to the fields you need
@@ -155,6 +173,15 @@ impl From<DocumentCategory> for DocumentCategoryEssentials {
         DocumentCategoryEssentials {
             id: v.id,
             name: v.name,
+        }
+    }
+}
+
+impl From<&DocumentCategory> for DocumentCategoryEssentials {
+    fn from(v: &DocumentCategory) -> Self {
+        DocumentCategoryEssentials {
+            id: v.id,
+            name: v.name.to_owned(),
         }
     }
 }

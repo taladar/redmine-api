@@ -36,6 +36,15 @@ impl From<IssueCategory> for IssueCategoryEssentials {
     }
 }
 
+impl From<&IssueCategory> for IssueCategoryEssentials {
+    fn from(v: &IssueCategory) -> Self {
+        IssueCategoryEssentials {
+            id: v.id,
+            name: v.name.to_owned(),
+        }
+    }
+}
+
 /// a type for issue categories to use as an API return type
 ///
 /// alternatively you can use your own type limited to the fields you need

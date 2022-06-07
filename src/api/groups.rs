@@ -38,6 +38,15 @@ impl From<Group> for GroupEssentials {
     }
 }
 
+impl From<&Group> for GroupEssentials {
+    fn from(v: &Group) -> Self {
+        GroupEssentials {
+            id: v.id,
+            name: v.name.to_owned(),
+        }
+    }
+}
+
 /// a type for groups to use as an API return type
 ///
 /// alternatively you can use your own type limited to the fields you need

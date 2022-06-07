@@ -29,6 +29,15 @@ impl From<IssueStatus> for IssueStatusEssentials {
     }
 }
 
+impl From<&IssueStatus> for IssueStatusEssentials {
+    fn from(v: &IssueStatus) -> Self {
+        IssueStatusEssentials {
+            id: v.id,
+            name: v.name.to_owned(),
+        }
+    }
+}
+
 /// a type for issue status to use as an API return type
 ///
 /// alternatively you can use your own type limited to the fields you need

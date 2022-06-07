@@ -51,6 +51,15 @@ impl From<Project> for ProjectEssentials {
     }
 }
 
+impl From<&Project> for ProjectEssentials {
+    fn from(v: &Project) -> Self {
+        ProjectEssentials {
+            id: v.id,
+            name: v.name.to_owned(),
+        }
+    }
+}
+
 /// a type for projects to use as an API return type
 ///
 /// alternatively you can use your own type limited to the fields you need
