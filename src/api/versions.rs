@@ -119,7 +119,7 @@ pub struct GetVersion {
 
 impl ReturnsJsonResponse for GetVersion {}
 
-impl<'a> GetVersion {
+impl GetVersion {
     /// Create a builder for the endpoint.
     #[must_use]
     pub fn builder() -> GetVersionBuilder {
@@ -127,7 +127,7 @@ impl<'a> GetVersion {
     }
 }
 
-impl<'a> Endpoint for GetVersion {
+impl Endpoint for GetVersion {
     fn method(&self) -> Method {
         Method::GET
     }
@@ -295,7 +295,7 @@ impl DeleteVersion {
     }
 }
 
-impl<'a> Endpoint for DeleteVersion {
+impl Endpoint for DeleteVersion {
     fn method(&self) -> Method {
         Method::DELETE
     }

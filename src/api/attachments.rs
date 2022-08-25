@@ -49,9 +49,9 @@ pub struct GetAttachment {
     id: u64,
 }
 
-impl<'a> ReturnsJsonResponse for GetAttachment {}
+impl ReturnsJsonResponse for GetAttachment {}
 
-impl<'a> GetAttachment {
+impl GetAttachment {
     /// Create a builder for the endpoint.
     #[must_use]
     pub fn builder() -> GetAttachmentBuilder {
@@ -85,7 +85,7 @@ impl DeleteAttachment {
     }
 }
 
-impl<'a> Endpoint for DeleteAttachment {
+impl Endpoint for DeleteAttachment {
     fn method(&self) -> Method {
         Method::DELETE
     }

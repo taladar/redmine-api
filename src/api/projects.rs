@@ -183,7 +183,7 @@ impl ListProjects {
     }
 }
 
-impl<'a> Endpoint for ListProjects {
+impl Endpoint for ListProjects {
     fn method(&self) -> Method {
         Method::GET
     }

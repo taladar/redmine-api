@@ -100,7 +100,7 @@ pub struct GetIssueCategory {
 
 impl ReturnsJsonResponse for GetIssueCategory {}
 
-impl<'a> GetIssueCategory {
+impl GetIssueCategory {
     /// Create a builder for the endpoint.
     #[must_use]
     pub fn builder() -> GetIssueCategoryBuilder {
@@ -108,7 +108,7 @@ impl<'a> GetIssueCategory {
     }
 }
 
-impl<'a> Endpoint for GetIssueCategory {
+impl Endpoint for GetIssueCategory {
     fn method(&self) -> Method {
         Method::GET
     }
@@ -223,7 +223,7 @@ impl DeleteIssueCategory {
     }
 }
 
-impl<'a> Endpoint for DeleteIssueCategory {
+impl Endpoint for DeleteIssueCategory {
     fn method(&self) -> Method {
         Method::DELETE
     }

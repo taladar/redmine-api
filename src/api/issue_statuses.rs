@@ -16,6 +16,9 @@ use crate::api::{Endpoint, ReturnsJsonResponse};
 pub struct IssueStatusEssentials {
     /// numeric id
     pub id: u64,
+    /// is this status consided closed, only included in recent Redmine versions
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub is_closed: Option<bool>,
     /// display name
     pub name: String,
 }
@@ -24,6 +27,7 @@ impl From<IssueStatus> for IssueStatusEssentials {
     fn from(v: IssueStatus) -> Self {
         IssueStatusEssentials {
             id: v.id,
+            is_closed: Some(v.is_closed),
             name: v.name,
         }
     }
@@ -33,6 +37,7 @@ impl From<&IssueStatus> for IssueStatusEssentials {
     fn from(v: &IssueStatus) -> Self {
         IssueStatusEssentials {
             id: v.id,
+            is_closed: Some(v.is_closed),
             name: v.name.to_owned(),
         }
     }
@@ -56,7 +61,7 @@ pub struct IssueStatus {
 #[builder(setter(strip_option))]
 pub struct ListIssueStatuses {}
 
-impl<'a> ReturnsJsonResponse for ListIssueStatuses {}
+impl ReturnsJsonResponse for ListIssueStatuses {}
 
 impl ListIssueStatuses {
     /// Create a builder for the endpoint.
@@ -66,7 +71,7 @@ impl ListIssueStatuses {
     }
 }
 
-impl<'a> Endpoint for ListIssueStatuses {
+impl Endpoint for ListIssueStatuses {
     fn method(&self) -> Method {
         Method::GET
     }

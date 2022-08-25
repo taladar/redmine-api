@@ -136,7 +136,7 @@ pub struct GetTimeEntry {
 
 impl ReturnsJsonResponse for GetTimeEntry {}
 
-impl<'a> GetTimeEntry {
+impl GetTimeEntry {
     /// Create a builder for the endpoint.
     #[must_use]
     pub fn builder() -> GetTimeEntryBuilder {
@@ -144,7 +144,7 @@ impl<'a> GetTimeEntry {
     }
 }
 
-impl<'a> Endpoint for GetTimeEntry {
+impl Endpoint for GetTimeEntry {
     fn method(&self) -> Method {
         Method::GET
     }
@@ -295,7 +295,7 @@ impl DeleteTimeEntry {
     }
 }
 
-impl<'a> Endpoint for DeleteTimeEntry {
+impl Endpoint for DeleteTimeEntry {
     fn method(&self) -> Method {
         Method::DELETE
     }

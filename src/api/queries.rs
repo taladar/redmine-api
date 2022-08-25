@@ -47,7 +47,7 @@ impl ListQueries {
     }
 }
 
-impl<'a> Endpoint for ListQueries {
+impl Endpoint for ListQueries {
     fn method(&self) -> Method {
         Method::GET
     }

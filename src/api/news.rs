@@ -57,7 +57,7 @@ impl ListNews {
     }
 }
 
-impl<'a> Endpoint for ListNews {
+impl Endpoint for ListNews {
     fn method(&self) -> Method {
         Method::GET
     }

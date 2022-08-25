@@ -68,7 +68,7 @@ impl ListIssuePriorities {
     }
 }
 
-impl<'a> Endpoint for ListIssuePriorities {
+impl Endpoint for ListIssuePriorities {
     fn method(&self) -> Method {
         Method::GET
     }
@@ -141,7 +141,7 @@ impl ListTimeEntryActivities {
     }
 }
 
-impl<'a> Endpoint for ListTimeEntryActivities {
+impl Endpoint for ListTimeEntryActivities {
     fn method(&self) -> Method {
         Method::GET
     }
@@ -214,7 +214,7 @@ impl ListDocumentCategories {
     }
 }
 
-impl<'a> Endpoint for ListDocumentCategories {
+impl Endpoint for ListDocumentCategories {
     fn method(&self) -> Method {
         Method::GET
     }

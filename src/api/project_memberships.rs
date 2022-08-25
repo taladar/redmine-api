@@ -106,7 +106,7 @@ pub struct GetProjectMembership {
 
 impl ReturnsJsonResponse for GetProjectMembership {}
 
-impl<'a> GetProjectMembership {
+impl GetProjectMembership {
     /// Create a builder for the endpoint.
     #[must_use]
     pub fn builder() -> GetProjectMembershipBuilder {
@@ -114,7 +114,7 @@ impl<'a> GetProjectMembership {
     }
 }
 
-impl<'a> Endpoint for GetProjectMembership {
+impl Endpoint for GetProjectMembership {
     fn method(&self) -> Method {
         Method::GET
     }
@@ -188,7 +188,7 @@ impl UpdateProjectMembership {
     }
 }
 
-impl<'a> Endpoint for UpdateProjectMembership {
+impl Endpoint for UpdateProjectMembership {
     fn method(&self) -> Method {
         Method::PUT
     }
@@ -223,7 +223,7 @@ impl DeleteProjectMembership {
     }
 }
 
-impl<'a> Endpoint for DeleteProjectMembership {
+impl Endpoint for DeleteProjectMembership {
     fn method(&self) -> Method {
         Method::DELETE
     }

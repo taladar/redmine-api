@@ -226,7 +226,7 @@ impl GetUser {
     }
 }
 
-impl<'a> Endpoint for GetUser {
+impl Endpoint for GetUser {
     fn method(&self) -> Method {
         Method::GET
     }
@@ -427,7 +427,7 @@ impl DeleteUser {
     }
 }
 
-impl<'a> Endpoint for DeleteUser {
+impl Endpoint for DeleteUser {
     fn method(&self) -> Method {
         Method::DELETE
     }

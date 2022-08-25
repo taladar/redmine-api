@@ -1,3 +1,9 @@
+## 0.1.7
+
+optional rustls support contributed by Alexander Yekimov <av.yekimov@yandex.ru>
+fix clippy lints about unused lifetimes in impl blocks
+add IssueStatusEssentials field is_closed which seems to be included in recent Redmine versions
+
 ## 0.1.6
 
 Fix missing #[builder(default)] on GetUser id field

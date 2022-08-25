@@ -72,7 +72,7 @@ impl ListTrackers {
     }
 }
 
-impl<'a> Endpoint for ListTrackers {
+impl Endpoint for ListTrackers {
     fn method(&self) -> Method {
         Method::GET
     }

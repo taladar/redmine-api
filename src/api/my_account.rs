@@ -64,7 +64,7 @@ impl GetMyAccount {
     }
 }
 
-impl<'a> Endpoint for GetMyAccount {
+impl Endpoint for GetMyAccount {
     fn method(&self) -> Method {
         Method::GET
     }

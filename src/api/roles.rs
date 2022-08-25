@@ -101,7 +101,7 @@ impl ListRoles {
     }
 }
 
-impl<'a> Endpoint for ListRoles {
+impl Endpoint for ListRoles {
     fn method(&self) -> Method {
         Method::GET
     }
@@ -129,7 +129,7 @@ impl GetRole {
     }
 }
 
-impl<'a> Endpoint for GetRole {
+impl Endpoint for GetRole {
     fn method(&self) -> Method {
         Method::GET
     }

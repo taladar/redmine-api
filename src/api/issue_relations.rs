@@ -41,9 +41,9 @@ pub struct ListIssueRelations {
     issue_id: u64,
 }
 
-impl<'a> ReturnsJsonResponse for ListIssueRelations {}
+impl ReturnsJsonResponse for ListIssueRelations {}
 
-impl<'a> ListIssueRelations {
+impl ListIssueRelations {
     /// Create a builder for the endpoint.
     #[must_use]
     pub fn builder() -> ListIssueRelationsBuilder {
@@ -51,7 +51,7 @@ impl<'a> ListIssueRelations {
     }
 }
 
-impl<'a> Endpoint for ListIssueRelations {
+impl Endpoint for ListIssueRelations {
     fn method(&self) -> Method {
         Method::GET
     }
@@ -69,9 +69,9 @@ pub struct GetIssueRelation {
     id: u64,
 }
 
-impl<'a> ReturnsJsonResponse for GetIssueRelation {}
+impl ReturnsJsonResponse for GetIssueRelation {}
 
-impl<'a> GetIssueRelation {
+impl GetIssueRelation {
     /// Create a builder for the endpoint.
     #[must_use]
     pub fn builder() -> GetIssueRelationBuilder {
@@ -79,7 +79,7 @@ impl<'a> GetIssueRelation {
     }
 }
 
-impl<'a> Endpoint for GetIssueRelation {
+impl Endpoint for GetIssueRelation {
     fn method(&self) -> Method {
         Method::GET
     }
@@ -130,9 +130,9 @@ pub struct CreateIssueRelation {
     delay: Option<u64>,
 }
 
-impl<'a> ReturnsJsonResponse for CreateIssueRelation {}
+impl ReturnsJsonResponse for CreateIssueRelation {}
 
-impl<'a> CreateIssueRelation {
+impl CreateIssueRelation {
     /// Create a builder for the endpoint.
     #[must_use]
     pub fn builder() -> CreateIssueRelationBuilder {
@@ -140,7 +140,7 @@ impl<'a> CreateIssueRelation {
     }
 }
 
-impl<'a> Endpoint for CreateIssueRelation {
+impl Endpoint for CreateIssueRelation {
     fn method(&self) -> Method {
         Method::POST
     }
@@ -167,7 +167,7 @@ pub struct DeleteIssueRelation {
     id: u64,
 }
 
-impl<'a> DeleteIssueRelation {
+impl DeleteIssueRelation {
     /// Create a builder for the endpoint.
     #[must_use]
     pub fn builder() -> DeleteIssueRelationBuilder {
@@ -175,7 +175,7 @@ impl<'a> DeleteIssueRelation {
     }
 }
 
-impl<'a> Endpoint for DeleteIssueRelation {
+impl Endpoint for DeleteIssueRelation {
     fn method(&self) -> Method {
         Method::DELETE
     }

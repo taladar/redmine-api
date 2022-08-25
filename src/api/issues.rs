@@ -735,15 +735,15 @@ pub struct ListIssues {
     due_date: Option<ComparableFilter<time::Date>>,
 }
 
-impl<'a> ReturnsJsonResponse for ListIssues {}
+impl ReturnsJsonResponse for ListIssues {}
 
-impl<'a> Pageable for ListIssues {
+impl Pageable for ListIssues {
     fn response_wrapper_key(&self) -> String {
         "issues".to_string()
     }
 }
 
-impl<'a> ListIssues {
+impl ListIssues {
     /// Create a builder for the endpoint.
     #[must_use]
     pub fn builder() -> ListIssuesBuilder {
@@ -751,7 +751,7 @@ impl<'a> ListIssues {
     }
 }
 
-impl<'a> Endpoint for ListIssues {
+impl Endpoint for ListIssues {
     fn method(&self) -> Method {
         Method::GET
     }
@@ -873,9 +873,9 @@ pub struct GetIssue {
     include: Option<Vec<IssueInclude>>,
 }
 
-impl<'a> ReturnsJsonResponse for GetIssue {}
+impl ReturnsJsonResponse for GetIssue {}
 
-impl<'a> GetIssue {
+impl GetIssue {
     /// Create a builder for the endpoint.
     #[must_use]
     pub fn builder() -> GetIssueBuilder {
@@ -1109,7 +1109,7 @@ impl DeleteIssue {
     }
 }
 
-impl<'a> Endpoint for DeleteIssue {
+impl Endpoint for DeleteIssue {
     fn method(&self) -> Method {
         Method::DELETE
     }
@@ -1138,7 +1138,7 @@ impl AddWatcher {
     }
 }
 
-impl<'a> Endpoint for AddWatcher {
+impl Endpoint for AddWatcher {
     fn method(&self) -> Method {
         Method::POST
     }
@@ -1170,7 +1170,7 @@ impl RemoveWatcher {
     }
 }
 
-impl<'a> Endpoint for RemoveWatcher {
+impl Endpoint for RemoveWatcher {
     fn method(&self) -> Method {
         Method::DELETE
     }

@@ -79,7 +79,7 @@ impl ListGroups {
     }
 }
 
-impl<'a> Endpoint for ListGroups {
+impl Endpoint for ListGroups {
     fn method(&self) -> Method {
         Method::GET
     }
@@ -132,7 +132,7 @@ impl GetGroup {
     }
 }
 
-impl<'a> Endpoint for GetGroup {
+impl Endpoint for GetGroup {
     fn method(&self) -> Method {
         Method::GET
     }
@@ -247,7 +247,7 @@ impl DeleteGroup {
     }
 }
 
-impl<'a> Endpoint for DeleteGroup {
+impl Endpoint for DeleteGroup {
     fn method(&self) -> Method {
         Method::DELETE
     }
@@ -276,7 +276,7 @@ impl AddUserToGroup {
     }
 }
 
-impl<'a> Endpoint for AddUserToGroup {
+impl Endpoint for AddUserToGroup {
     fn method(&self) -> Method {
         Method::POST
     }
@@ -308,7 +308,7 @@ impl RemoveUserFromGroup {
     }
 }
 
-impl<'a> Endpoint for RemoveUserFromGroup {
+impl Endpoint for RemoveUserFromGroup {
     fn method(&self) -> Method {
         Method::DELETE
     }

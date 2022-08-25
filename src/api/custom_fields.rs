@@ -306,7 +306,7 @@ impl ListCustomFields {
     }
 }
 
-impl<'a> Endpoint for ListCustomFields {
+impl Endpoint for ListCustomFields {
     fn method(&self) -> Method {
         Method::GET
     }
