@@ -113,9 +113,12 @@ impl Redmine {
     ///
     /// # Errors
     ///
-    /// Currently this can not fail but it returns a Result for future proofing the API
+    /// This will return [`crate::Error::ReqwestError`] if initialization of Reqwest client is failed.
     pub fn new(redmine_url: url::Url, api_key: &str) -> Result<Self, crate::Error> {
+        #[cfg(not(feature = "rustls-tls"))]
         let client = Client::new();
+        #[cfg(feature = "rustls-tls")]
+        let client = Client::builder().use_rustls_tls().build()?;
 
         Ok(Self {
             client,

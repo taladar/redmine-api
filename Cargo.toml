@@ -11,6 +11,9 @@ categories = [ "api-bindings" ]
 edition = "2021"
 exclude = [ ".env", "tarpaulin-report.html", "tarpaulin-report.json" ]
 
+[features]
+rustls-tls = ["reqwest/rustls-tls"]
+
 [profile.release]
 # do not strip debug info from release builds, useful for debugging those, cargo-flamegraph profiling or similar use cases
 debug = true
@@ -34,7 +37,7 @@ version = "0.1.34"
 features = [ "log" ]
 
 [dependencies.reqwest]
-version = "0.11.10"
+version = "0.11"
 features = [ "blocking", "json" ]
 
 [dependencies.time]
