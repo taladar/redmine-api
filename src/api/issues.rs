@@ -304,7 +304,8 @@ pub struct Issue {
     /// the percentage done
     pub done_ratio: u64,
     /// custom fields with values
-    pub custom_fields: Vec<CustomFieldEssentialsWithValue>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub custom_fields: Option<Vec<CustomFieldEssentialsWithValue>>,
     /// estimated hours it will take to implement this issue
     pub estimated_hours: Option<f64>,
     /// The time when this issue was created

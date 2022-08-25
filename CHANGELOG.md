@@ -1,3 +1,7 @@
+## 0.1.8
+
+make issues custom_fields optional
+
 ## 0.1.7
 
 optional rustls support contributed by Alexander Yekimov <av.yekimov@yandex.ru>
