@@ -480,7 +480,7 @@ mod test {
     #[test]
     fn test_list_users_no_pagination() -> Result<(), Box<dyn Error>> {
         let _r_user = USER_LOCK.read();
-        dotenv::dotenv()?;
+        dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListUsers::builder().build()?;
         redmine.json_response_body::<_, UsersWrapper<User>>(&endpoint)?;
@@ -491,7 +491,7 @@ mod test {
     #[test]
     fn test_list_users_first_page() -> Result<(), Box<dyn Error>> {
         let _r_user = USER_LOCK.read();
-        dotenv::dotenv()?;
+        dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListUsers::builder().build()?;
         redmine.json_response_body_page::<_, User>(&endpoint, 0, 25)?;
@@ -502,7 +502,7 @@ mod test {
     #[test]
     fn test_list_users_all_pages() -> Result<(), Box<dyn Error>> {
         let _r_user = USER_LOCK.read();
-        dotenv::dotenv()?;
+        dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListUsers::builder().build()?;
         redmine.json_response_body_all_pages::<_, User>(&endpoint)?;
@@ -513,7 +513,7 @@ mod test {
     #[test]
     fn test_get_user() -> Result<(), Box<dyn Error>> {
         let _r_user = USER_LOCK.read();
-        dotenv::dotenv()?;
+        dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = GetUser::builder().id(1).build()?;
         redmine.json_response_body::<_, UserWrapper<User>>(&endpoint)?;
@@ -526,7 +526,7 @@ mod test {
     fn test_create_user() -> Result<(), Box<dyn Error>> {
         let _w_user = USER_LOCK.write();
         let name = format!("unittest_{}", function_name!());
-        dotenv::dotenv()?;
+        dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let list_endpoint = ListUsers::builder().name(name.clone()).build()?;
         let UsersWrapper { users } =
@@ -558,7 +558,7 @@ mod test {
     // fn test_create_user_send_account_info() -> Result<(), Box<dyn Error>> {
     //     let _w_user = USER_LOCK.write();
     //     let name = format!("unittest_{}", function_name!());
-    //     dotenv::dotenv()?;
+    //     dotenvy::dotenv()?;
     //     let redmine = crate::api::Redmine::from_env()?;
     //     let list_endpoint = ListUsers::builder().name(name.clone()).build()?;
     //     let UsersWrapper { users } =
@@ -591,7 +591,7 @@ mod test {
     // fn test_create_admin_user() -> Result<(), Box<dyn Error>> {
     //     let _w_user = USER_LOCK.write();
     //     let name = format!("unittest_{}", function_name!());
-    //     dotenv::dotenv()?;
+    //     dotenvy::dotenv()?;
     //     let redmine = crate::api::Redmine::from_env()?;
     //     let list_endpoint = ListUsers::builder().name(name.clone()).build()?;
     //     let UsersWrapper { users } =
@@ -620,7 +620,7 @@ mod test {
     fn test_update_user() -> Result<(), Box<dyn Error>> {
         let _w_user = USER_LOCK.write();
         let name = format!("unittest_{}", function_name!());
-        dotenv::dotenv()?;
+        dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let list_endpoint = ListUsers::builder().name(name.clone()).build()?;
         let UsersWrapper { users } =
@@ -655,7 +655,7 @@ mod test {
     #[test]
     fn test_completeness_user_type() -> Result<(), Box<dyn Error>> {
         let _r_user = USER_LOCK.read();
-        dotenv::dotenv()?;
+        dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListUsers::builder().build()?;
         let UsersWrapper { users: values } =
@@ -679,7 +679,7 @@ mod test {
     #[test]
     fn test_completeness_user_type_all_pages_all_user_details() -> Result<(), Box<dyn Error>> {
         let _r_user = USER_LOCK.read();
-        dotenv::dotenv()?;
+        dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListUsers::builder().build()?;
         let users = redmine.json_response_body_all_pages::<_, User>(&endpoint)?;

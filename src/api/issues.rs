@@ -1213,7 +1213,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_no_pagination() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.read();
-        dotenv::dotenv()?;
+        dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListIssues::builder().build()?;
         redmine.json_response_body::<_, IssuesWrapper<Issue>>(&endpoint)?;
@@ -1224,7 +1224,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_first_page() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.read();
-        dotenv::dotenv()?;
+        dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListIssues::builder().build()?;
         redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
@@ -1239,7 +1239,7 @@ pub(crate) mod test {
     #[ignore]
     fn test_list_issues_all_pages() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.read();
-        dotenv::dotenv()?;
+        dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListIssues::builder().build()?;
         redmine.json_response_body_all_pages::<_, Issue>(&endpoint)?;
@@ -1250,7 +1250,7 @@ pub(crate) mod test {
     #[test]
     fn test_get_issue() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.read();
-        dotenv::dotenv()?;
+        dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = GetIssue::builder().id(40000).build()?;
         redmine.json_response_body::<_, IssueWrapper<Issue>>(&endpoint)?;
@@ -1325,7 +1325,7 @@ pub(crate) mod test {
     #[test]
     fn test_completeness_issue_type() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.read();
-        dotenv::dotenv()?;
+        dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListIssues::builder()
             .include(vec![
@@ -1356,7 +1356,7 @@ pub(crate) mod test {
     #[ignore]
     fn test_completeness_issue_type_all_pages() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.read();
-        dotenv::dotenv()?;
+        dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListIssues::builder()
             .include(vec![
@@ -1387,7 +1387,7 @@ pub(crate) mod test {
     #[ignore]
     fn test_completeness_issue_type_all_pages_all_issue_details() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.read();
-        dotenv::dotenv()?;
+        dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListIssues::builder()
             .include(vec![

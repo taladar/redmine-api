@@ -99,7 +99,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_trackers_no_pagination() -> Result<(), Box<dyn Error>> {
-        dotenv::dotenv()?;
+        dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListTrackers::builder().build()?;
         redmine.json_response_body::<_, TrackersWrapper<Tracker>>(&endpoint)?;
@@ -113,7 +113,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_completeness_tracker_type() -> Result<(), Box<dyn Error>> {
-        dotenv::dotenv()?;
+        dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListTrackers::builder().build()?;
         let TrackersWrapper { trackers: values } =

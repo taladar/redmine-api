@@ -3,7 +3,7 @@ name = "redmine-api"
 description = "API for the Redmine issue tracker"
 readme = "README.md"
 license = "MIT OR Apache-2.0"
-version = "0.1.8"
+version = "0.1.9"
 authors = ["Matthias Hörmann <mhoermann@gmail.com>"]
 repository = "https://github.com/taladar/redmine-api"
 keywords = [ "redmine", "api" ]
@@ -49,8 +49,8 @@ version = "1.0.137"
 features = [ "derive" ]
 
 [dev-dependencies]
-pretty_assertions= "1.2.1"
-dotenv= "0.15.0"
+pretty_assertions= "1.3.0"
+dotenvy= "0.15.6"
 tracing-test= "0.2.1"
 function_name= "0.2.1"
 finally-block= "0.2.0"

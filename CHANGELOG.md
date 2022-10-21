@@ -1,3 +1,9 @@
+## 0.1.9
+
+Fix SPDX license expression
+Replace dotenv (unmaintained) with dotenvy
+Update dependencies
+
 ## 0.1.8
 
 make issues custom_fields optional

@@ -265,7 +265,7 @@ mod test {
     #[test]
     fn test_list_project_memberships_no_pagination() -> Result<(), Box<dyn Error>> {
         let _r_project_memberships = PROJECT_MEMBERSHIP_LOCK.read();
-        dotenv::dotenv()?;
+        dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListProjectMemberships::builder()
             .project_id_or_name("sandbox")
@@ -278,7 +278,7 @@ mod test {
     #[test]
     fn test_list_project_memberships_first_page() -> Result<(), Box<dyn Error>> {
         let _r_project_memberships = PROJECT_MEMBERSHIP_LOCK.read();
-        dotenv::dotenv()?;
+        dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListProjectMemberships::builder()
             .project_id_or_name("sandbox")
@@ -291,7 +291,7 @@ mod test {
     #[test]
     fn test_list_project_memberships_all_pages() -> Result<(), Box<dyn Error>> {
         let _r_project_memberships = PROJECT_MEMBERSHIP_LOCK.read();
-        dotenv::dotenv()?;
+        dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListProjectMemberships::builder()
             .project_id_or_name("sandbox")
@@ -304,7 +304,7 @@ mod test {
     #[test]
     fn test_get_project_membership() -> Result<(), Box<dyn Error>> {
         let _r_project_memberships = PROJECT_MEMBERSHIP_LOCK.read();
-        dotenv::dotenv()?;
+        dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = GetProjectMembership::builder().id(238).build()?;
         redmine.json_response_body::<_, MembershipWrapper<ProjectMembership>>(&endpoint)?;
@@ -362,7 +362,7 @@ mod test {
     #[test]
     fn test_completeness_project_membership_type() -> Result<(), Box<dyn Error>> {
         let _r_project_memberships = PROJECT_MEMBERSHIP_LOCK.read();
-        dotenv::dotenv()?;
+        dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListProjectMemberships::builder()
             .project_id_or_name("sandbox")

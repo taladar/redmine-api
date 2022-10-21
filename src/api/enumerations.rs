@@ -240,7 +240,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_issue_priorities_no_pagination() -> Result<(), Box<dyn Error>> {
-        dotenv::dotenv()?;
+        dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListIssuePriorities::builder().build()?;
         redmine.json_response_body::<_, IssuePrioritiesWrapper<IssuePriority>>(&endpoint)?;
@@ -250,7 +250,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_time_entry_activities_no_pagination() -> Result<(), Box<dyn Error>> {
-        dotenv::dotenv()?;
+        dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListTimeEntryActivities::builder().build()?;
         redmine
@@ -261,7 +261,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_document_categories_no_pagination() -> Result<(), Box<dyn Error>> {
-        dotenv::dotenv()?;
+        dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListDocumentCategories::builder().build()?;
         redmine.json_response_body::<_, DocumentCategoriesWrapper<DocumentCategory>>(&endpoint)?;

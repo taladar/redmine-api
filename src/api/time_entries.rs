@@ -336,7 +336,7 @@ mod test {
     #[test]
     fn test_list_time_entries_no_pagination() -> Result<(), Box<dyn Error>> {
         let _r_time_entries = TIME_ENTRY_LOCK.read();
-        dotenv::dotenv()?;
+        dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListTimeEntries::builder().build()?;
         redmine.json_response_body::<_, TimeEntriesWrapper<TimeEntry>>(&endpoint)?;
@@ -347,7 +347,7 @@ mod test {
     #[test]
     fn test_list_time_entries_first_page() -> Result<(), Box<dyn Error>> {
         let _r_time_entries = TIME_ENTRY_LOCK.read();
-        dotenv::dotenv()?;
+        dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListTimeEntries::builder().build()?;
         redmine.json_response_body_page::<_, TimeEntry>(&endpoint, 0, 25)?;
@@ -360,7 +360,7 @@ mod test {
     // #[ignore]
     // fn test_list_time_entries_all_pages() -> Result<(), Box<dyn Error>> {
     //     let _r_time_entries = TIME_ENTRY_LOCK.read();
-    //     dotenv::dotenv()?;
+    //     dotenvy::dotenv()?;
     //     let redmine = crate::api::Redmine::from_env()?;
     //     let endpoint = ListTimeEntries::builder().build()?;
     //     redmine.json_response_body_all_pages::<_, TimeEntry>(&endpoint)?;
@@ -371,7 +371,7 @@ mod test {
     #[test]
     fn test_get_time_entry() -> Result<(), Box<dyn Error>> {
         let _r_time_entries = TIME_ENTRY_LOCK.read();
-        dotenv::dotenv()?;
+        dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = GetTimeEntry::builder().id(832).build()?;
         redmine.json_response_body::<_, TimeEntryWrapper<TimeEntry>>(&endpoint)?;
@@ -382,7 +382,7 @@ mod test {
     #[test]
     fn test_create_time_entry() -> Result<(), Box<dyn Error>> {
         let _w_time_entries = TIME_ENTRY_LOCK.write();
-        dotenv::dotenv()?;
+        dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let create_endpoint = super::CreateTimeEntry::builder()
             .issue_id(25095)
@@ -397,7 +397,7 @@ mod test {
     #[test]
     fn test_update_time_entry() -> Result<(), Box<dyn Error>> {
         let _w_time_entries = TIME_ENTRY_LOCK.write();
-        dotenv::dotenv()?;
+        dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let create_endpoint = super::CreateTimeEntry::builder()
             .issue_id(25095)
@@ -422,7 +422,7 @@ mod test {
     #[test]
     fn test_completeness_time_entry_type() -> Result<(), Box<dyn Error>> {
         let _r_time_entries = TIME_ENTRY_LOCK.read();
-        dotenv::dotenv()?;
+        dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListTimeEntries::builder().build()?;
         let TimeEntriesWrapper {

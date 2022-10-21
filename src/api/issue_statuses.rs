@@ -106,7 +106,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_issue_statuses_no_pagination() -> Result<(), Box<dyn Error>> {
-        dotenv::dotenv()?;
+        dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListIssueStatuses::builder().build()?;
         redmine.json_response_body::<_, IssueStatusesWrapper<IssueStatus>>(&endpoint)?;
@@ -120,7 +120,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_completeness_issue_status_type() -> Result<(), Box<dyn Error>> {
-        dotenv::dotenv()?;
+        dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListIssueStatuses::builder().build()?;
         let IssueStatusesWrapper {

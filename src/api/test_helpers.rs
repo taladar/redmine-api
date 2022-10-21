@@ -25,7 +25,7 @@ where
     F: FnOnce(&crate::api::Redmine, u64, &str) -> Result<(), Box<dyn Error>>,
 {
     let _w_projects = PROJECT_LOCK.write();
-    dotenv::dotenv()?;
+    dotenvy::dotenv()?;
     let redmine = crate::api::Redmine::from_env()?;
     let get_endpoint = GetProject::builder().project_id_or_name(name).build()?;
     let get_result = redmine.json_response_body::<_, ProjectWrapper<Project>>(&get_endpoint);
@@ -75,7 +75,7 @@ where
     F: FnOnce(&crate::api::Redmine, u64, &str) -> Result<(), Box<dyn Error>>,
 {
     let _w_groups = GROUP_LOCK.write();
-    dotenv::dotenv()?;
+    dotenvy::dotenv()?;
     let redmine = crate::api::Redmine::from_env()?;
     let create_endpoint = CreateGroup::builder().name(name).build()?;
     let GroupWrapper { group } =

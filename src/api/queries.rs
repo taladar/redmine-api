@@ -74,7 +74,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_queries_no_pagination() -> Result<(), Box<dyn Error>> {
-        dotenv::dotenv()?;
+        dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListQueries::builder().build()?;
         redmine.json_response_body::<_, QueriesWrapper<Query>>(&endpoint)?;
@@ -84,7 +84,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_queries_first_page() -> Result<(), Box<dyn Error>> {
-        dotenv::dotenv()?;
+        dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListQueries::builder().build()?;
         redmine.json_response_body_page::<_, Query>(&endpoint, 0, 25)?;
@@ -94,7 +94,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_queries_all_pages() -> Result<(), Box<dyn Error>> {
-        dotenv::dotenv()?;
+        dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListQueries::builder().build()?;
         redmine.json_response_body_all_pages::<_, Query>(&endpoint)?;
@@ -108,7 +108,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_completeness_query_type() -> Result<(), Box<dyn Error>> {
-        dotenv::dotenv()?;
+        dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListQueries::builder().build()?;
         let QueriesWrapper { queries: values } =

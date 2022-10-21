@@ -112,7 +112,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_get_attachment() -> Result<(), Box<dyn Error>> {
-        dotenv::dotenv()?;
+        dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = GetAttachment::builder().id(3).build()?;
         redmine.json_response_body::<_, AttachmentWrapper<Attachment>>(&endpoint)?;
@@ -126,7 +126,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_completeness_attachment_type() -> Result<(), Box<dyn Error>> {
-        dotenv::dotenv()?;
+        dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = GetAttachment::builder().id(3).build()?;
         let AttachmentWrapper { attachment: value } =

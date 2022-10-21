@@ -118,7 +118,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_news_no_pagination() -> Result<(), Box<dyn Error>> {
-        dotenv::dotenv()?;
+        dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListNews::builder().build()?;
         redmine.json_response_body::<_, NewsWrapper<News>>(&endpoint)?;
@@ -128,7 +128,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_news_first_page() -> Result<(), Box<dyn Error>> {
-        dotenv::dotenv()?;
+        dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListNews::builder().build()?;
         redmine.json_response_body_page::<_, News>(&endpoint, 0, 25)?;
@@ -138,7 +138,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_news_all_pages() -> Result<(), Box<dyn Error>> {
-        dotenv::dotenv()?;
+        dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListNews::builder().build()?;
         redmine.json_response_body_all_pages::<_, News>(&endpoint)?;
@@ -152,7 +152,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_completeness_news_type() -> Result<(), Box<dyn Error>> {
-        dotenv::dotenv()?;
+        dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListNews::builder().build()?;
         let NewsWrapper { news: values } =

@@ -219,7 +219,7 @@ mod test {
     #[test]
     fn test_list_issue_relations_no_pagination() -> Result<(), Box<dyn Error>> {
         let _r_issue_relation = ISSUE_RELATION_LOCK.read();
-        dotenv::dotenv()?;
+        dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListIssueRelations::builder().issue_id(50017).build()?;
         redmine.json_response_body::<_, RelationsWrapper<IssueRelation>>(&endpoint)?;
@@ -230,7 +230,7 @@ mod test {
     #[test]
     fn test_get_issue_relation() -> Result<(), Box<dyn Error>> {
         let _r_issue_relation = ISSUE_RELATION_LOCK.read();
-        dotenv::dotenv()?;
+        dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = GetIssueRelation::builder().id(10).build()?;
         redmine.json_response_body::<_, RelationWrapper<IssueRelation>>(&endpoint)?;
@@ -311,7 +311,7 @@ mod test {
     #[test]
     fn test_completeness_issue_relation_type() -> Result<(), Box<dyn Error>> {
         let _r_issue_relation = ISSUE_RELATION_LOCK.read();
-        dotenv::dotenv()?;
+        dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListIssueRelations::builder().issue_id(50017).build()?;
         let RelationsWrapper { relations: values } =

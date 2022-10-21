@@ -333,7 +333,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_custom_fields_no_pagination() -> Result<(), Box<dyn Error>> {
-        dotenv::dotenv()?;
+        dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListCustomFields::builder().build()?;
         redmine.json_response_body::<_, CustomFieldsWrapper<CustomField>>(&endpoint)?;
@@ -347,7 +347,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_completeness_custom_fields_type() -> Result<(), Box<dyn Error>> {
-        dotenv::dotenv()?;
+        dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListCustomFields::builder().build()?;
         let CustomFieldsWrapper {

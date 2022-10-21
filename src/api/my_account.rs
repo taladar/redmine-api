@@ -85,7 +85,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_get_my_account() -> Result<(), Box<dyn Error>> {
-        dotenv::dotenv()?;
+        dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = GetMyAccount::builder().build()?;
         redmine.json_response_body::<_, UserWrapper<MyAccount>>(&endpoint)?;
@@ -99,7 +99,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_completeness_my_account_type() -> Result<(), Box<dyn Error>> {
-        dotenv::dotenv()?;
+        dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = GetMyAccount::builder().build()?;
         let UserWrapper { user: value } =
