@@ -25,6 +25,7 @@ use crate::api::projects::ProjectEssentials;
 use crate::api::users::UserEssentials;
 use crate::api::{Endpoint, Pageable, QueryParams, ReturnsJsonResponse};
 use serde::Serialize;
+use crate::api::custom_fields::CustomFieldEssentialsWithValue;
 
 /// a type for time entries to use as an API return type
 ///
@@ -48,6 +49,10 @@ pub struct TimeEntry {
     pub project: Option<ProjectEssentials>,
     /// day the time was spent on
     pub spent_on: Option<time::Date>,
+    /// custom fields with values
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub custom_fields: Option<Vec<CustomFieldEssentialsWithValue>>,
+
     /// The time when this time entry was created
     #[serde(
         serialize_with = "crate::api::serialize_rfc3339",

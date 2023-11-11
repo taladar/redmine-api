@@ -2,7 +2,7 @@
 #![deny(renamed_and_removed_lints)]
 #![forbid(unsafe_code)]
 #![deny(deprecated)]
-#![forbid(private_in_public)]
+// #![forbid(private_in_public)]
 #![forbid(non_fmt_panics)]
 #![deny(unreachable_code)]
 #![deny(unreachable_patterns)]
