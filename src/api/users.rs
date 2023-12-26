@@ -36,7 +36,7 @@ pub struct UserEssentials {
 /// a type for user to use as an API return type
 ///
 /// alternatively you can use your own type limited to the fields you need
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
 pub struct User {
     /// numeric id
     pub id: u64,
