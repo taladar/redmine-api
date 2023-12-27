@@ -34,7 +34,7 @@ pub struct Module {
 
 /// a minimal type for Redmine projects used in lists of projects included in
 /// other Redmine objects (e.g. custom fields)
-#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize, Clone)]
 pub struct ProjectEssentials {
     /// numeric id
     pub id: u64,

@@ -123,7 +123,7 @@ pub struct CustomField {
 
 /// a type for custom field essentials with values used in other Redmine
 /// objects (e.g. issues)
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct CustomFieldEssentialsWithValue {
     /// numeric id
     pub id: u64,

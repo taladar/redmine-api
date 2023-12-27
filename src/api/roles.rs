@@ -14,7 +14,7 @@ use crate::api::{Endpoint, ReturnsJsonResponse};
 /// a minimal type for Redmine roles used in lists of roles included in
 /// other Redmine objects (e.g. custom fields) and also in the global ListRoles
 /// endpoint (unlike most other Redmine API objects)
-#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize, Clone)]
 pub struct RoleEssentials {
     /// numeric id
     id: u64,

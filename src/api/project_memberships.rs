@@ -21,7 +21,7 @@ use serde::Serialize;
 
 /// a minimal type for project memberships to be used in lists of memberships
 /// returned as part of the user
-#[derive(Debug, PartialEq, Eq, Serialize, serde::Deserialize)]
+#[derive(Debug, PartialEq, Eq, Serialize, serde::Deserialize, Clone)]
 pub struct UserProjectMembership {
     /// numeric id
     pub id: u64,

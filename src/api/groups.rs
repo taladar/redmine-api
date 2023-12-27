@@ -21,7 +21,7 @@ use serde::Serialize;
 
 /// a minimal type for Redmine groups used in lists of groups included in
 /// other Redmine objects
-#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize, Clone)]
 pub struct GroupEssentials {
     /// numeric id
     pub id: u64,
