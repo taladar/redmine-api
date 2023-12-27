@@ -19,13 +19,13 @@ use derive_builder::Builder;
 use http::Method;
 use std::borrow::Cow;
 
+use crate::api::custom_fields::CustomFieldEssentialsWithValue;
 use crate::api::enumerations::TimeEntryActivityEssentials;
 use crate::api::issues::IssueEssentials;
 use crate::api::projects::ProjectEssentials;
 use crate::api::users::UserEssentials;
 use crate::api::{Endpoint, Pageable, QueryParams, ReturnsJsonResponse};
 use serde::Serialize;
-use crate::api::custom_fields::CustomFieldEssentialsWithValue;
 
 /// a type for time entries to use as an API return type
 ///
