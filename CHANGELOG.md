@@ -1,3 +1,8 @@
+## 0.1.10
+
+Some extra Clone implementations
+Custom fields in time entries
+
 ## 0.1.9
 
 Fix SPDX license expression
