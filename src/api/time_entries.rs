@@ -16,7 +16,7 @@
 //! - [x] delete time entry endpoint
 
 use derive_builder::Builder;
-use http::Method;
+use reqwest::Method;
 use std::borrow::Cow;
 
 use crate::api::custom_fields::CustomFieldEssentialsWithValue;

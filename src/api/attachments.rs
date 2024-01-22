@@ -7,7 +7,7 @@
 //! - [x] delete attachment endpoint
 
 use derive_builder::Builder;
-use http::Method;
+use reqwest::Method;
 use std::borrow::Cow;
 
 use crate::api::users::UserEssentials;

@@ -12,7 +12,7 @@
 /// or issue attachments
 ///
 use derive_builder::Builder;
-use http::Method;
+use reqwest::Method;
 use std::borrow::Cow;
 use std::io::Read;
 use std::path::PathBuf;

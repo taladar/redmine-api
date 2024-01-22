@@ -52,7 +52,7 @@ use serde::Deserialize;
 use serde::Deserializer;
 use serde::Serialize;
 
-use http::Method;
+use reqwest::Method;
 use std::borrow::Cow;
 
 use reqwest::{blocking::Client, Url};
@@ -170,7 +170,7 @@ impl Redmine {
     /// diff in how they parse the response body and how often they call this
     fn rest(
         &self,
-        method: http::Method,
+        method: reqwest::Method,
         endpoint: &str,
         parameters: QueryParams,
         mime_type_and_body: Option<(&str, Vec<u8>)>,
