@@ -59,15 +59,14 @@ use reqwest::{blocking::Client, Url};
 use tracing::{debug, error, trace};
 
 /// main API client object
-#[derive(derivative::Derivative)]
-#[derivative(Debug)]
+#[derive(derive_more::Debug)]
 pub struct Redmine {
     /// the reqwest client we use to perform our API requests
     client: Client,
     /// the redmine base url
     redmine_url: Url,
     /// a redmine API key, usually 40 hex digits where the letters (a-f) are lower case
-    #[derivative(Debug = "ignore")]
+    #[debug(skip)]
     api_key: String,
     /// the user id we want to impersonate, only works if the API key we use has admin privileges
     impersonate_user_id: Option<u64>,

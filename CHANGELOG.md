@@ -1,3 +1,8 @@
+## 0.2.7
+
+update dependencies
+replace derivative (unmaintained) with derive\_more
+
 ## 0.2.6
 
 update dependencies
