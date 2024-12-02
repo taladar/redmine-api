@@ -44,7 +44,7 @@ pub struct UploadFile<'a> {
     filename: Option<Cow<'a, str>>,
 }
 
-impl<'a> ReturnsJsonResponse for UploadFile<'a> {}
+impl ReturnsJsonResponse for UploadFile<'_> {}
 
 impl<'a> UploadFile<'a> {
     /// Create a builder for the endpoint.
@@ -54,7 +54,7 @@ impl<'a> UploadFile<'a> {
     }
 }
 
-impl<'a> Endpoint for UploadFile<'a> {
+impl Endpoint for UploadFile<'_> {
     fn method(&self) -> Method {
         Method::POST
     }

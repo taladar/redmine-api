@@ -985,9 +985,9 @@ impl<'a> CreateIssue<'a> {
     }
 }
 
-impl<'a> ReturnsJsonResponse for CreateIssue<'a> {}
+impl ReturnsJsonResponse for CreateIssue<'_> {}
 
-impl<'a> Endpoint for CreateIssue<'a> {
+impl Endpoint for CreateIssue<'_> {
     fn method(&self) -> Method {
         Method::POST
     }
@@ -1075,7 +1075,7 @@ impl<'a> UpdateIssue<'a> {
     }
 }
 
-impl<'a> Endpoint for UpdateIssue<'a> {
+impl Endpoint for UpdateIssue<'_> {
     fn method(&self) -> Method {
         Method::PUT
     }

@@ -76,8 +76,8 @@ pub struct ListProjectNews<'a> {
     project_id_or_name: Cow<'a, str>,
 }
 
-impl<'a> ReturnsJsonResponse for ListProjectNews<'a> {}
-impl<'a> Pageable for ListProjectNews<'a> {
+impl ReturnsJsonResponse for ListProjectNews<'_> {}
+impl Pageable for ListProjectNews<'_> {
     fn response_wrapper_key(&self) -> String {
         "news".to_string()
     }
@@ -91,7 +91,7 @@ impl<'a> ListProjectNews<'a> {
     }
 }
 
-impl<'a> Endpoint for ListProjectNews<'a> {
+impl Endpoint for ListProjectNews<'_> {
     fn method(&self) -> Method {
         Method::GET
     }

@@ -89,7 +89,7 @@ pub struct ListVersions<'a> {
     project_id_or_name: Cow<'a, str>,
 }
 
-impl<'a> ReturnsJsonResponse for ListVersions<'a> {}
+impl ReturnsJsonResponse for ListVersions<'_> {}
 
 impl<'a> ListVersions<'a> {
     /// Create a builder for the endpoint.
@@ -99,7 +99,7 @@ impl<'a> ListVersions<'a> {
     }
 }
 
-impl<'a> Endpoint for ListVersions<'a> {
+impl Endpoint for ListVersions<'_> {
     fn method(&self) -> Method {
         Method::GET
     }
@@ -195,7 +195,7 @@ pub struct CreateVersion<'a> {
     wiki_page_title: Option<Cow<'a, str>>,
 }
 
-impl<'a> ReturnsJsonResponse for CreateVersion<'a> {}
+impl ReturnsJsonResponse for CreateVersion<'_> {}
 
 impl<'a> CreateVersion<'a> {
     /// Create a builder for the endpoint.
@@ -205,7 +205,7 @@ impl<'a> CreateVersion<'a> {
     }
 }
 
-impl<'a> Endpoint for CreateVersion<'a> {
+impl Endpoint for CreateVersion<'_> {
     fn method(&self) -> Method {
         Method::POST
     }
@@ -260,7 +260,7 @@ impl<'a> UpdateVersion<'a> {
     }
 }
 
-impl<'a> Endpoint for UpdateVersion<'a> {
+impl Endpoint for UpdateVersion<'_> {
     fn method(&self) -> Method {
         Method::PUT
     }

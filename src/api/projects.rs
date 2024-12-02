@@ -243,7 +243,7 @@ pub struct GetProject<'a> {
     include: Option<Vec<ProjectInclude>>,
 }
 
-impl<'a> ReturnsJsonResponse for GetProject<'a> {}
+impl ReturnsJsonResponse for GetProject<'_> {}
 
 impl<'a> GetProject<'a> {
     /// Create a builder for the endpoint.
@@ -253,7 +253,7 @@ impl<'a> GetProject<'a> {
     }
 }
 
-impl<'a> Endpoint for GetProject<'a> {
+impl Endpoint for GetProject<'_> {
     fn method(&self) -> Method {
         Method::GET
     }
@@ -286,7 +286,7 @@ impl<'a> ArchiveProject<'a> {
     }
 }
 
-impl<'a> Endpoint for ArchiveProject<'a> {
+impl Endpoint for ArchiveProject<'_> {
     fn method(&self) -> Method {
         Method::PUT
     }
@@ -313,7 +313,7 @@ impl<'a> UnarchiveProject<'a> {
     }
 }
 
-impl<'a> Endpoint for UnarchiveProject<'a> {
+impl Endpoint for UnarchiveProject<'_> {
     fn method(&self) -> Method {
         Method::PUT
     }
@@ -369,7 +369,7 @@ pub struct CreateProject<'a> {
     custom_field_values: Option<HashMap<u64, Cow<'a, str>>>,
 }
 
-impl<'a> ReturnsJsonResponse for CreateProject<'a> {}
+impl ReturnsJsonResponse for CreateProject<'_> {}
 
 impl<'a> CreateProject<'a> {
     /// Create a builder for the endpoint.
@@ -379,7 +379,7 @@ impl<'a> CreateProject<'a> {
     }
 }
 
-impl<'a> Endpoint for CreateProject<'a> {
+impl Endpoint for CreateProject<'_> {
     fn method(&self) -> Method {
         Method::POST
     }
@@ -456,7 +456,7 @@ impl<'a> UpdateProject<'a> {
     }
 }
 
-impl<'a> Endpoint for UpdateProject<'a> {
+impl Endpoint for UpdateProject<'_> {
     fn method(&self) -> Method {
         Method::PUT
     }
@@ -492,7 +492,7 @@ impl<'a> DeleteProject<'a> {
     }
 }
 
-impl<'a> Endpoint for DeleteProject<'a> {
+impl Endpoint for DeleteProject<'_> {
     fn method(&self) -> Method {
         Method::DELETE
     }

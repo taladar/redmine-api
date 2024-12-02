@@ -70,7 +70,7 @@ pub struct ListIssueCategories<'a> {
     project_id_or_name: Cow<'a, str>,
 }
 
-impl<'a> ReturnsJsonResponse for ListIssueCategories<'a> {}
+impl ReturnsJsonResponse for ListIssueCategories<'_> {}
 
 impl<'a> ListIssueCategories<'a> {
     /// Create a builder for the endpoint.
@@ -80,7 +80,7 @@ impl<'a> ListIssueCategories<'a> {
     }
 }
 
-impl<'a> Endpoint for ListIssueCategories<'a> {
+impl Endpoint for ListIssueCategories<'_> {
     fn method(&self) -> Method {
         Method::GET
     }
@@ -135,7 +135,7 @@ pub struct CreateIssueCategory<'a> {
     assigned_to_id: Option<u64>,
 }
 
-impl<'a> ReturnsJsonResponse for CreateIssueCategory<'a> {}
+impl ReturnsJsonResponse for CreateIssueCategory<'_> {}
 
 impl<'a> CreateIssueCategory<'a> {
     /// Create a builder for the endpoint.
@@ -145,7 +145,7 @@ impl<'a> CreateIssueCategory<'a> {
     }
 }
 
-impl<'a> Endpoint for CreateIssueCategory<'a> {
+impl Endpoint for CreateIssueCategory<'_> {
     fn method(&self) -> Method {
         Method::POST
     }
@@ -188,7 +188,7 @@ impl<'a> UpdateIssueCategory<'a> {
     }
 }
 
-impl<'a> Endpoint for UpdateIssueCategory<'a> {
+impl Endpoint for UpdateIssueCategory<'_> {
     fn method(&self) -> Method {
         Method::PUT
     }

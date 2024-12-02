@@ -94,8 +94,8 @@ pub struct ListTimeEntries<'a> {
     to: Option<time::Date>,
 }
 
-impl<'a> ReturnsJsonResponse for ListTimeEntries<'a> {}
-impl<'a> Pageable for ListTimeEntries<'a> {
+impl ReturnsJsonResponse for ListTimeEntries<'_> {}
+impl Pageable for ListTimeEntries<'_> {
     fn response_wrapper_key(&self) -> String {
         "time_entries".to_string()
     }
@@ -109,7 +109,7 @@ impl<'a> ListTimeEntries<'a> {
     }
 }
 
-impl<'a> Endpoint for ListTimeEntries<'a> {
+impl Endpoint for ListTimeEntries<'_> {
     fn method(&self) -> Method {
         Method::GET
     }
@@ -186,9 +186,9 @@ pub struct CreateTimeEntry<'a> {
     user_id: Option<u64>,
 }
 
-impl<'a> ReturnsJsonResponse for CreateTimeEntry<'a> {}
+impl ReturnsJsonResponse for CreateTimeEntry<'_> {}
 
-impl<'a> CreateTimeEntryBuilder<'a> {
+impl CreateTimeEntryBuilder<'_> {
     /// ensures that either issue_id or project_id is non-None when [Self::build()] is called
     fn validate(&self) -> Result<(), String> {
         if self.issue_id.is_none() && self.project_id.is_none() {
@@ -207,7 +207,7 @@ impl<'a> CreateTimeEntry<'a> {
     }
 }
 
-impl<'a> Endpoint for CreateTimeEntry<'a> {
+impl Endpoint for CreateTimeEntry<'_> {
     fn method(&self) -> Method {
         Method::POST
     }
@@ -265,7 +265,7 @@ impl<'a> UpdateTimeEntry<'a> {
     }
 }
 
-impl<'a> Endpoint for UpdateTimeEntry<'a> {
+impl Endpoint for UpdateTimeEntry<'_> {
     fn method(&self) -> Method {
         Method::PUT
     }

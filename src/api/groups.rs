@@ -160,7 +160,7 @@ pub struct CreateGroup<'a> {
     user_ids: Option<Vec<u64>>,
 }
 
-impl<'a> ReturnsJsonResponse for CreateGroup<'a> {}
+impl ReturnsJsonResponse for CreateGroup<'_> {}
 
 impl<'a> CreateGroup<'a> {
     /// Create a builder for the endpoint.
@@ -170,7 +170,7 @@ impl<'a> CreateGroup<'a> {
     }
 }
 
-impl<'a> Endpoint for CreateGroup<'a> {
+impl Endpoint for CreateGroup<'_> {
     fn method(&self) -> Method {
         Method::POST
     }
@@ -212,7 +212,7 @@ impl<'a> UpdateGroup<'a> {
     }
 }
 
-impl<'a> Endpoint for UpdateGroup<'a> {
+impl Endpoint for UpdateGroup<'_> {
     fn method(&self) -> Method {
         Method::PUT
     }

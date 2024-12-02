@@ -3,7 +3,7 @@ name = "redmine-api"
 description = "API for the Redmine issue tracker"
 readme = "README.md"
 license = "MIT OR Apache-2.0"
-version = "0.2.7"
+version = "0.2.8"
 authors = ["Matthias Hörmann <mhoermann@gmail.com>"]
 repository = "https://github.com/taladar/redmine-api"
 keywords = [ "redmine", "api" ]
@@ -23,17 +23,17 @@ debug = true
 [dependencies]
 thiserror= "2.0.3"
 futures= "0.3.31"
-url= "2.5.3"
-serde_json= "1.0.132"
+url= "2.5.4"
+serde_json= "1.0.133"
 serde_with= "3.11.0"
 envy= "0.4.2"
 http= "1.1.0"
 derive_builder= "0.20.2"
-bytes= "1.8.0"
+bytes= "1.9.0"
 derive_more = { version = "1.0.0", features = ["debug"] }
 
 [dependencies.tracing]
-version = "0.1.40"
+version = "0.1.41"
 features = [ "log" ]
 
 [dependencies.reqwest]

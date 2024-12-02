@@ -149,8 +149,8 @@ pub struct ListUsers<'a> {
     group_id: Option<u64>,
 }
 
-impl<'a> ReturnsJsonResponse for ListUsers<'a> {}
-impl<'a> Pageable for ListUsers<'a> {
+impl ReturnsJsonResponse for ListUsers<'_> {}
+impl Pageable for ListUsers<'_> {
     fn response_wrapper_key(&self) -> String {
         "users".to_string()
     }
@@ -164,7 +164,7 @@ impl<'a> ListUsers<'a> {
     }
 }
 
-impl<'a> Endpoint for ListUsers<'a> {
+impl Endpoint for ListUsers<'_> {
     fn method(&self) -> Method {
         Method::GET
     }
@@ -307,7 +307,7 @@ pub struct CreateUser<'a> {
     admin: Option<bool>,
 }
 
-impl<'a> ReturnsJsonResponse for CreateUser<'a> {}
+impl ReturnsJsonResponse for CreateUser<'_> {}
 
 impl<'a> CreateUser<'a> {
     /// Create a builder for the endpoint.
@@ -317,7 +317,7 @@ impl<'a> CreateUser<'a> {
     }
 }
 
-impl<'a> Endpoint for CreateUser<'a> {
+impl Endpoint for CreateUser<'_> {
     fn method(&self) -> Method {
         Method::POST
     }
@@ -391,7 +391,7 @@ impl<'a> UpdateUser<'a> {
     }
 }
 
-impl<'a> Endpoint for UpdateUser<'a> {
+impl Endpoint for UpdateUser<'_> {
     fn method(&self) -> Method {
         Method::PUT
     }

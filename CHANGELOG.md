@@ -1,3 +1,7 @@
+## 0.2.8
+
+update depedencies
+
 ## 0.2.7
 
 update dependencies

@@ -1,3 +1,4 @@
+//! Helpers for testing, mainly for setup and teardown
 use std::error::Error;
 use tracing::trace;
 

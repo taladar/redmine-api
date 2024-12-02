@@ -71,8 +71,8 @@ pub struct ListProjectMemberships<'a> {
     project_id_or_name: Cow<'a, str>,
 }
 
-impl<'a> ReturnsJsonResponse for ListProjectMemberships<'a> {}
-impl<'a> Pageable for ListProjectMemberships<'a> {
+impl ReturnsJsonResponse for ListProjectMemberships<'_> {}
+impl Pageable for ListProjectMemberships<'_> {
     fn response_wrapper_key(&self) -> String {
         "memberships".to_string()
     }
@@ -86,7 +86,7 @@ impl<'a> ListProjectMemberships<'a> {
     }
 }
 
-impl<'a> Endpoint for ListProjectMemberships<'a> {
+impl Endpoint for ListProjectMemberships<'_> {
     fn method(&self) -> Method {
         Method::GET
     }
@@ -139,7 +139,7 @@ pub struct CreateProjectMembership<'a> {
     role_ids: Vec<u64>,
 }
 
-impl<'a> ReturnsJsonResponse for CreateProjectMembership<'a> {}
+impl ReturnsJsonResponse for CreateProjectMembership<'_> {}
 
 impl<'a> CreateProjectMembership<'a> {
     /// Create a builder for the endpoint.
@@ -149,7 +149,7 @@ impl<'a> CreateProjectMembership<'a> {
     }
 }
 
-impl<'a> Endpoint for CreateProjectMembership<'a> {
+impl Endpoint for CreateProjectMembership<'_> {
     fn method(&self) -> Method {
         Method::POST
     }
