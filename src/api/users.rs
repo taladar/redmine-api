@@ -467,14 +467,14 @@ pub struct UserWrapperWithSendInformation<T> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use parking_lot::{const_rwlock, RwLock};
     use pretty_assertions::assert_eq;
     use std::error::Error;
+    use tokio::sync::RwLock;
     use tracing_test::traced_test;
 
     /// needed so we do not get 404s when listing while
     /// creating/deleting or creating/updating/deleting
-    static USER_LOCK: RwLock<()> = const_rwlock(());
+    static USER_LOCK: RwLock<()> = RwLock::const_new(());
 
     #[traced_test]
     #[test]

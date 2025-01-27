@@ -337,14 +337,14 @@ pub struct GroupWrapper<T> {
 pub(crate) mod test {
     use super::*;
     use crate::api::test_helpers::with_group;
-    use parking_lot::{const_rwlock, RwLock};
     use pretty_assertions::assert_eq;
     use std::error::Error;
+    use tokio::sync::RwLock;
     use tracing_test::traced_test;
 
     /// needed so we do not get 404s when listing while
     /// creating/deleting or creating/updating/deleting
-    pub static GROUP_LOCK: RwLock<()> = const_rwlock(());
+    pub static GROUP_LOCK: RwLock<()> = RwLock::const_new(());
 
     #[traced_test]
     #[test]

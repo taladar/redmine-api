@@ -252,14 +252,14 @@ pub struct IssueCategoryWrapper<T> {
 mod test {
     use super::*;
     use crate::api::test_helpers::with_project;
-    use parking_lot::{const_rwlock, RwLock};
     use pretty_assertions::assert_eq;
     use std::error::Error;
+    use tokio::sync::RwLock;
     use tracing_test::traced_test;
 
     /// needed so we do not get 404s when listing while
     /// creating/deleting or creating/updating/deleting
-    static ISSUE_CATEGORY_LOCK: RwLock<()> = const_rwlock(());
+    static ISSUE_CATEGORY_LOCK: RwLock<()> = RwLock::const_new(());
 
     #[traced_test]
     #[test]

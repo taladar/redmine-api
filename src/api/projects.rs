@@ -521,14 +521,14 @@ pub struct ProjectWrapper<T> {
 pub(crate) mod test {
     use super::*;
     use crate::api::test_helpers::with_project;
-    use parking_lot::{const_rwlock, RwLock};
     use pretty_assertions::assert_eq;
     use std::error::Error;
+    use tokio::sync::RwLock;
     use tracing_test::traced_test;
 
     /// needed so we do not get 404s when listing while
     /// creating/deleting or creating/updating/deleting
-    pub static PROJECT_LOCK: RwLock<()> = const_rwlock(());
+    pub static PROJECT_LOCK: RwLock<()> = RwLock::const_new(());
 
     #[traced_test]
     #[test]
@@ -560,6 +560,45 @@ pub(crate) mod test {
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListProjects::builder().build()?;
         redmine.json_response_body_all_pages::<_, Project>(&endpoint)?;
+        Ok(())
+    }
+
+    #[traced_test]
+    #[tokio::test]
+    async fn test_list_projects_async_no_pagination() -> Result<(), Box<dyn Error>> {
+        let _r_project = PROJECT_LOCK.read();
+        dotenvy::dotenv()?;
+        let redmine = crate::api::RedmineAsync::from_env()?;
+        let endpoint = ListProjects::builder().build()?;
+        redmine
+            .json_response_body::<_, ProjectsWrapper<Project>>(&endpoint)
+            .await?;
+        Ok(())
+    }
+
+    #[traced_test]
+    #[tokio::test]
+    async fn test_list_projects_async_first_page() -> Result<(), Box<dyn Error>> {
+        let _r_project = PROJECT_LOCK.read();
+        dotenvy::dotenv()?;
+        let redmine = crate::api::RedmineAsync::from_env()?;
+        let endpoint = ListProjects::builder().build()?;
+        redmine
+            .json_response_body_page::<_, Project>(&endpoint, 0, 25)
+            .await?;
+        Ok(())
+    }
+
+    #[traced_test]
+    #[tokio::test]
+    async fn test_list_projects_async_all_pages() -> Result<(), Box<dyn Error>> {
+        let _r_project = PROJECT_LOCK.read();
+        dotenvy::dotenv()?;
+        let redmine = crate::api::RedmineAsync::from_env()?;
+        let endpoint = ListProjects::builder().build()?;
+        redmine
+            .json_response_body_all_pages::<_, Project>(&endpoint)
+            .await?;
         Ok(())
     }
 

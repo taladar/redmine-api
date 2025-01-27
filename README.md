@@ -4,8 +4,8 @@ API for the Redmine issue tracker
 
 ## State of this crate
 
-Currently it only supports synchronous requests but async support should
-be possible without too much effort if necessary.
+The crate supports both sync and async usage but the async code is
+significantly newer so it might not be as well tested.
 
 Most API endpoints are supported and each supported API endpoint is tested with
 at least one unit test though at this early stage I do make no stability

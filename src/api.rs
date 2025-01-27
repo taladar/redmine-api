@@ -11,6 +11,7 @@
 //! - [x] add all the wrappers I somehow missed
 //!   - [x] check if admin and send_information truly are not part of the user hash in Create/UpdateUser or if the wiki docs are wrong (admin is, send_information is not)
 //! - [x] test include parameters and add relevant data to the return types
+//! - [x] async support
 //!
 //! Potential breaking changes ahead
 //! - [ ] use Enum for sort column
@@ -18,7 +19,6 @@
 //! - [ ] change project_id_or_name to Enum
 //! - [ ] extra filter expressions I overlooked/did not know about
 //! - [ ] parameters that are more flexible than they appear
-//! - [ ] async support?
 
 pub mod attachments;
 pub mod custom_fields;
@@ -55,14 +55,28 @@ use serde::Serialize;
 use reqwest::Method;
 use std::borrow::Cow;
 
-use reqwest::{blocking::Client, Url};
+use reqwest::Url;
 use tracing::{debug, error, trace};
 
-/// main API client object
+/// main API client object (sync)
 #[derive(derive_more::Debug)]
 pub struct Redmine {
     /// the reqwest client we use to perform our API requests
-    client: Client,
+    client: reqwest::blocking::Client,
+    /// the redmine base url
+    redmine_url: Url,
+    /// a redmine API key, usually 40 hex digits where the letters (a-f) are lower case
+    #[debug(skip)]
+    api_key: String,
+    /// the user id we want to impersonate, only works if the API key we use has admin privileges
+    impersonate_user_id: Option<u64>,
+}
+
+/// main API client object (async)
+#[derive(derive_more::Debug)]
+pub struct RedmineAsync {
+    /// the reqwest client we use to perform our API requests
+    client: reqwest::Client,
     /// the redmine base url
     redmine_url: Url,
     /// a redmine API key, usually 40 hex digits where the letters (a-f) are lower case
@@ -115,9 +129,11 @@ impl Redmine {
     /// This will return [`crate::Error::ReqwestError`] if initialization of Reqwest client is failed.
     pub fn new(redmine_url: url::Url, api_key: &str) -> Result<Self, crate::Error> {
         #[cfg(not(feature = "rustls-tls"))]
-        let client = Client::new();
+        let client = reqwest::blocking::Client::new();
         #[cfg(feature = "rustls-tls")]
-        let client = Client::builder().use_rustls_tls().build()?;
+        let client = reqwest::blocking::Client::builder()
+            .use_rustls_tls()
+            .build()?;
 
         Ok(Self {
             client,
@@ -379,6 +395,336 @@ impl Redmine {
             let mime_type_and_body = endpoint.body()?;
             let (status, response_body) =
                 self.rest(method.clone(), &url, page_parameters, mime_type_and_body)?;
+            if response_body.is_empty() {
+                return Err(crate::Error::EmptyResponseBody(status));
+            }
+            let json_value_response_body: serde_json::Value =
+                serde_json::from_slice(&response_body)?;
+            let json_object_response_body = json_value_response_body.as_object();
+            if let Some(json_object_response_body) = json_object_response_body {
+                let total_count: u64 = json_object_response_body
+                    .get("total_count")
+                    .ok_or_else(|| crate::Error::PaginationKeyMissing("total_count".to_string()))?
+                    .as_u64()
+                    .ok_or_else(|| {
+                        crate::Error::PaginationKeyHasWrongType("total_count".to_string())
+                    })?;
+                let response_offset: u64 = json_object_response_body
+                    .get("offset")
+                    .ok_or_else(|| crate::Error::PaginationKeyMissing("offset".to_string()))?
+                    .as_u64()
+                    .ok_or_else(|| {
+                        crate::Error::PaginationKeyHasWrongType("total_count".to_string())
+                    })?;
+                let response_limit: u64 = json_object_response_body
+                    .get("limit")
+                    .ok_or_else(|| crate::Error::PaginationKeyMissing("limit".to_string()))?
+                    .as_u64()
+                    .ok_or_else(|| {
+                        crate::Error::PaginationKeyHasWrongType("total_count".to_string())
+                    })?;
+                let response_wrapper_key = endpoint.response_wrapper_key();
+                let inner_response_body = json_object_response_body
+                    .get(&response_wrapper_key)
+                    .ok_or(crate::Error::PaginationKeyMissing(response_wrapper_key))?;
+                let result = serde_json::from_value::<Vec<R>>(inner_response_body.to_owned());
+                if let Ok(ref parsed_response_body) = result {
+                    trace!(%total_count, %offset, %limit, "Parsed response body:\n{:?}", parsed_response_body);
+                }
+                total_results.extend(result?);
+                if total_count < (response_offset + response_limit) {
+                    break;
+                }
+                offset += limit;
+            } else {
+                return Err(crate::Error::NonObjectResponseBody(status));
+            }
+        }
+        Ok(total_results)
+    }
+}
+
+impl RedmineAsync {
+    /// create a [RedmineAsync] object
+    ///
+    /// # Errors
+    ///
+    /// This will return [`crate::Error::ReqwestError`] if initialization of Reqwest client is failed.
+    pub fn new(redmine_url: url::Url, api_key: &str) -> Result<Self, crate::Error> {
+        #[cfg(not(feature = "rustls-tls"))]
+        let client = reqwest::Client::new();
+        #[cfg(feature = "rustls-tls")]
+        let client = reqwest::Client::builder().use_rustls_tls().build()?;
+
+        Ok(Self {
+            client,
+            redmine_url,
+            api_key: api_key.to_string(),
+            impersonate_user_id: None,
+        })
+    }
+
+    /// create a [RedmineAsync] object from the environment variables
+    ///
+    /// REDMINE_API_KEY
+    /// REDMINE_URL
+    ///
+    /// # Errors
+    ///
+    /// This will return an error if the environment variables are
+    /// missing or the URL can not be parsed
+    pub fn from_env() -> Result<Self, crate::Error> {
+        let env_options = envy::from_env::<EnvOptions>()?;
+
+        let redmine_url = env_options.redmine_url;
+        let api_key = env_options.redmine_api_key;
+
+        Self::new(redmine_url, &api_key)
+    }
+
+    /// Sets the user id of a user to impersonate in all future API calls
+    ///
+    /// this requires Redmine admin privileges
+    pub fn impersonate_user(&mut self, id: u64) {
+        self.impersonate_user_id = Some(id);
+    }
+
+    /// returns the issue URL for a given issue id
+    ///
+    /// this is mostly for convenience since we are already storing the
+    /// redmine URL and it works entirely on the client
+    #[must_use]
+    #[allow(clippy::missing_panics_doc)]
+    pub fn issue_url(&self, issue_id: u64) -> Url {
+        let RedmineAsync { redmine_url, .. } = self;
+        // we can unwrap here because we know /issues/<number>
+        // parses successfully as an url fragment
+        redmine_url.join(&format!("/issues/{}", issue_id)).unwrap()
+    }
+
+    /// internal method for shared logic between the methods below which
+    /// diff in how they parse the response body and how often they call this
+    async fn rest(
+        &self,
+        method: reqwest::Method,
+        endpoint: &str,
+        parameters: QueryParams<'_>,
+        mime_type_and_body: Option<(&str, Vec<u8>)>,
+    ) -> Result<(reqwest::StatusCode, bytes::Bytes), crate::Error> {
+        let RedmineAsync {
+            client,
+            redmine_url,
+            api_key,
+            impersonate_user_id,
+        } = self;
+        let mut url = redmine_url.join(endpoint)?;
+        parameters.add_to_url(&mut url);
+        debug!(%url, %method, "Calling redmine");
+        let req = client
+            .request(method.clone(), url.clone())
+            .header("x-redmine-api-key", api_key);
+        let req = if let Some(user_id) = impersonate_user_id {
+            req.header("X-Redmine-Switch-User", format!("{}", user_id))
+        } else {
+            req
+        };
+        let req = if let Some((mime, data)) = mime_type_and_body {
+            if let Ok(request_body) = from_utf8(&data) {
+                trace!("Request body (Content-Type: {}):\n{}", mime, request_body);
+            } else {
+                trace!(
+                    "Request body (Content-Type: {}) could not be parsed as UTF-8:\n{:?}",
+                    mime,
+                    data
+                );
+            }
+            req.body(data).header("Content-Type", mime)
+        } else {
+            req
+        };
+        let result = req.send().await;
+        if let Err(ref e) = result {
+            error!(%url, %method, "Redmine send error: {:?}", e);
+        }
+        let result = result?;
+        let status = result.status();
+        let response_body = result.bytes().await?;
+        match from_utf8(&response_body) {
+            Ok(response_body) => {
+                trace!("Response body:\n{}", &response_body);
+            }
+            Err(e) => {
+                trace!(
+                    "Response body that could not be parsed as utf8 because of {}:\n{:?}",
+                    &e,
+                    &response_body
+                );
+            }
+        }
+        if status.is_client_error() {
+            error!(%url, %method, "Redmine status error (client error): {:?}", status);
+        } else if status.is_server_error() {
+            error!(%url, %method, "Redmine status error (server error): {:?}", status);
+        }
+        Ok((status, response_body))
+    }
+
+    /// use this with endpoints that have no response body, e.g. those just deleting
+    /// a Redmine object
+    ///
+    /// # Errors
+    ///
+    /// This can return an error if the endpoint returns an error when creating the request
+    /// body or when the web request fails
+    pub async fn ignore_response_body<E>(&self, endpoint: &E) -> Result<(), crate::Error>
+    where
+        E: Endpoint,
+    {
+        let method = endpoint.method();
+        let url = endpoint.endpoint();
+        let parameters = endpoint.parameters();
+        let mime_type_and_body = endpoint.body()?;
+        self.rest(method, &url, parameters, mime_type_and_body)
+            .await?;
+        Ok(())
+    }
+
+    /// use this with endpoints which return a JSON response but do not support pagination
+    ///
+    /// you can use it with those that support pagination but they will only return the first page
+    ///
+    /// # Errors
+    ///
+    /// This can return an error if the endpoint returns an error when creating the request body,
+    /// when the web request fails or when the response can not be parsed as a JSON object
+    /// into the result type
+    pub async fn json_response_body<E, R>(&self, endpoint: &E) -> Result<R, crate::Error>
+    where
+        E: Endpoint + ReturnsJsonResponse,
+        R: DeserializeOwned + std::fmt::Debug,
+    {
+        let method = endpoint.method();
+        let url = endpoint.endpoint();
+        let parameters = endpoint.parameters();
+        let mime_type_and_body = endpoint.body()?;
+        let (status, response_body) = self
+            .rest(method, &url, parameters, mime_type_and_body)
+            .await?;
+        if response_body.is_empty() {
+            Err(crate::Error::EmptyResponseBody(status))
+        } else {
+            let result = serde_json::from_slice::<R>(&response_body);
+            if let Ok(ref parsed_response_body) = result {
+                trace!("Parsed response body:\n{:#?}", parsed_response_body);
+            }
+            Ok(result?)
+        }
+    }
+
+    /// use this to get a single page of a paginated JSON response
+    /// # Errors
+    ///
+    /// This can return an error if the endpoint returns an error when creating the
+    /// request body, when the web request fails, when the response can not be parsed
+    /// as a JSON object, when any of the pagination keys or the value key are missing
+    /// in the JSON object or when the values can not be parsed as the result type.
+    pub async fn json_response_body_page<E, R>(
+        &self,
+        endpoint: &E,
+        offset: u64,
+        limit: u64,
+    ) -> Result<ResponsePage<R>, crate::Error>
+    where
+        E: Endpoint + ReturnsJsonResponse + Pageable,
+        R: DeserializeOwned + std::fmt::Debug,
+    {
+        let method = endpoint.method();
+        let url = endpoint.endpoint();
+        let mut parameters = endpoint.parameters();
+        parameters.push("offset", offset);
+        parameters.push("limit", limit);
+        let mime_type_and_body = endpoint.body()?;
+        let (status, response_body) = self
+            .rest(method, &url, parameters, mime_type_and_body)
+            .await?;
+        if response_body.is_empty() {
+            Err(crate::Error::EmptyResponseBody(status))
+        } else {
+            let json_value_response_body: serde_json::Value =
+                serde_json::from_slice(&response_body)?;
+            let json_object_response_body = json_value_response_body.as_object();
+            if let Some(json_object_response_body) = json_object_response_body {
+                let total_count = json_object_response_body
+                    .get("total_count")
+                    .ok_or_else(|| crate::Error::PaginationKeyMissing("total_count".to_string()))?
+                    .as_u64()
+                    .ok_or_else(|| {
+                        crate::Error::PaginationKeyHasWrongType("total_count".to_string())
+                    })?;
+                let offset = json_object_response_body
+                    .get("offset")
+                    .ok_or_else(|| crate::Error::PaginationKeyMissing("offset".to_string()))?
+                    .as_u64()
+                    .ok_or_else(|| {
+                        crate::Error::PaginationKeyHasWrongType("total_count".to_string())
+                    })?;
+                let limit = json_object_response_body
+                    .get("limit")
+                    .ok_or_else(|| crate::Error::PaginationKeyMissing("limit".to_string()))?
+                    .as_u64()
+                    .ok_or_else(|| {
+                        crate::Error::PaginationKeyHasWrongType("total_count".to_string())
+                    })?;
+                let response_wrapper_key = endpoint.response_wrapper_key();
+                let inner_response_body = json_object_response_body
+                    .get(&response_wrapper_key)
+                    .ok_or(crate::Error::PaginationKeyMissing(response_wrapper_key))?;
+                let result = serde_json::from_value::<Vec<R>>(inner_response_body.to_owned());
+                if let Ok(ref parsed_response_body) = result {
+                    trace!(%total_count, %offset, %limit, "Parsed response body:\n{:?}", parsed_response_body);
+                }
+                Ok(ResponsePage {
+                    values: result?,
+                    total_count,
+                    offset,
+                    limit,
+                })
+            } else {
+                Err(crate::Error::NonObjectResponseBody(status))
+            }
+        }
+    }
+
+    /// use this to get the results for all pages of a paginated JSON response
+    ///
+    /// # Errors
+    ///
+    /// This can return an error if the endpoint returns an error when creating the
+    /// request body, when any of the web requests fails, when the response can not be
+    /// parsed as a JSON object, when any of the pagination keys or the value key are missing
+    /// in the JSON object or when the values can not be parsed as the result type.
+    ///
+    pub async fn json_response_body_all_pages<E, R>(
+        &self,
+        endpoint: &E,
+    ) -> Result<Vec<R>, crate::Error>
+    where
+        E: Endpoint + ReturnsJsonResponse + Pageable,
+        R: DeserializeOwned + std::fmt::Debug,
+    {
+        let method = endpoint.method();
+        let url = endpoint.endpoint();
+        let mut offset = 0;
+        let limit = 100;
+        let mut total_results = vec![];
+        loop {
+            let mut page_parameters = endpoint.parameters();
+            page_parameters.push("offset", offset);
+            page_parameters.push("limit", limit);
+            let mime_type_and_body = endpoint.body()?;
+            let (status, response_body) = self
+                .rest(method.clone(), &url, page_parameters, mime_type_and_body)
+                .await?;
             if response_body.is_empty() {
                 return Err(crate::Error::EmptyResponseBody(status));
             }
