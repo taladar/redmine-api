@@ -1,3 +1,8 @@
+## 0.2.9
+
+update dependencies
+fix visibility in RoleEssentials (fields were private)
+
 ## 0.2.8
 
 update depedencies

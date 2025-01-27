@@ -17,12 +17,12 @@ use crate::api::{Endpoint, ReturnsJsonResponse};
 #[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize, Clone)]
 pub struct RoleEssentials {
     /// numeric id
-    id: u64,
+    pub id: u64,
     /// display name
-    name: String,
+    pub name: String,
     /// true if this role is inherited from a parent project, used e.g. in project memberships
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    inherited: Option<bool>,
+    pub inherited: Option<bool>,
 }
 
 /// determines which issues are visible to users/group with a role
