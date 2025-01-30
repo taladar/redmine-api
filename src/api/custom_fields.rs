@@ -15,7 +15,7 @@ use crate::api::{Endpoint, ReturnsJsonResponse};
 
 /// Represents the types of objects that can be customized with customized types
 /// in Redmine
-#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum CustomizedType {
     /// Redmine Issues
@@ -39,7 +39,7 @@ pub enum CustomizedType {
 }
 
 /// Describes the format (data type) of a field
-#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum FieldFormat {
     /// true or false
@@ -69,7 +69,7 @@ pub enum FieldFormat {
 }
 
 /// Possible values contain a value and a label
-#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub struct PossibleValue {
     /// label for the value in a select box
@@ -81,7 +81,7 @@ pub struct PossibleValue {
 /// a type for custom fields to use as an API return type
 ///
 /// alternatively you can use your own type limited to the fields you need
-#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct CustomField {
     /// numeric id
     pub id: u64,
@@ -123,7 +123,7 @@ pub struct CustomField {
 
 /// a type for custom field essentials with values used in other Redmine
 /// objects (e.g. issues)
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CustomFieldEssentialsWithValue {
     /// numeric id
     pub id: u64,
@@ -292,7 +292,7 @@ impl<'de> serde::Deserialize<'de> for CustomFieldEssentialsWithValue {
 }
 
 /// The endpoint for all custom fields
-#[derive(Debug, Builder)]
+#[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
 pub struct ListCustomFields {}
 
@@ -317,7 +317,7 @@ impl Endpoint for ListCustomFields {
 }
 
 /// helper struct for outer layers with a custom_fields field holding the inner data
-#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct CustomFieldsWrapper<T> {
     /// to parse JSON with custom_fields key
     pub custom_fields: Vec<T>,

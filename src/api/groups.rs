@@ -21,7 +21,7 @@ use serde::Serialize;
 
 /// a minimal type for Redmine groups used in lists of groups included in
 /// other Redmine objects
-#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct GroupEssentials {
     /// numeric id
     pub id: u64,
@@ -50,7 +50,7 @@ impl From<&Group> for GroupEssentials {
 /// a type for groups to use as an API return type
 ///
 /// alternatively you can use your own type limited to the fields you need
-#[derive(Debug, PartialEq, Eq, Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, serde::Deserialize)]
 pub struct Group {
     /// numeric id
     pub id: u64,
@@ -65,7 +65,7 @@ pub struct Group {
 }
 
 /// The endpoint for all Redmine groups
-#[derive(Debug, Builder)]
+#[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
 pub struct ListGroups {}
 
@@ -112,7 +112,7 @@ impl std::fmt::Display for GroupInclude {
 }
 
 /// The endpoint for a specific Redmine group
-#[derive(Debug, Builder)]
+#[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
 pub struct GetGroup {
     /// id of the group
@@ -232,7 +232,7 @@ impl Endpoint for UpdateGroup<'_> {
 }
 
 /// The endpoint to delete a Redmine group
-#[derive(Debug, Builder)]
+#[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
 pub struct DeleteGroup {
     /// Id of the group to delete
@@ -258,7 +258,7 @@ impl Endpoint for DeleteGroup {
 }
 
 /// The endpoint to add a Redmine user to a Redmine group
-#[derive(Debug, Builder, Serialize)]
+#[derive(Debug, Clone, Builder, Serialize)]
 #[builder(setter(strip_option))]
 pub struct AddUserToGroup {
     /// Group Id to add the user to
@@ -291,7 +291,7 @@ impl Endpoint for AddUserToGroup {
 }
 
 /// The endpoint to remove a Redmine user from a Redmine group
-#[derive(Debug, Builder)]
+#[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
 pub struct RemoveUserFromGroup {
     /// Group Id to remove the user from
@@ -319,7 +319,7 @@ impl Endpoint for RemoveUserFromGroup {
 }
 
 /// helper struct for outer layers with a groups field holding the inner data
-#[derive(Debug, PartialEq, Eq, Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, serde::Deserialize)]
 pub struct GroupsWrapper<T> {
     /// to parse JSON with groups key
     pub groups: Vec<T>,
@@ -327,7 +327,7 @@ pub struct GroupsWrapper<T> {
 
 /// A lot of APIs in Redmine wrap their data in an extra layer, this is a
 /// helper struct for outer layers with a group field holding the inner data
-#[derive(Debug, PartialEq, Eq, Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, serde::Deserialize)]
 pub struct GroupWrapper<T> {
     /// to parse JSON with group key
     pub group: T,

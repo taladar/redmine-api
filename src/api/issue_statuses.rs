@@ -12,7 +12,7 @@ use crate::api::{Endpoint, ReturnsJsonResponse};
 
 /// a minimal type for Redmine issue status used in
 /// other Redmine objects (e.g. issue)
-#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct IssueStatusEssentials {
     /// numeric id
     pub id: u64,
@@ -46,7 +46,7 @@ impl From<&IssueStatus> for IssueStatusEssentials {
 /// a type for issue status to use as an API return type
 ///
 /// alternatively you can use your own type limited to the fields you need
-#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct IssueStatus {
     /// numeric id
     pub id: u64,
@@ -57,7 +57,7 @@ pub struct IssueStatus {
 }
 
 /// The endpoint for all issue statuses
-#[derive(Debug, Builder)]
+#[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
 pub struct ListIssueStatuses {}
 
@@ -82,7 +82,7 @@ impl Endpoint for ListIssueStatuses {
 }
 
 /// helper struct for outer layers with a issue_statuses field holding the inner data
-#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct IssueStatusesWrapper<T> {
     /// to parse JSON with issue_statuses key
     pub issue_statuses: Vec<T>,
@@ -90,7 +90,7 @@ pub struct IssueStatusesWrapper<T> {
 
 /// A lot of APIs in Redmine wrap their data in an extra layer, this is a
 /// helper struct for outer layers with a issue_status field holding the inner data
-#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct IssueStatusWrapper<T> {
     /// to parse JSON with an issue_status key
     pub issue_status: T,

@@ -14,7 +14,7 @@ use crate::api::{Endpoint, ReturnsJsonResponse};
 
 /// a minimal type for Redmine issue priorities included in
 /// other Redmine objects
-#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct IssuePriorityEssentials {
     /// numeric id
     pub id: u64,
@@ -43,7 +43,7 @@ impl From<&IssuePriority> for IssuePriorityEssentials {
 /// a type for issue priority to use as an API return type
 ///
 /// alternatively you can use your own type limited to the fields you need
-#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct IssuePriority {
     /// numeric id
     pub id: u64,
@@ -54,7 +54,7 @@ pub struct IssuePriority {
 }
 
 /// The endpoint for all issue priorities
-#[derive(Debug, Builder)]
+#[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
 pub struct ListIssuePriorities {}
 
@@ -79,7 +79,7 @@ impl Endpoint for ListIssuePriorities {
 }
 
 /// helper struct for outer layers with a issue_priorities field holding the inner data
-#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct IssuePrioritiesWrapper<T> {
     /// to parse JSON with issue_priorities key
     pub issue_priorities: Vec<T>,
@@ -87,7 +87,7 @@ pub struct IssuePrioritiesWrapper<T> {
 
 /// a minimal type for Redmine time entry activities included in
 /// other Redmine objects
-#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct TimeEntryActivityEssentials {
     /// numeric id
     pub id: u64,
@@ -116,7 +116,7 @@ impl From<&TimeEntryActivity> for TimeEntryActivityEssentials {
 /// a type for time entry activity to use as an API return type
 ///
 /// alternatively you can use your own type limited to the fields you need
-#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct TimeEntryActivity {
     /// numeric id
     pub id: u64,
@@ -127,7 +127,7 @@ pub struct TimeEntryActivity {
 }
 
 /// The endpoint for all time entry activities
-#[derive(Debug, Builder)]
+#[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
 pub struct ListTimeEntryActivities {}
 
@@ -152,7 +152,7 @@ impl Endpoint for ListTimeEntryActivities {
 }
 
 /// helper struct for outer layers with a time_entry_activities field holding the inner data
-#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct TimeEntryActivitiesWrapper<T> {
     /// to parse JSON with time_entry_activities key
     pub time_entry_activities: Vec<T>,
@@ -160,7 +160,7 @@ pub struct TimeEntryActivitiesWrapper<T> {
 
 /// a minimal type for Redmine document categories included in
 /// other Redmine objects
-#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct DocumentCategoryEssentials {
     /// numeric id
     pub id: u64,
@@ -189,7 +189,7 @@ impl From<&DocumentCategory> for DocumentCategoryEssentials {
 /// a type for document category to use as an API return type
 ///
 /// alternatively you can use your own type limited to the fields you need
-#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct DocumentCategory {
     /// numeric id
     pub id: u64,
@@ -200,7 +200,7 @@ pub struct DocumentCategory {
 }
 
 /// The endpoint for all document categories
-#[derive(Debug, Builder)]
+#[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
 pub struct ListDocumentCategories {}
 
@@ -225,7 +225,7 @@ impl Endpoint for ListDocumentCategories {
 }
 
 /// helper struct for outer layers with a document_categories field holding the inner data
-#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct DocumentCategoriesWrapper<T> {
     /// to parse JSON with document_categories key
     pub document_categories: Vec<T>,

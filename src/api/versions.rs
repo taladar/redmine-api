@@ -18,7 +18,7 @@ use serde::Serialize;
 
 /// a minimal type for Redmine versions included in
 /// other Redmine objects
-#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct VersionEssentials {
     /// numeric id
     pub id: u64,
@@ -47,7 +47,7 @@ impl From<&Version> for VersionEssentials {
 /// a type for version to use as an API return type
 ///
 /// alternatively you can use your own type limited to the fields you need
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Version {
     /// numeric id
     pub id: u64,
@@ -81,7 +81,7 @@ pub struct Version {
 }
 
 /// The endpoint for all versions in a Redmine project
-#[derive(Debug, Builder)]
+#[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
 pub struct ListVersions<'a> {
     /// The project Id or the project name as it appears in the URL for the project whose versions we want to list
@@ -110,7 +110,7 @@ impl Endpoint for ListVersions<'_> {
 }
 
 /// The endpoint for a specific Redmine project version
-#[derive(Debug, Builder)]
+#[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
 pub struct GetVersion {
     /// the id of the version to retrieve
@@ -280,7 +280,7 @@ impl Endpoint for UpdateVersion<'_> {
 }
 
 /// The endpoint to delete a version in a Redmine project
-#[derive(Debug, Builder)]
+#[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
 pub struct DeleteVersion {
     /// The id of the version to delete
@@ -306,7 +306,7 @@ impl Endpoint for DeleteVersion {
 }
 
 /// helper struct for outer layers with a versions field holding the inner data
-#[derive(Debug, PartialEq, Eq, Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, serde::Deserialize)]
 pub struct VersionsWrapper<T> {
     /// to parse JSON with versions key
     pub versions: Vec<T>,
@@ -314,7 +314,7 @@ pub struct VersionsWrapper<T> {
 
 /// A lot of APIs in Redmine wrap their data in an extra layer, this is a
 /// helper struct for outer layers with a version field holding the inner data
-#[derive(Debug, PartialEq, Eq, Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, serde::Deserialize)]
 pub struct VersionWrapper<T> {
     /// to parse JSON with version key
     pub version: T,

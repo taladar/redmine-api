@@ -25,7 +25,7 @@ use serde::Serialize;
 
 /// a minimal type for Redmine users used in
 /// other Redmine objects (e.g. issue author)
-#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct UserEssentials {
     /// numeric id
     pub id: u64,
@@ -36,7 +36,7 @@ pub struct UserEssentials {
 /// a type for user to use as an API return type
 ///
 /// alternatively you can use your own type limited to the fields you need
-#[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct User {
     /// numeric id
     pub id: u64,
@@ -133,7 +133,7 @@ impl std::fmt::Display for UserStatus {
 }
 
 /// The endpoint for all users
-#[derive(Debug, Builder)]
+#[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
 pub struct ListUsers<'a> {
     /// Filter by user status
@@ -205,7 +205,7 @@ impl std::fmt::Display for UserInclude {
 }
 
 /// The endpoint for a specific user
-#[derive(Debug, Builder)]
+#[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
 pub struct GetUser {
     /// User id to fetch, if not specified will fetch the current user
@@ -412,7 +412,7 @@ impl Endpoint for UpdateUser<'_> {
 }
 
 /// The endpoint to delete a Redmine user
-#[derive(Debug, Builder)]
+#[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
 pub struct DeleteUser {
     /// The id of the user to delete
@@ -438,7 +438,7 @@ impl Endpoint for DeleteUser {
 }
 
 /// helper struct for outer layers with a users field holding the inner data
-#[derive(Debug, PartialEq, Eq, Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, serde::Deserialize)]
 pub struct UsersWrapper<T> {
     /// to parse JSON with users key
     pub users: Vec<T>,
@@ -446,7 +446,7 @@ pub struct UsersWrapper<T> {
 
 /// A lot of APIs in Redmine wrap their data in an extra layer, this is a
 /// helper struct for outer layers with a user field holding the inner data
-#[derive(Debug, PartialEq, Eq, Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, serde::Deserialize)]
 pub struct UserWrapper<T> {
     /// to parse JSON with user key
     pub user: T,
@@ -455,7 +455,7 @@ pub struct UserWrapper<T> {
 /// a special version of the UserWrapper to use with [CreateUser] and [UpdateUser]
 /// because Redmine puts the send_information flag outside the user object for
 /// some reason
-#[derive(Debug, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct UserWrapperWithSendInformation<T> {
     /// to parse JSON with user key
     pub user: T,

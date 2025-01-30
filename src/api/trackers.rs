@@ -13,7 +13,7 @@ use crate::api::{Endpoint, ReturnsJsonResponse};
 
 /// a minimal type for Redmine trackers used in lists of trackers included in
 /// other Redmine objects (e.g. custom fields)
-#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct TrackerEssentials {
     /// numeric id
     pub id: u64,
@@ -42,7 +42,7 @@ impl From<&Tracker> for TrackerEssentials {
 /// a type for tracker to use as an API return type
 ///
 /// alternatively you can use your own type limited to the fields you need
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Tracker {
     /// numeric id
     pub id: u64,
@@ -58,7 +58,7 @@ pub struct Tracker {
 }
 
 /// The endpoint for all trackers
-#[derive(Debug, Builder)]
+#[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
 pub struct ListTrackers {}
 
@@ -83,7 +83,7 @@ impl Endpoint for ListTrackers {
 }
 
 /// helper struct for outer layers with a trackers field holding the inner data
-#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct TrackersWrapper<T> {
     /// to parse JSON with trackers key
     pub trackers: Vec<T>,

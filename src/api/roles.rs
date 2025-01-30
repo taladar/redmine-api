@@ -14,7 +14,7 @@ use crate::api::{Endpoint, ReturnsJsonResponse};
 /// a minimal type for Redmine roles used in lists of roles included in
 /// other Redmine objects (e.g. custom fields) and also in the global ListRoles
 /// endpoint (unlike most other Redmine API objects)
-#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct RoleEssentials {
     /// numeric id
     pub id: u64,
@@ -26,7 +26,7 @@ pub struct RoleEssentials {
 }
 
 /// determines which issues are visible to users/group with a role
-#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum IssuesVisibility {
     /// a user/group with the role can see all issues (in visible projects)
     #[serde(rename = "all")]
@@ -40,7 +40,7 @@ pub enum IssuesVisibility {
 }
 
 /// determines which time entries are visible to users/group with a role
-#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum TimeEntriesVisibility {
     /// a user/group with the role can see all time entries (in visible projects)
     #[serde(rename = "all")]
@@ -51,7 +51,7 @@ pub enum TimeEntriesVisibility {
 }
 
 /// determines which users are visible to users/group with a role
-#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum UsersVisibility {
     /// a user/group with the role can see all active users
     #[serde(rename = "all")]
@@ -64,7 +64,7 @@ pub enum UsersVisibility {
 /// a type for roles to use as an API return type
 ///
 /// alternatively you can use your own type limited to the fields you need
-#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct Role {
     /// numeric id
     pub id: u64,
@@ -87,7 +87,7 @@ pub struct Role {
 ///
 /// unlike most other Redmine objects this only returns a RoleEssentials like
 /// minimal object
-#[derive(Debug, Builder)]
+#[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
 pub struct ListRoles {}
 
@@ -112,7 +112,7 @@ impl Endpoint for ListRoles {
 }
 
 /// The endpoint for a specific role
-#[derive(Debug, Builder)]
+#[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
 pub struct GetRole {
     /// the id of the role to retrieve
@@ -140,7 +140,7 @@ impl Endpoint for GetRole {
 }
 
 /// helper struct for outer layers with a roles field holding the inner data
-#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct RolesWrapper<T> {
     /// to parse JSON with roles key
     pub roles: Vec<T>,
@@ -148,7 +148,7 @@ pub struct RolesWrapper<T> {
 
 /// A lot of APIs in Redmine wrap their data in an extra layer, this is a
 /// helper struct for outer layers with a role field holding the inner data
-#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct RoleWrapper<T> {
     /// to parse JSON with role key
     pub role: T,

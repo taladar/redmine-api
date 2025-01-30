@@ -108,7 +108,7 @@ use serde::Serialize;
 
 /// a minimal type for Redmine users or groups used in lists of assignees included in
 /// other Redmine objects
-#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct AssigneeEssentials {
     /// numeric id
     pub id: u64,
@@ -172,7 +172,7 @@ impl From<&Group> for AssigneeEssentials {
 
 /// a minimal type for Redmine issues included in
 /// other Redmine objects
-#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct IssueEssentials {
     /// numeric id
     pub id: u64,
@@ -191,7 +191,7 @@ impl From<&Issue> for IssueEssentials {
 }
 
 /// the type of journal change
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub enum ChangePropertyType {
     /// issue attribute change
     #[serde(rename = "attr")]
@@ -208,7 +208,7 @@ pub enum ChangePropertyType {
 }
 
 /// a changed attribute entry in a journal entry
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct JournalChange {
     /// name of the attribute
     pub name: String,
@@ -221,7 +221,7 @@ pub struct JournalChange {
 }
 
 /// journals (issue comments and changes)
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Journal {
     /// numeric id
     pub id: u64,
@@ -242,7 +242,7 @@ pub struct Journal {
 }
 
 /// minimal issue used e.g. in child issues
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct ChildIssue {
     /// numeric id
     pub id: u64,
@@ -258,7 +258,7 @@ pub struct ChildIssue {
 /// a type for issue to use as an API return type
 ///
 /// alternatively you can use your own type limited to the fields you need
-#[derive(Debug, Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Serialize, serde::Deserialize)]
 pub struct Issue {
     /// numeric id
     pub id: u64,
@@ -671,7 +671,7 @@ impl std::fmt::Display for IssueListInclude {
 }
 
 /// The endpoint for all Redmine issues
-#[derive(Debug, Builder)]
+#[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
 pub struct ListIssues {
     /// Include associated data
@@ -864,7 +864,7 @@ impl std::fmt::Display for IssueInclude {
 }
 
 /// The endpoint for a specific Redmine issue
-#[derive(Debug, Builder)]
+#[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
 pub struct GetIssue {
     /// id of the issue to retrieve
@@ -1095,7 +1095,7 @@ impl Endpoint for UpdateIssue<'_> {
 }
 
 /// The endpoint to delete a Redmine issue
-#[derive(Debug, Builder)]
+#[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
 pub struct DeleteIssue {
     /// id of the issue to delete
@@ -1121,7 +1121,7 @@ impl Endpoint for DeleteIssue {
 }
 
 /// The endpoint to add a Redmine user as a watcher on a Redmine issue
-#[derive(Debug, Builder, Serialize)]
+#[derive(Debug, Clone, Builder, Serialize)]
 #[builder(setter(strip_option))]
 pub struct AddWatcher {
     /// id of the issue to add the watcher to
@@ -1154,7 +1154,7 @@ impl Endpoint for AddWatcher {
 }
 
 /// The endpoint to remove a Redmine user from a Redmine issue as a watcher
-#[derive(Debug, Builder)]
+#[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
 pub struct RemoveWatcher {
     /// id of the issue to remove the watcher from
@@ -1182,7 +1182,7 @@ impl Endpoint for RemoveWatcher {
 }
 
 /// helper struct for outer layers with a issues field holding the inner data
-#[derive(Debug, PartialEq, Eq, Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, serde::Deserialize)]
 pub struct IssuesWrapper<T> {
     /// to parse JSON with issues key
     pub issues: Vec<T>,
@@ -1190,7 +1190,7 @@ pub struct IssuesWrapper<T> {
 
 /// A lot of APIs in Redmine wrap their data in an extra layer, this is a
 /// helper struct for outer layers with a issue field holding the inner data
-#[derive(Debug, PartialEq, Eq, Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, serde::Deserialize)]
 pub struct IssueWrapper<T> {
     /// to parse JSON with an issue key
     pub issue: T,

@@ -22,7 +22,7 @@ use crate::api::{Endpoint, QueryParams, ReturnsJsonResponse};
 /// return type for the [UploadFile] endpoint, there is not much point in
 /// making your own since it only has one field and if that is not used
 /// calling [UploadFile] is useless
-#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct FileUploadToken {
     /// the file upload token to be used in other endpoints
     token: String,
@@ -88,7 +88,7 @@ impl Endpoint for UploadFile<'_> {
 
 /// A lot of APIs in Redmine wrap their data in an extra layer, this is a
 /// helper struct for outer layers with a upload field holding the inner data
-#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct UploadWrapper<T> {
     /// to parse JSON with upload key
     pub upload: T,

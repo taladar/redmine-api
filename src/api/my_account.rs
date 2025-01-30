@@ -14,7 +14,7 @@ use crate::api::{Endpoint, ReturnsJsonResponse};
 /// a type for my account to use as an API return type
 ///
 /// alternatively you can use your own type limited to the fields you need
-#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct MyAccount {
     /// numeric id
     pub id: u64,
@@ -50,7 +50,7 @@ pub struct MyAccount {
 }
 
 /// The endpoint to retrieve the current user's my account settings/data
-#[derive(Debug, Builder)]
+#[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
 pub struct GetMyAccount {}
 

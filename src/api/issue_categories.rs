@@ -19,7 +19,7 @@ use serde::Serialize;
 
 /// a minimal type for Redmine issue categories used in
 /// other Redmine objects (e.g. issue)
-#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct IssueCategoryEssentials {
     /// numeric id
     pub id: u64,
@@ -48,7 +48,7 @@ impl From<&IssueCategory> for IssueCategoryEssentials {
 /// a type for issue categories to use as an API return type
 ///
 /// alternatively you can use your own type limited to the fields you need
-#[derive(Debug, PartialEq, Eq, Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, serde::Deserialize)]
 pub struct IssueCategory {
     /// numeric id
     pub id: u64,
@@ -62,7 +62,7 @@ pub struct IssueCategory {
 }
 
 /// The endpoint for all issue categories in a Redmine project
-#[derive(Debug, Builder)]
+#[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
 pub struct ListIssueCategories<'a> {
     /// the project id or name as it appears in the URL
@@ -91,7 +91,7 @@ impl Endpoint for ListIssueCategories<'_> {
 }
 
 /// The endpoint for a specific issue category
-#[derive(Debug, Builder)]
+#[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
 pub struct GetIssueCategory {
     /// the id of the issue category to retrieve
@@ -208,7 +208,7 @@ impl Endpoint for UpdateIssueCategory<'_> {
 }
 
 /// The endpoint to delete a Redmine issue category
-#[derive(Debug, Builder)]
+#[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
 pub struct DeleteIssueCategory {
     /// the id of the issue category to delete
@@ -234,7 +234,7 @@ impl Endpoint for DeleteIssueCategory {
 }
 
 /// helper struct for outer layers with a issue_categories field holding the inner data
-#[derive(Debug, PartialEq, Eq, Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, serde::Deserialize)]
 pub struct IssueCategoriesWrapper<T> {
     /// to parse JSON with issue_categories key
     pub issue_categories: Vec<T>,
@@ -242,7 +242,7 @@ pub struct IssueCategoriesWrapper<T> {
 
 /// A lot of APIs in Redmine wrap their data in an extra layer, this is a
 /// helper struct for outer layers with a issue_category field holding the inner data
-#[derive(Debug, PartialEq, Eq, Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, serde::Deserialize)]
 pub struct IssueCategoryWrapper<T> {
     /// to parse JSON with an issue_category key
     pub issue_category: T,

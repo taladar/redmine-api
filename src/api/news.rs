@@ -16,7 +16,7 @@ use crate::api::{Endpoint, Pageable, ReturnsJsonResponse};
 /// a type for news to use as an API return type
 ///
 /// alternatively you can use your own type limited to the fields you need
-#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct News {
     /// numeric id
     pub id: u64,
@@ -38,7 +38,7 @@ pub struct News {
     pub created_on: time::OffsetDateTime,
 }
 /// The endpoint for all news
-#[derive(Debug, Builder)]
+#[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
 pub struct ListNews {}
 
@@ -68,7 +68,7 @@ impl Endpoint for ListNews {
 }
 
 /// The endpoint for project news
-#[derive(Debug, Builder)]
+#[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
 pub struct ListProjectNews<'a> {
     /// project id or name as it appears in the URL
@@ -102,7 +102,7 @@ impl Endpoint for ListProjectNews<'_> {
 }
 
 /// helper struct for outer layers with a news field holding the inner data
-#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct NewsWrapper<T> {
     /// to parse JSON with news key
     pub news: Vec<T>,

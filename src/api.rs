@@ -97,7 +97,7 @@ where
 }
 
 /// used to deserialize the required options from the environment
-#[derive(Debug, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Deserialize)]
 struct EnvOptions {
     /// a redmine API key, usually 40 hex digits where the letters (a-f) are lower case
     redmine_api_key: String,

@@ -21,7 +21,7 @@ use serde::Serialize;
 
 /// a minimal type for project memberships to be used in lists of memberships
 /// returned as part of the user
-#[derive(Debug, PartialEq, Eq, Serialize, serde::Deserialize, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, serde::Deserialize)]
 pub struct UserProjectMembership {
     /// numeric id
     pub id: u64,
@@ -33,7 +33,7 @@ pub struct UserProjectMembership {
 
 /// a minimal type for project memberships to be used in lists of memberships
 /// returned as part of the group
-#[derive(Debug, PartialEq, Eq, Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, serde::Deserialize)]
 pub struct GroupProjectMembership {
     /// numeric id
     pub id: u64,
@@ -46,7 +46,7 @@ pub struct GroupProjectMembership {
 /// a type for project memberships to use as an API return type
 ///
 /// alternatively you can use your own type limited to the fields you need
-#[derive(Debug, PartialEq, Eq, Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, serde::Deserialize)]
 pub struct ProjectMembership {
     /// numeric id
     pub id: u64,
@@ -63,7 +63,7 @@ pub struct ProjectMembership {
 }
 
 /// The endpoint for all memberships in a Redmine project
-#[derive(Debug, Builder)]
+#[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
 pub struct ListProjectMemberships<'a> {
     /// project id or name as it appears in the URL
@@ -97,7 +97,7 @@ impl Endpoint for ListProjectMemberships<'_> {
 }
 
 /// The endpoint for a specific Redmine project membership
-#[derive(Debug, Builder)]
+#[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
 pub struct GetProjectMembership {
     /// id of the project membership to retrieve
@@ -208,7 +208,7 @@ impl Endpoint for UpdateProjectMembership {
 }
 
 /// The endpoint to delete a membership in a Redmine project
-#[derive(Debug, Builder)]
+#[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
 pub struct DeleteProjectMembership {
     /// id of the project membership to delete
@@ -234,7 +234,7 @@ impl Endpoint for DeleteProjectMembership {
 }
 
 /// helper struct for outer layers with a memberships field holding the inner data
-#[derive(Debug, PartialEq, Eq, Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, serde::Deserialize)]
 pub struct MembershipsWrapper<T> {
     /// to parse JSON with memberships key
     pub memberships: Vec<T>,
@@ -242,7 +242,7 @@ pub struct MembershipsWrapper<T> {
 
 /// A lot of APIs in Redmine wrap their data in an extra layer, this is a
 /// helper struct for outer layers with a membership field holding the inner data
-#[derive(Debug, PartialEq, Eq, Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, serde::Deserialize)]
 pub struct MembershipWrapper<T> {
     /// to parse JSON with membership key
     pub membership: T,

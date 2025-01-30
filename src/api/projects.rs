@@ -24,7 +24,7 @@ use serde::Serialize;
 use std::collections::HashMap;
 
 /// a minimal type for Redmine modules used in lists enabled modules
-#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct Module {
     /// numeric id
     pub id: u64,
@@ -34,7 +34,7 @@ pub struct Module {
 
 /// a minimal type for Redmine projects used in lists of projects included in
 /// other Redmine objects (e.g. custom fields)
-#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct ProjectEssentials {
     /// numeric id
     pub id: u64,
@@ -63,7 +63,7 @@ impl From<&Project> for ProjectEssentials {
 /// a type for projects to use as an API return type
 ///
 /// alternatively you can use your own type limited to the fields you need
-#[derive(Debug, PartialEq, Eq, Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, serde::Deserialize)]
 pub struct Project {
     /// numeric id
     pub id: u64,
@@ -160,7 +160,7 @@ impl std::fmt::Display for ProjectsInclude {
 }
 
 /// The endpoint for all Redmine projects
-#[derive(Debug, Builder)]
+#[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
 pub struct ListProjects {
     /// the types of associate data to include
@@ -232,7 +232,7 @@ impl std::fmt::Display for ProjectInclude {
 }
 
 /// The endpoint for a specific Redmine project
-#[derive(Debug, Builder)]
+#[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
 pub struct GetProject<'a> {
     /// the project id or name as it appears in the URL
@@ -270,7 +270,7 @@ impl Endpoint for GetProject<'_> {
 }
 
 /// The endpoint to archive a Redmine project
-#[derive(Debug, Builder)]
+#[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
 pub struct ArchiveProject<'a> {
     /// the project id or name as it appears in the URL of the project to archive
@@ -297,7 +297,7 @@ impl Endpoint for ArchiveProject<'_> {
 }
 
 /// The endpoint to unarchive a Redmine project
-#[derive(Debug, Builder)]
+#[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
 pub struct UnarchiveProject<'a> {
     /// the project id or name as it appears in the URL of the project to unarchive
@@ -476,7 +476,7 @@ impl Endpoint for UpdateProject<'_> {
 }
 
 /// The endpoint to delete a Redmine project
-#[derive(Debug, Builder)]
+#[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
 pub struct DeleteProject<'a> {
     /// the project id or name as it appears in the URL of the project to delete
@@ -503,7 +503,7 @@ impl Endpoint for DeleteProject<'_> {
 }
 
 /// helper struct for outer layers with a projects field holding the inner data
-#[derive(Debug, PartialEq, Eq, Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, serde::Deserialize)]
 pub struct ProjectsWrapper<T> {
     /// to parse JSON with projects key
     pub projects: Vec<T>,
@@ -511,7 +511,7 @@ pub struct ProjectsWrapper<T> {
 
 /// A lot of APIs in Redmine wrap their data in an extra layer, this is a
 /// helper struct for outer layers with a project field holding the inner data
-#[derive(Debug, PartialEq, Eq, Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, serde::Deserialize)]
 pub struct ProjectWrapper<T> {
     /// to parse JSON with project key
     pub project: T,

@@ -13,7 +13,7 @@ use crate::api::{Endpoint, Pageable, ReturnsJsonResponse};
 /// a type for query to use as an API return type
 ///
 /// alternatively you can use your own type limited to the fields you need
-#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct Query {
     /// numeric id
     pub id: u64,
@@ -28,7 +28,7 @@ pub struct Query {
 /// The endpoint to retrieve all queries visible to the current user
 ///
 /// to actually use them pass the query_id to the ListIssues endpoint
-#[derive(Debug, Builder)]
+#[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
 pub struct ListQueries {}
 
@@ -58,7 +58,7 @@ impl Endpoint for ListQueries {
 }
 
 /// helper struct for outer layers with a queries field holding the inner data
-#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct QueriesWrapper<T> {
     /// to parse JSON with queries key
     pub queries: Vec<T>,

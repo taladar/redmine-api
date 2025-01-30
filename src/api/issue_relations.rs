@@ -19,7 +19,7 @@ use serde::Serialize;
 /// a type for issue relations to use as an API return type
 ///
 /// alternatively you can use your own type limited to the fields you need
-#[derive(Debug, PartialEq, Eq, Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, serde::Deserialize)]
 pub struct IssueRelation {
     /// numeric id
     pub id: u64,
@@ -34,7 +34,7 @@ pub struct IssueRelation {
 }
 
 /// The endpoint for all issue relations in a Redmine issue
-#[derive(Debug, Builder)]
+#[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
 pub struct ListIssueRelations {
     /// the id of the issue for which we want to retrieve all issue relations
@@ -62,7 +62,7 @@ impl Endpoint for ListIssueRelations {
 }
 
 /// The endpoint for a specific issue relation
-#[derive(Debug, Builder)]
+#[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
 pub struct GetIssueRelation {
     /// the id of the issue relation to retrieve
@@ -160,7 +160,7 @@ impl Endpoint for CreateIssueRelation {
 }
 
 /// The endpoint to delete an issue relation
-#[derive(Debug, Builder)]
+#[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
 pub struct DeleteIssueRelation {
     /// the id of the issue relation to delete
@@ -186,7 +186,7 @@ impl Endpoint for DeleteIssueRelation {
 }
 
 /// helper struct for outer layers with a relations field holding the inner data
-#[derive(Debug, PartialEq, Eq, Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, serde::Deserialize)]
 pub struct RelationsWrapper<T> {
     /// to parse JSON with relations key
     pub relations: Vec<T>,
@@ -194,7 +194,7 @@ pub struct RelationsWrapper<T> {
 
 /// A lot of APIs in Redmine wrap their data in an extra layer, this is a
 /// helper struct for outer layers with a relation field holding the inner data
-#[derive(Debug, PartialEq, Eq, Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, serde::Deserialize)]
 pub struct RelationWrapper<T> {
     /// to parse JSON with an relation key
     pub relation: T,

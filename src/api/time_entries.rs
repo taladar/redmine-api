@@ -30,7 +30,7 @@ use serde::Serialize;
 /// a type for time entries to use as an API return type
 ///
 /// alternatively you can use your own type limited to the fields you need
-#[derive(Debug, Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Serialize, serde::Deserialize)]
 pub struct TimeEntry {
     /// numeric id
     pub id: u64,
@@ -68,7 +68,7 @@ pub struct TimeEntry {
 }
 
 /// The endpoint for all time entries
-#[derive(Debug, Builder)]
+#[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
 pub struct ListTimeEntries<'a> {
     /// user who spent the time
@@ -132,7 +132,7 @@ impl Endpoint for ListTimeEntries<'_> {
 }
 
 /// The endpoint for a specific time entry
-#[derive(Debug, Builder)]
+#[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
 pub struct GetTimeEntry {
     /// the id of the time entry to retrieve
@@ -285,7 +285,7 @@ impl Endpoint for UpdateTimeEntry<'_> {
 }
 
 /// The endpoint to delete a Redmine time entry
-#[derive(Debug, Builder)]
+#[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
 pub struct DeleteTimeEntry {
     /// the id of the time entry to delete
@@ -311,7 +311,7 @@ impl Endpoint for DeleteTimeEntry {
 }
 
 /// helper struct for outer layers with a time_entries field holding the inner data
-#[derive(Debug, PartialEq, Eq, Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, serde::Deserialize)]
 pub struct TimeEntriesWrapper<T> {
     /// to parse JSON with time_entries key
     pub time_entries: Vec<T>,
@@ -319,7 +319,7 @@ pub struct TimeEntriesWrapper<T> {
 
 /// A lot of APIs in Redmine wrap their data in an extra layer, this is a
 /// helper struct for outer layers with a time_entry field holding the inner data
-#[derive(Debug, PartialEq, Eq, Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, serde::Deserialize)]
 pub struct TimeEntryWrapper<T> {
     /// to parse JSON with time_entry key
     pub time_entry: T,

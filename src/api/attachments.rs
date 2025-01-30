@@ -16,7 +16,7 @@ use crate::api::{Endpoint, ReturnsJsonResponse};
 /// a type for attachment to use as an API return type
 ///
 /// alternatively you can use your own type limited to the fields you need
-#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct Attachment {
     /// numeric id
     pub id: u64,
@@ -42,7 +42,7 @@ pub struct Attachment {
 }
 
 /// The endpoint for a specific Redmine attachment
-#[derive(Debug, Builder)]
+#[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
 pub struct GetAttachment {
     /// id of the attachment to retrieve
@@ -70,7 +70,7 @@ impl Endpoint for GetAttachment {
 }
 
 /// The endpoint to delete a Redmine attachment
-#[derive(Debug, Builder)]
+#[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
 pub struct DeleteAttachment {
     /// id of the attachment to delete
@@ -96,7 +96,7 @@ impl Endpoint for DeleteAttachment {
 }
 
 /// helper struct for outer layers with a attachment field holding the inner data
-#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct AttachmentWrapper<T> {
     /// to parse JSON with attachment key
     pub attachment: T,
