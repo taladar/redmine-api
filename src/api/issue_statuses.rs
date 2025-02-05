@@ -52,6 +52,8 @@ pub struct IssueStatus {
     pub id: u64,
     /// display name
     pub name: String,
+    /// description
+    pub description: Option<String>,
     /// is this status considered closed
     pub is_closed: bool,
 }

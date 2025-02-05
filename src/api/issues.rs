@@ -342,7 +342,7 @@ pub struct Issue {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub total_spent_hours: Option<f64>,
     /// the total hours estimated on this and sub-tasks
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     pub total_estimated_hours: Option<f64>,
 }
 

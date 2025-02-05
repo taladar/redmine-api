@@ -14,6 +14,7 @@ use derive_builder::Builder;
 use reqwest::Method;
 use std::borrow::Cow;
 
+use crate::api::custom_fields::CustomFieldName;
 use crate::api::enumerations::TimeEntryActivityEssentials;
 use crate::api::issue_categories::IssueCategoryEssentials;
 use crate::api::issues::AssigneeEssentials;
@@ -130,6 +131,9 @@ pub struct Project {
     /// trackers in this project (only with include parameter)
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub trackers: Option<Vec<TrackerEssentials>>,
+    /// custom field ids and names in this project (only with include parameter)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub issue_custom_fields: Option<Vec<CustomFieldName>>,
 }
 
 /// The types of associated data which can be fetched along with a project
@@ -141,6 +145,10 @@ pub enum ProjectsInclude {
     IssueCategories,
     /// Redmine Modules enabled in the project
     EnabledModules,
+    /// Time entry activities for the project
+    TimeEntryActivities,
+    /// Issue custom fields for the project
+    IssueCustomFields,
 }
 
 impl std::fmt::Display for ProjectsInclude {
@@ -154,6 +162,12 @@ impl std::fmt::Display for ProjectsInclude {
             }
             Self::EnabledModules => {
                 write!(f, "enabled_modules")
+            }
+            Self::TimeEntryActivities => {
+                write!(f, "time_entry_activities")
+            }
+            Self::IssueCustomFields => {
+                write!(f, "issue_custom_fields")
             }
         }
     }
@@ -210,6 +224,8 @@ pub enum ProjectInclude {
     EnabledModules,
     /// Time Entry Activities enabled in the project
     TimeEntryActivities,
+    /// Issue custom fields for the project
+    IssueCustomFields,
 }
 
 impl std::fmt::Display for ProjectInclude {
@@ -226,6 +242,9 @@ impl std::fmt::Display for ProjectInclude {
             }
             Self::TimeEntryActivities => {
                 write!(f, "time_entry_activities")
+            }
+            Self::IssueCustomFields => {
+                write!(f, "issue_custom_fields")
             }
         }
     }
@@ -682,6 +701,8 @@ pub(crate) mod test {
                 ProjectsInclude::Trackers,
                 ProjectsInclude::IssueCategories,
                 ProjectsInclude::EnabledModules,
+                ProjectsInclude::TimeEntryActivities,
+                ProjectsInclude::IssueCustomFields,
             ])
             .build()?;
         let projects = redmine.json_response_body_all_pages::<_, Project>(&endpoint)?;
@@ -693,6 +714,7 @@ pub(crate) mod test {
                     ProjectInclude::IssueCategories,
                     ProjectInclude::EnabledModules,
                     ProjectInclude::TimeEntryActivities,
+                    ProjectInclude::IssueCustomFields,
                 ])
                 .build()?;
             let ProjectWrapper { project: value } = redmine

@@ -1,3 +1,8 @@
+## 0.5.0
+
+add missing values for ProjectIncludes and ProjectsIncludes
+some more fixes to missing fields in other data types
+
 ## 0.4.2
 
 fix visibility on redmine\_api::api::issues::CustomField fields

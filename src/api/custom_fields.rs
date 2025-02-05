@@ -87,6 +87,8 @@ pub struct CustomField {
     pub id: u64,
     /// display name
     pub name: String,
+    /// description
+    pub description: Option<String>,
     /// type of Redmine object this field is customizing
     pub customized_type: CustomizedType,
     /// data type of the field
@@ -133,6 +135,15 @@ pub struct CustomFieldEssentialsWithValue {
     pub multiple: Option<bool>,
     /// value
     pub value: Option<Vec<String>>,
+}
+
+/// a type used to list all the custom field ids and names
+#[derive(Debug, Clone, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
+pub struct CustomFieldName {
+    /// numeric id
+    pub id: u64,
+    /// display name
+    pub name: String,
 }
 
 impl serde::Serialize for CustomFieldEssentialsWithValue {
