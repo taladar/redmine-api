@@ -904,11 +904,11 @@ impl Endpoint for GetIssue {
 #[derive(Debug, Clone, Serialize, serde::Deserialize)]
 pub struct CustomField<'a> {
     /// the custom field's id
-    id: u64,
+    pub id: u64,
     /// is usually present in contexts where it is returned by Redmine but can be omitted when it is sent by the client
-    name: Option<Cow<'a, str>>,
+    pub name: Option<Cow<'a, str>>,
     /// the custom field's value
-    value: Cow<'a, str>,
+    pub value: Cow<'a, str>,
 }
 
 /// the information the uploader needs to supply for an attachment

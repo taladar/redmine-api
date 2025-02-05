@@ -1,3 +1,7 @@
+## 0.4.2
+
+fix visibility on redmine\_api::api::issues::CustomField fields
+
 ## 0.4.1
 
 update dependencies
