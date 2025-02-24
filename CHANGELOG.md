@@ -1,3 +1,7 @@
+## 0.5.1
+
+update dependencies
+
 ## 0.5.0
 
 add missing values for ProjectIncludes and ProjectsIncludes
