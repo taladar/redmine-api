@@ -3,13 +3,13 @@ name = "redmine-api"
 description = "API for the Redmine issue tracker"
 readme = "README.md"
 license = "MIT OR Apache-2.0"
-version = "0.5.5"
+version = "0.5.6"
 authors = ["Matthias Hörmann <mhoermann@gmail.com>"]
 repository = "https://github.com/taladar/redmine-api"
-keywords = [ "redmine", "api" ]
-categories = [ "api-bindings" ]
+keywords = ["redmine", "api"]
+categories = ["api-bindings"]
 edition = "2021"
-exclude = [ ".env", "tarpaulin-report.html", "tarpaulin-report.json" ]
+exclude = [".env", "tarpaulin-report.html", "tarpaulin-report.json"]
 
 [features]
 rustls-tls = ["reqwest/rustls-tls"]
@@ -17,41 +17,29 @@ rustls-tls = ["reqwest/rustls-tls"]
 [profile.release]
 # do not strip debug info from release builds, useful for debugging those, cargo-flamegraph profiling or similar use cases
 debug = true
-
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-thiserror= "2.0.12"
-futures= "0.3.31"
-url= "2.5.4"
-serde_json= "1.0.140"
-serde_with= "3.12.0"
-envy= "0.4.2"
-http= "1.3.1"
-derive_builder= "0.20.2"
-bytes= "1.10.1"
+bytes = "1.10.1"
+derive_builder = "0.20.2"
 derive_more = { version = "2.0.1", features = ["debug"] }
-
-[dependencies.tracing]
-version = "0.1.41"
-features = [ "log" ]
-
-[dependencies.reqwest]
-version = "0.12"
-features = [ "blocking", "json" ]
-
-[dependencies.time]
-version = "0.3.41"
-features = [ "serde", "serde-human-readable" ]
-
-[dependencies.serde]
-version = "1.0.219"
-features = [ "derive" ]
+envy = "0.4.2"
+futures = "0.3.31"
+http = "1.3.1"
+reqwest = { version = "0.12.5", default-features = false, features = [ "blocking", "json" ] }
+serde = { version = "1.0.219", features = [ "derive" ] }
+serde_json = "1.0.140"
+serde_with = "3.12.0"
+thiserror = "2.0.12"
+time = { version = "0.3.41", features = [ "serde", "serde-human-readable" ] }
+tracing = { version = "0.1.41", features = [ "log" ] }
+url = "2.5.4"
 
 [dev-dependencies]
-pretty_assertions= "1.4.1"
-dotenvy= "0.15.7"
-tracing-test= "0.2.5"
-function_name= "0.3.0"
-finally-block= "0.2.0"
+dotenvy = "0.15.7"
+finally-block = "0.2.0"
+function_name = "0.3.0"
+pretty_assertions = "1.4.1"
+reqwest = { version = "0.12.5", default-features = false, features = [ "charset", "http2", "rustls-tls", "macos-system-configuration" ] }
 tokio = { version = "1.44.2", features = ["full"] }
+tracing-test = "0.2.5"

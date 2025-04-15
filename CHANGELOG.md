@@ -1,3 +1,9 @@
+## 0.5.6
+
+minimize reqwest features to allow user of the library to decide if they want
+to use openssl, rustls, http2,... without this library forcing a choice via
+its use of the default features
+
 ## 0.5.5
 
 update dependencies
