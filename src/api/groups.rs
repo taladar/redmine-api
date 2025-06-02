@@ -16,7 +16,7 @@ use std::borrow::Cow;
 
 use crate::api::project_memberships::GroupProjectMembership;
 use crate::api::users::UserEssentials;
-use crate::api::{Endpoint, QueryParams, ReturnsJsonResponse};
+use crate::api::{Endpoint, NoPagination, QueryParams, ReturnsJsonResponse};
 use serde::Serialize;
 
 /// a minimal type for Redmine groups used in lists of groups included in
@@ -70,6 +70,7 @@ pub struct Group {
 pub struct ListGroups {}
 
 impl ReturnsJsonResponse for ListGroups {}
+impl NoPagination for ListGroups {}
 
 impl ListGroups {
     /// Create a builder for the endpoint.
@@ -123,6 +124,7 @@ pub struct GetGroup {
 }
 
 impl ReturnsJsonResponse for GetGroup {}
+impl NoPagination for GetGroup {}
 
 impl GetGroup {
     /// Create a builder for the endpoint.
@@ -161,6 +163,7 @@ pub struct CreateGroup<'a> {
 }
 
 impl ReturnsJsonResponse for CreateGroup<'_> {}
+impl NoPagination for CreateGroup<'_> {}
 
 impl<'a> CreateGroup<'a> {
     /// Create a builder for the endpoint.

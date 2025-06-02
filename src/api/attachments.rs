@@ -11,7 +11,7 @@ use reqwest::Method;
 use std::borrow::Cow;
 
 use crate::api::users::UserEssentials;
-use crate::api::{Endpoint, ReturnsJsonResponse};
+use crate::api::{Endpoint, NoPagination, ReturnsJsonResponse};
 
 /// a type for attachment to use as an API return type
 ///
@@ -50,6 +50,7 @@ pub struct GetAttachment {
 }
 
 impl ReturnsJsonResponse for GetAttachment {}
+impl NoPagination for GetAttachment {}
 
 impl GetAttachment {
     /// Create a builder for the endpoint.
@@ -114,7 +115,7 @@ mod test {
     fn test_get_attachment() -> Result<(), Box<dyn Error>> {
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
-        let endpoint = GetAttachment::builder().id(3).build()?;
+        let endpoint = GetAttachment::builder().id(38468).build()?;
         redmine.json_response_body::<_, AttachmentWrapper<Attachment>>(&endpoint)?;
         Ok(())
     }
@@ -128,7 +129,7 @@ mod test {
     fn test_completeness_attachment_type() -> Result<(), Box<dyn Error>> {
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
-        let endpoint = GetAttachment::builder().id(3).build()?;
+        let endpoint = GetAttachment::builder().id(38468).build()?;
         let AttachmentWrapper { attachment: value } =
             redmine.json_response_body::<_, AttachmentWrapper<serde_json::Value>>(&endpoint)?;
         let o: Attachment = serde_json::from_value(value.clone())?;

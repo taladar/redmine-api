@@ -13,7 +13,7 @@ use derive_builder::Builder;
 use reqwest::Method;
 use std::borrow::Cow;
 
-use crate::api::{Endpoint, ReturnsJsonResponse};
+use crate::api::{Endpoint, NoPagination, ReturnsJsonResponse};
 use serde::Serialize;
 
 /// a type for issue relations to use as an API return type
@@ -42,6 +42,7 @@ pub struct ListIssueRelations {
 }
 
 impl ReturnsJsonResponse for ListIssueRelations {}
+impl NoPagination for ListIssueRelations {}
 
 impl ListIssueRelations {
     /// Create a builder for the endpoint.
@@ -70,6 +71,7 @@ pub struct GetIssueRelation {
 }
 
 impl ReturnsJsonResponse for GetIssueRelation {}
+impl NoPagination for GetIssueRelation {}
 
 impl GetIssueRelation {
     /// Create a builder for the endpoint.
@@ -131,6 +133,7 @@ pub struct CreateIssueRelation {
 }
 
 impl ReturnsJsonResponse for CreateIssueRelation {}
+impl NoPagination for CreateIssueRelation {}
 
 impl CreateIssueRelation {
     /// Create a builder for the endpoint.

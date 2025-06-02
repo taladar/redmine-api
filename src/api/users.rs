@@ -20,7 +20,7 @@ use std::borrow::Cow;
 use crate::api::custom_fields::CustomFieldEssentialsWithValue;
 use crate::api::groups::GroupEssentials;
 use crate::api::project_memberships::UserProjectMembership;
-use crate::api::{Endpoint, Pageable, QueryParams, ReturnsJsonResponse};
+use crate::api::{Endpoint, NoPagination, Pageable, QueryParams, ReturnsJsonResponse};
 use serde::Serialize;
 
 /// a minimal type for Redmine users used in
@@ -217,6 +217,7 @@ pub struct GetUser {
 }
 
 impl ReturnsJsonResponse for GetUser {}
+impl NoPagination for GetUser {}
 
 impl GetUser {
     /// Create a builder for the endpoint.
@@ -308,6 +309,7 @@ pub struct CreateUser<'a> {
 }
 
 impl ReturnsJsonResponse for CreateUser<'_> {}
+impl NoPagination for CreateUser<'_> {}
 
 impl<'a> CreateUser<'a> {
     /// Create a builder for the endpoint.
@@ -466,6 +468,8 @@ pub struct UserWrapperWithSendInformation<T> {
 
 #[cfg(test)]
 mod test {
+    use crate::api::ResponsePage;
+
     use super::*;
     use pretty_assertions::assert_eq;
     use std::error::Error;
@@ -475,17 +479,6 @@ mod test {
     /// needed so we do not get 404s when listing while
     /// creating/deleting or creating/updating/deleting
     static USER_LOCK: RwLock<()> = RwLock::const_new(());
-
-    #[traced_test]
-    #[test]
-    fn test_list_users_no_pagination() -> Result<(), Box<dyn Error>> {
-        let _r_user = USER_LOCK.read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
-        let endpoint = ListUsers::builder().build()?;
-        redmine.json_response_body::<_, UsersWrapper<User>>(&endpoint)?;
-        Ok(())
-    }
 
     #[traced_test]
     #[test]
@@ -529,8 +522,7 @@ mod test {
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let list_endpoint = ListUsers::builder().name(name.clone()).build()?;
-        let UsersWrapper { users } =
-            redmine.json_response_body::<_, UsersWrapper<User>>(&list_endpoint)?;
+        let users: Vec<User> = redmine.json_response_body_all_pages(&list_endpoint)?;
         for user in users {
             let delete_endpoint = DeleteUser::builder().id(user.id).build()?;
             redmine.ignore_response_body::<_>(&delete_endpoint)?;
@@ -623,8 +615,7 @@ mod test {
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let list_endpoint = ListUsers::builder().name(name.clone()).build()?;
-        let UsersWrapper { users } =
-            redmine.json_response_body::<_, UsersWrapper<User>>(&list_endpoint)?;
+        let users: Vec<User> = redmine.json_response_body_all_pages(&list_endpoint)?;
         for user in users {
             let delete_endpoint = DeleteUser::builder().id(user.id).build()?;
             redmine.ignore_response_body::<_>(&delete_endpoint)?;
@@ -653,13 +644,17 @@ mod test {
     /// it is better than nothing
     #[traced_test]
     #[test]
-    fn test_completeness_user_type() -> Result<(), Box<dyn Error>> {
+    fn test_completeness_user_type_first_page() -> Result<(), Box<dyn Error>> {
         let _r_user = USER_LOCK.read();
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListUsers::builder().build()?;
-        let UsersWrapper { users: values } =
-            redmine.json_response_body::<_, UsersWrapper<serde_json::Value>>(&endpoint)?;
+        let ResponsePage {
+            values,
+            total_count: _,
+            offset: _,
+            limit: _,
+        } = redmine.json_response_body_page::<_, serde_json::Value>(&endpoint, 0, 100)?;
         for value in values {
             let o: User = serde_json::from_value(value.clone())?;
             let reserialized = serde_json::to_value(o)?;

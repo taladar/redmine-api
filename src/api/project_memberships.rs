@@ -16,7 +16,7 @@ use crate::api::groups::GroupEssentials;
 use crate::api::projects::ProjectEssentials;
 use crate::api::roles::RoleEssentials;
 use crate::api::users::UserEssentials;
-use crate::api::{Endpoint, Pageable, ReturnsJsonResponse};
+use crate::api::{Endpoint, NoPagination, Pageable, ReturnsJsonResponse};
 use serde::Serialize;
 
 /// a minimal type for project memberships to be used in lists of memberships
@@ -105,6 +105,7 @@ pub struct GetProjectMembership {
 }
 
 impl ReturnsJsonResponse for GetProjectMembership {}
+impl NoPagination for GetProjectMembership {}
 
 impl GetProjectMembership {
     /// Create a builder for the endpoint.
@@ -140,6 +141,7 @@ pub struct CreateProjectMembership<'a> {
 }
 
 impl ReturnsJsonResponse for CreateProjectMembership<'_> {}
+impl NoPagination for CreateProjectMembership<'_> {}
 
 impl<'a> CreateProjectMembership<'a> {
     /// Create a builder for the endpoint.
@@ -263,19 +265,6 @@ mod test {
 
     #[traced_test]
     #[test]
-    fn test_list_project_memberships_no_pagination() -> Result<(), Box<dyn Error>> {
-        let _r_project_memberships = PROJECT_MEMBERSHIP_LOCK.read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
-        let endpoint = ListProjectMemberships::builder()
-            .project_id_or_name("sandbox")
-            .build()?;
-        redmine.json_response_body::<_, MembershipsWrapper<ProjectMembership>>(&endpoint)?;
-        Ok(())
-    }
-
-    #[traced_test]
-    #[test]
     fn test_list_project_memberships_first_page() -> Result<(), Box<dyn Error>> {
         let _r_project_memberships = PROJECT_MEMBERSHIP_LOCK.read();
         dotenvy::dotenv()?;
@@ -367,9 +356,7 @@ mod test {
         let endpoint = ListProjectMemberships::builder()
             .project_id_or_name("sandbox")
             .build()?;
-        let MembershipsWrapper {
-            memberships: values,
-        } = redmine.json_response_body::<_, MembershipsWrapper<serde_json::Value>>(&endpoint)?;
+        let values: Vec<serde_json::Value> = redmine.json_response_body_all_pages(&endpoint)?;
         for value in values {
             let o: ProjectMembership = serde_json::from_value(value.clone())?;
             let reserialized = serde_json::to_value(o)?;

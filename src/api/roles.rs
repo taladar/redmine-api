@@ -9,7 +9,7 @@ use derive_builder::Builder;
 use reqwest::Method;
 use std::borrow::Cow;
 
-use crate::api::{Endpoint, ReturnsJsonResponse};
+use crate::api::{Endpoint, NoPagination, ReturnsJsonResponse};
 
 /// a minimal type for Redmine roles used in lists of roles included in
 /// other Redmine objects (e.g. custom fields) and also in the global ListRoles
@@ -92,6 +92,7 @@ pub struct Role {
 pub struct ListRoles {}
 
 impl ReturnsJsonResponse for ListRoles {}
+impl NoPagination for ListRoles {}
 
 impl ListRoles {
     /// Create a builder for the endpoint.
@@ -120,6 +121,7 @@ pub struct GetRole {
 }
 
 impl ReturnsJsonResponse for GetRole {}
+impl NoPagination for GetRole {}
 
 impl GetRole {
     /// Create a builder for the endpoint.

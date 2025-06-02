@@ -8,7 +8,7 @@ use derive_builder::Builder;
 use reqwest::Method;
 use std::borrow::Cow;
 
-use crate::api::{Endpoint, ReturnsJsonResponse};
+use crate::api::{Endpoint, NoPagination, ReturnsJsonResponse};
 
 /// a minimal type for Redmine issue status used in
 /// other Redmine objects (e.g. issue)
@@ -64,6 +64,7 @@ pub struct IssueStatus {
 pub struct ListIssueStatuses {}
 
 impl ReturnsJsonResponse for ListIssueStatuses {}
+impl NoPagination for ListIssueStatuses {}
 
 impl ListIssueStatuses {
     /// Create a builder for the endpoint.

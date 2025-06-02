@@ -11,7 +11,7 @@ use std::borrow::Cow;
 use crate::api::projects::ProjectEssentials;
 use crate::api::roles::RoleEssentials;
 use crate::api::trackers::TrackerEssentials;
-use crate::api::{Endpoint, ReturnsJsonResponse};
+use crate::api::{Endpoint, NoPagination, ReturnsJsonResponse};
 
 /// Represents the types of objects that can be customized with customized types
 /// in Redmine
@@ -308,6 +308,7 @@ impl<'de> serde::Deserialize<'de> for CustomFieldEssentialsWithValue {
 pub struct ListCustomFields {}
 
 impl ReturnsJsonResponse for ListCustomFields {}
+impl NoPagination for ListCustomFields {}
 
 impl ListCustomFields {
     /// Create a builder for the endpoint.

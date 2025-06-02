@@ -73,16 +73,6 @@ mod test {
 
     #[traced_test]
     #[test]
-    fn test_list_queries_no_pagination() -> Result<(), Box<dyn Error>> {
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
-        let endpoint = ListQueries::builder().build()?;
-        redmine.json_response_body::<_, QueriesWrapper<Query>>(&endpoint)?;
-        Ok(())
-    }
-
-    #[traced_test]
-    #[test]
     fn test_list_queries_first_page() -> Result<(), Box<dyn Error>> {
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
@@ -111,8 +101,7 @@ mod test {
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListQueries::builder().build()?;
-        let QueriesWrapper { queries: values } =
-            redmine.json_response_body::<_, QueriesWrapper<serde_json::Value>>(&endpoint)?;
+        let values: Vec<serde_json::Value> = redmine.json_response_body_all_pages(&endpoint)?;
         for value in values {
             let o: Query = serde_json::from_value(value.clone())?;
             let reserialized = serde_json::to_value(o)?;

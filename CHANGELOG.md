@@ -1,3 +1,11 @@
+## 0.6.0
+
+add new trait NoPagination that guards the use of the unpaginated API
+so the user is forced to use the paginated API functions for endpoints that
+do require pagination to return all results
+
+update dependencies
+
 ## 0.5.6
 
 minimize reqwest features to allow user of the library to decide if they want

@@ -103,7 +103,7 @@ use crate::api::projects::ProjectEssentials;
 use crate::api::trackers::TrackerEssentials;
 use crate::api::users::UserEssentials;
 use crate::api::versions::VersionEssentials;
-use crate::api::{Endpoint, Pageable, QueryParams, ReturnsJsonResponse};
+use crate::api::{Endpoint, NoPagination, Pageable, QueryParams, ReturnsJsonResponse};
 use serde::Serialize;
 
 /// a minimal type for Redmine users or groups used in lists of assignees included in
@@ -875,6 +875,7 @@ pub struct GetIssue {
 }
 
 impl ReturnsJsonResponse for GetIssue {}
+impl NoPagination for GetIssue {}
 
 impl GetIssue {
     /// Create a builder for the endpoint.
@@ -986,6 +987,7 @@ impl<'a> CreateIssue<'a> {
 }
 
 impl ReturnsJsonResponse for CreateIssue<'_> {}
+impl NoPagination for CreateIssue<'_> {}
 
 impl Endpoint for CreateIssue<'_> {
     fn method(&self) -> Method {
@@ -1200,6 +1202,7 @@ pub struct IssueWrapper<T> {
 pub(crate) mod test {
     use super::*;
     use crate::api::test_helpers::with_project;
+    use crate::api::ResponsePage;
     use pretty_assertions::assert_eq;
     use std::error::Error;
     use tokio::sync::RwLock;
@@ -1208,17 +1211,6 @@ pub(crate) mod test {
     /// needed so we do not get 404s when listing while
     /// creating/deleting or creating/updating/deleting
     pub static ISSUES_LOCK: RwLock<()> = RwLock::const_new(());
-
-    #[traced_test]
-    #[test]
-    fn test_list_issues_no_pagination() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
-        let endpoint = ListIssues::builder().build()?;
-        redmine.json_response_body::<_, IssuesWrapper<Issue>>(&endpoint)?;
-        Ok(())
-    }
 
     #[traced_test]
     #[test]
@@ -1323,7 +1315,7 @@ pub(crate) mod test {
     /// it is better than nothing
     #[traced_test]
     #[test]
-    fn test_completeness_issue_type() -> Result<(), Box<dyn Error>> {
+    fn test_completeness_issue_type_first_page() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.read();
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
@@ -1333,8 +1325,12 @@ pub(crate) mod test {
                 IssueListInclude::Relations,
             ])
             .build()?;
-        let IssuesWrapper { issues: values } =
-            redmine.json_response_body::<_, IssuesWrapper<serde_json::Value>>(&endpoint)?;
+        let ResponsePage {
+            values,
+            total_count: _,
+            offset: _,
+            limit: _,
+        } = redmine.json_response_body_page::<_, serde_json::Value>(&endpoint, 0, 100)?;
         for value in values {
             let o: Issue = serde_json::from_value(value.clone())?;
             let reserialized = serde_json::to_value(o)?;

@@ -13,7 +13,7 @@ use reqwest::Method;
 use std::borrow::Cow;
 
 use crate::api::projects::ProjectEssentials;
-use crate::api::{Endpoint, ReturnsJsonResponse};
+use crate::api::{Endpoint, NoPagination, ReturnsJsonResponse};
 use serde::Serialize;
 
 /// a minimal type for Redmine versions included in
@@ -90,6 +90,7 @@ pub struct ListVersions<'a> {
 }
 
 impl ReturnsJsonResponse for ListVersions<'_> {}
+impl NoPagination for ListVersions<'_> {}
 
 impl<'a> ListVersions<'a> {
     /// Create a builder for the endpoint.
@@ -118,6 +119,7 @@ pub struct GetVersion {
 }
 
 impl ReturnsJsonResponse for GetVersion {}
+impl NoPagination for GetVersion {}
 
 impl GetVersion {
     /// Create a builder for the endpoint.
@@ -196,6 +198,7 @@ pub struct CreateVersion<'a> {
 }
 
 impl ReturnsJsonResponse for CreateVersion<'_> {}
+impl NoPagination for CreateVersion<'_> {}
 
 impl<'a> CreateVersion<'a> {
     /// Create a builder for the endpoint.

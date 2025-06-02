@@ -14,7 +14,7 @@ use std::borrow::Cow;
 
 use crate::api::issues::AssigneeEssentials;
 use crate::api::projects::ProjectEssentials;
-use crate::api::{Endpoint, ReturnsJsonResponse};
+use crate::api::{Endpoint, NoPagination, ReturnsJsonResponse};
 use serde::Serialize;
 
 /// a minimal type for Redmine issue categories used in
@@ -71,6 +71,7 @@ pub struct ListIssueCategories<'a> {
 }
 
 impl ReturnsJsonResponse for ListIssueCategories<'_> {}
+impl NoPagination for ListIssueCategories<'_> {}
 
 impl<'a> ListIssueCategories<'a> {
     /// Create a builder for the endpoint.
@@ -99,6 +100,7 @@ pub struct GetIssueCategory {
 }
 
 impl ReturnsJsonResponse for GetIssueCategory {}
+impl NoPagination for GetIssueCategory {}
 
 impl GetIssueCategory {
     /// Create a builder for the endpoint.
@@ -136,6 +138,7 @@ pub struct CreateIssueCategory<'a> {
 }
 
 impl ReturnsJsonResponse for CreateIssueCategory<'_> {}
+impl NoPagination for CreateIssueCategory<'_> {}
 
 impl<'a> CreateIssueCategory<'a> {
     /// Create a builder for the endpoint.

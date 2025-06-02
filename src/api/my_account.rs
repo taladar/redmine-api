@@ -9,7 +9,7 @@ use reqwest::Method;
 use std::borrow::Cow;
 
 use crate::api::custom_fields::CustomFieldEssentialsWithValue;
-use crate::api::{Endpoint, ReturnsJsonResponse};
+use crate::api::{Endpoint, NoPagination, ReturnsJsonResponse};
 
 /// a type for my account to use as an API return type
 ///
@@ -55,6 +55,7 @@ pub struct MyAccount {
 pub struct GetMyAccount {}
 
 impl ReturnsJsonResponse for GetMyAccount {}
+impl NoPagination for GetMyAccount {}
 
 impl GetMyAccount {
     /// Create a builder for the endpoint.

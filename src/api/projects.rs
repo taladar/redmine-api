@@ -20,7 +20,7 @@ use crate::api::issue_categories::IssueCategoryEssentials;
 use crate::api::issues::AssigneeEssentials;
 use crate::api::trackers::TrackerEssentials;
 use crate::api::versions::VersionEssentials;
-use crate::api::{Endpoint, Pageable, QueryParams, ReturnsJsonResponse};
+use crate::api::{Endpoint, NoPagination, Pageable, QueryParams, ReturnsJsonResponse};
 use serde::Serialize;
 use std::collections::HashMap;
 
@@ -263,6 +263,7 @@ pub struct GetProject<'a> {
 }
 
 impl ReturnsJsonResponse for GetProject<'_> {}
+impl NoPagination for GetProject<'_> {}
 
 impl<'a> GetProject<'a> {
     /// Create a builder for the endpoint.
@@ -389,6 +390,7 @@ pub struct CreateProject<'a> {
 }
 
 impl ReturnsJsonResponse for CreateProject<'_> {}
+impl NoPagination for CreateProject<'_> {}
 
 impl<'a> CreateProject<'a> {
     /// Create a builder for the endpoint.
@@ -551,17 +553,6 @@ pub(crate) mod test {
 
     #[traced_test]
     #[test]
-    fn test_list_projects_no_pagination() -> Result<(), Box<dyn Error>> {
-        let _r_project = PROJECT_LOCK.read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
-        let endpoint = ListProjects::builder().build()?;
-        redmine.json_response_body::<_, ProjectsWrapper<Project>>(&endpoint)?;
-        Ok(())
-    }
-
-    #[traced_test]
-    #[test]
     fn test_list_projects_first_page() -> Result<(), Box<dyn Error>> {
         let _r_project = PROJECT_LOCK.read();
         dotenvy::dotenv()?;
@@ -579,19 +570,6 @@ pub(crate) mod test {
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListProjects::builder().build()?;
         redmine.json_response_body_all_pages::<_, Project>(&endpoint)?;
-        Ok(())
-    }
-
-    #[traced_test]
-    #[tokio::test]
-    async fn test_list_projects_async_no_pagination() -> Result<(), Box<dyn Error>> {
-        let _r_project = PROJECT_LOCK.read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::RedmineAsync::from_env()?;
-        let endpoint = ListProjects::builder().build()?;
-        redmine
-            .json_response_body::<_, ProjectsWrapper<Project>>(&endpoint)
-            .await?;
         Ok(())
     }
 
@@ -670,8 +648,7 @@ pub(crate) mod test {
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListProjects::builder().build()?;
-        let ProjectsWrapper { projects: values } =
-            redmine.json_response_body::<_, ProjectsWrapper<serde_json::Value>>(&endpoint)?;
+        let values: Vec<serde_json::Value> = redmine.json_response_body_all_pages(&endpoint)?;
         for value in values {
             let o: Project = serde_json::from_value(value.clone())?;
             let reserialized = serde_json::to_value(o)?;

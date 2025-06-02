@@ -117,16 +117,6 @@ mod test {
 
     #[traced_test]
     #[test]
-    fn test_list_news_no_pagination() -> Result<(), Box<dyn Error>> {
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
-        let endpoint = ListNews::builder().build()?;
-        redmine.json_response_body::<_, NewsWrapper<News>>(&endpoint)?;
-        Ok(())
-    }
-
-    #[traced_test]
-    #[test]
     fn test_list_news_first_page() -> Result<(), Box<dyn Error>> {
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
@@ -155,8 +145,7 @@ mod test {
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListNews::builder().build()?;
-        let NewsWrapper { news: values } =
-            redmine.json_response_body::<_, NewsWrapper<serde_json::Value>>(&endpoint)?;
+        let values: Vec<serde_json::Value> = redmine.json_response_body_all_pages(&endpoint)?;
         for value in values {
             let o: News = serde_json::from_value(value.clone())?;
             let reserialized = serde_json::to_value(o)?;

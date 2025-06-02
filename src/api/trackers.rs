@@ -9,7 +9,7 @@ use reqwest::Method;
 use std::borrow::Cow;
 
 use crate::api::issue_statuses::IssueStatusEssentials;
-use crate::api::{Endpoint, ReturnsJsonResponse};
+use crate::api::{Endpoint, NoPagination, ReturnsJsonResponse};
 
 /// a minimal type for Redmine trackers used in lists of trackers included in
 /// other Redmine objects (e.g. custom fields)
@@ -63,6 +63,7 @@ pub struct Tracker {
 pub struct ListTrackers {}
 
 impl ReturnsJsonResponse for ListTrackers {}
+impl NoPagination for ListTrackers {}
 
 impl ListTrackers {
     /// Create a builder for the endpoint.

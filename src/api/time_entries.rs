@@ -24,7 +24,7 @@ use crate::api::enumerations::TimeEntryActivityEssentials;
 use crate::api::issues::IssueEssentials;
 use crate::api::projects::ProjectEssentials;
 use crate::api::users::UserEssentials;
-use crate::api::{Endpoint, Pageable, QueryParams, ReturnsJsonResponse};
+use crate::api::{Endpoint, NoPagination, Pageable, QueryParams, ReturnsJsonResponse};
 use serde::Serialize;
 
 /// a type for time entries to use as an API return type
@@ -140,6 +140,7 @@ pub struct GetTimeEntry {
 }
 
 impl ReturnsJsonResponse for GetTimeEntry {}
+impl NoPagination for GetTimeEntry {}
 
 impl GetTimeEntry {
     /// Create a builder for the endpoint.
@@ -187,6 +188,7 @@ pub struct CreateTimeEntry<'a> {
 }
 
 impl ReturnsJsonResponse for CreateTimeEntry<'_> {}
+impl NoPagination for CreateTimeEntry<'_> {}
 
 impl CreateTimeEntryBuilder<'_> {
     /// ensures that either issue_id or project_id is non-None when [Self::build()] is called
@@ -327,6 +329,8 @@ pub struct TimeEntryWrapper<T> {
 
 #[cfg(test)]
 mod test {
+    use crate::api::ResponsePage;
+
     use super::*;
     use pretty_assertions::assert_eq;
     use std::error::Error;
@@ -336,17 +340,6 @@ mod test {
     /// needed so we do not get 404s when listing while
     /// creating/deleting or creating/updating/deleting
     static TIME_ENTRY_LOCK: RwLock<()> = RwLock::const_new(());
-
-    #[traced_test]
-    #[test]
-    fn test_list_time_entries_no_pagination() -> Result<(), Box<dyn Error>> {
-        let _r_time_entries = TIME_ENTRY_LOCK.read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
-        let endpoint = ListTimeEntries::builder().build()?;
-        redmine.json_response_body::<_, TimeEntriesWrapper<TimeEntry>>(&endpoint)?;
-        Ok(())
-    }
 
     #[traced_test]
     #[test]
@@ -425,14 +418,17 @@ mod test {
     /// it is better than nothing
     #[traced_test]
     #[test]
-    fn test_completeness_time_entry_type() -> Result<(), Box<dyn Error>> {
+    fn test_completeness_time_entry_type_first_page() -> Result<(), Box<dyn Error>> {
         let _r_time_entries = TIME_ENTRY_LOCK.read();
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env()?;
         let endpoint = ListTimeEntries::builder().build()?;
-        let TimeEntriesWrapper {
-            time_entries: values,
-        } = redmine.json_response_body::<_, TimeEntriesWrapper<serde_json::Value>>(&endpoint)?;
+        let ResponsePage {
+            values,
+            total_count: _,
+            offset: _,
+            limit: _,
+        } = redmine.json_response_body_page::<_, serde_json::Value>(&endpoint, 0, 100)?;
         for value in values {
             let o: TimeEntry = serde_json::from_value(value.clone())?;
             let reserialized = serde_json::to_value(o)?;

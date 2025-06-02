@@ -17,7 +17,7 @@ use std::borrow::Cow;
 use std::io::Read;
 use std::path::PathBuf;
 
-use crate::api::{Endpoint, QueryParams, ReturnsJsonResponse};
+use crate::api::{Endpoint, NoPagination, QueryParams, ReturnsJsonResponse};
 
 /// return type for the [UploadFile] endpoint, there is not much point in
 /// making your own since it only has one field and if that is not used
@@ -45,6 +45,7 @@ pub struct UploadFile<'a> {
 }
 
 impl ReturnsJsonResponse for UploadFile<'_> {}
+impl NoPagination for UploadFile<'_> {}
 
 impl<'a> UploadFile<'a> {
     /// Create a builder for the endpoint.

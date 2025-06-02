@@ -99,8 +99,10 @@ implement the [ReturnsJsonResponse](api::ReturnsJsonResponse) trait
 so it can not be accidentally used on an endpoint which always returns an empty
 response body.
 
-If it is used on an endpoint supporting pagination it will just return the first
-page. This is a Redmine behaviour, not implemented by this crate.
+If this is used on an endpoint that requires pagination a compile time error
+will be emitted to avoid accidentally writing code that ignores all but the
+first page. This is implemented by having all endpoints that do not implement
+pagination implement the NoPagination trait.
 
 ```
 use redmine_api::api::Redmine;

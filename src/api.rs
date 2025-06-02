@@ -269,8 +269,6 @@ impl Redmine {
 
     /// use this with endpoints which return a JSON response but do not support pagination
     ///
-    /// you can use it with those that support pagination but they will only return the first page
-    ///
     /// # Errors
     ///
     /// This can return an error if the endpoint returns an error when creating the request body,
@@ -278,7 +276,7 @@ impl Redmine {
     /// into the result type
     pub fn json_response_body<E, R>(&self, endpoint: &E) -> Result<R, crate::Error>
     where
-        E: Endpoint + ReturnsJsonResponse,
+        E: Endpoint + ReturnsJsonResponse + NoPagination,
         R: DeserializeOwned + std::fmt::Debug,
     {
         let method = endpoint.method();
@@ -600,7 +598,7 @@ impl RedmineAsync {
     /// into the result type
     pub async fn json_response_body<E, R>(&self, endpoint: &E) -> Result<R, crate::Error>
     where
-        E: Endpoint + ReturnsJsonResponse,
+        E: Endpoint + ReturnsJsonResponse + NoPagination,
         R: DeserializeOwned + std::fmt::Debug,
     {
         let method = endpoint.method();
@@ -957,7 +955,18 @@ pub trait Endpoint {
 /// A trait to indicate that an endpoint is expected to return a JSON result
 pub trait ReturnsJsonResponse {}
 
+/// A trait to indicate that an endpoint requires pagination to yield all results
+/// or in other words that the non-pagination API should not be used on it or one
+/// might miss some results
+#[diagnostic::on_unimplemented(
+    message = "{Self} is an endpoint that requires pagination, use `.json_response_body_page(&endpoint, offset, limit)` or `.json_response_body_all_pages(&endpoint)` instead of `.json_response_body(&endpoint)`"
+)]
+pub trait NoPagination {}
+
 /// A trait to indicate that an endpoint is pageable.
+#[diagnostic::on_unimplemented(
+    message = "{Self} is an endpoint that does not implement pagination, use `.json_response_body(&endpoint)` instead of `.json_response_body_page(&endpoint, offset, limit)` or `.json_response_body_all_pages(&endpoint)`"
+)]
 pub trait Pageable {
     /// returns the name of the key in the response that contains the list of results
     fn response_wrapper_key(&self) -> String;

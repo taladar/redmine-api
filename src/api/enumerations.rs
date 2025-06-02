@@ -10,7 +10,7 @@ use derive_builder::Builder;
 use reqwest::Method;
 use std::borrow::Cow;
 
-use crate::api::{Endpoint, ReturnsJsonResponse};
+use crate::api::{Endpoint, NoPagination, ReturnsJsonResponse};
 
 /// a minimal type for Redmine issue priorities included in
 /// other Redmine objects
@@ -59,6 +59,7 @@ pub struct IssuePriority {
 pub struct ListIssuePriorities {}
 
 impl ReturnsJsonResponse for ListIssuePriorities {}
+impl NoPagination for ListIssuePriorities {}
 
 impl ListIssuePriorities {
     /// Create a builder for the endpoint.
@@ -132,6 +133,7 @@ pub struct TimeEntryActivity {
 pub struct ListTimeEntryActivities {}
 
 impl ReturnsJsonResponse for ListTimeEntryActivities {}
+impl NoPagination for ListTimeEntryActivities {}
 
 impl ListTimeEntryActivities {
     /// Create a builder for the endpoint.
@@ -205,6 +207,7 @@ pub struct DocumentCategory {
 pub struct ListDocumentCategories {}
 
 impl ReturnsJsonResponse for ListDocumentCategories {}
+impl NoPagination for ListDocumentCategories {}
 
 impl ListDocumentCategories {
     /// Create a builder for the endpoint.
