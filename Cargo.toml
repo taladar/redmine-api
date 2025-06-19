@@ -13,6 +13,7 @@ exclude = [".env", "tarpaulin-report.html", "tarpaulin-report.json"]
 
 [features]
 rustls-tls = ["reqwest/rustls-tls"]
+native-tls = ["reqwest/native-tls"]
 
 [profile.release]
 # do not strip debug info from release builds, useful for debugging those, cargo-flamegraph profiling or similar use cases
@@ -40,6 +41,6 @@ dotenvy = "0.15.7"
 finally-block = "0.2.0"
 function_name = "0.3.0"
 pretty_assertions = "1.4.1"
-reqwest = { version = "0.12.18", default-features = false, features = [ "charset", "http2", "rustls-tls", "macos-system-configuration" ] }
+reqwest = { version = "0.12.18", default-features = false, features = [ "charset", "default-tls", "http2", "rustls-tls", "macos-system-configuration" ] }
 tokio = { version = "1.45.1", features = ["full"] }
 tracing-test = "0.2.5"

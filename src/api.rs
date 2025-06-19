@@ -449,10 +449,12 @@ impl RedmineAsync {
     ///
     /// This will return [`crate::Error::ReqwestError`] if initialization of Reqwest client is failed.
     pub fn new(redmine_url: url::Url, api_key: &str) -> Result<Self, crate::Error> {
-        #[cfg(not(feature = "rustls-tls"))]
+        #[cfg(all(not(feature = "rustls-tls"),not(feature = "native-tls")))]
         let client = reqwest::Client::new();
         #[cfg(feature = "rustls-tls")]
         let client = reqwest::Client::builder().use_rustls_tls().build()?;
+        #[cfg(feature = "native-tls")]
+        let client = reqwest::Client::builder().use_native_tls().build()?;
 
         Ok(Self {
             client,
