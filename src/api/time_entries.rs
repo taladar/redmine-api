@@ -346,7 +346,11 @@ mod test {
     fn test_list_time_entries_first_page() -> Result<(), Box<dyn Error>> {
         let _r_time_entries = TIME_ENTRY_LOCK.read();
         dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
+        let redmine = crate::api::Redmine::from_env(
+            reqwest::blocking::Client::builder()
+                .use_rustls_tls()
+                .build()?,
+        )?;
         let endpoint = ListTimeEntries::builder().build()?;
         redmine.json_response_body_page::<_, TimeEntry>(&endpoint, 0, 25)?;
         Ok(())
@@ -370,7 +374,11 @@ mod test {
     fn test_get_time_entry() -> Result<(), Box<dyn Error>> {
         let _r_time_entries = TIME_ENTRY_LOCK.read();
         dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
+        let redmine = crate::api::Redmine::from_env(
+            reqwest::blocking::Client::builder()
+                .use_rustls_tls()
+                .build()?,
+        )?;
         let endpoint = GetTimeEntry::builder().id(832).build()?;
         redmine.json_response_body::<_, TimeEntryWrapper<TimeEntry>>(&endpoint)?;
         Ok(())
@@ -381,7 +389,11 @@ mod test {
     fn test_create_time_entry() -> Result<(), Box<dyn Error>> {
         let _w_time_entries = TIME_ENTRY_LOCK.write();
         dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
+        let redmine = crate::api::Redmine::from_env(
+            reqwest::blocking::Client::builder()
+                .use_rustls_tls()
+                .build()?,
+        )?;
         let create_endpoint = super::CreateTimeEntry::builder()
             .issue_id(25095)
             .hours(1.0)
@@ -396,7 +408,11 @@ mod test {
     fn test_update_time_entry() -> Result<(), Box<dyn Error>> {
         let _w_time_entries = TIME_ENTRY_LOCK.write();
         dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
+        let redmine = crate::api::Redmine::from_env(
+            reqwest::blocking::Client::builder()
+                .use_rustls_tls()
+                .build()?,
+        )?;
         let create_endpoint = super::CreateTimeEntry::builder()
             .issue_id(25095)
             .hours(1.0)
@@ -421,7 +437,11 @@ mod test {
     fn test_completeness_time_entry_type_first_page() -> Result<(), Box<dyn Error>> {
         let _r_time_entries = TIME_ENTRY_LOCK.read();
         dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
+        let redmine = crate::api::Redmine::from_env(
+            reqwest::blocking::Client::builder()
+                .use_rustls_tls()
+                .build()?,
+        )?;
         let endpoint = ListTimeEntries::builder().build()?;
         let ResponsePage {
             values,

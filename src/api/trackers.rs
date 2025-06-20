@@ -101,7 +101,11 @@ mod test {
     #[test]
     fn test_list_trackers_no_pagination() -> Result<(), Box<dyn Error>> {
         dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
+        let redmine = crate::api::Redmine::from_env(
+            reqwest::blocking::Client::builder()
+                .use_rustls_tls()
+                .build()?,
+        )?;
         let endpoint = ListTrackers::builder().build()?;
         redmine.json_response_body::<_, TrackersWrapper<Tracker>>(&endpoint)?;
         Ok(())
@@ -115,7 +119,11 @@ mod test {
     #[test]
     fn test_completeness_tracker_type() -> Result<(), Box<dyn Error>> {
         dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
+        let redmine = crate::api::Redmine::from_env(
+            reqwest::blocking::Client::builder()
+                .use_rustls_tls()
+                .build()?,
+        )?;
         let endpoint = ListTrackers::builder().build()?;
         let TrackersWrapper { trackers: values } =
             redmine.json_response_body::<_, TrackersWrapper<serde_json::Value>>(&endpoint)?;

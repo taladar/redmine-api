@@ -268,7 +268,11 @@ mod test {
     fn test_list_project_memberships_first_page() -> Result<(), Box<dyn Error>> {
         let _r_project_memberships = PROJECT_MEMBERSHIP_LOCK.read();
         dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
+        let redmine = crate::api::Redmine::from_env(
+            reqwest::blocking::Client::builder()
+                .use_rustls_tls()
+                .build()?,
+        )?;
         let endpoint = ListProjectMemberships::builder()
             .project_id_or_name("sandbox")
             .build()?;
@@ -281,7 +285,11 @@ mod test {
     fn test_list_project_memberships_all_pages() -> Result<(), Box<dyn Error>> {
         let _r_project_memberships = PROJECT_MEMBERSHIP_LOCK.read();
         dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
+        let redmine = crate::api::Redmine::from_env(
+            reqwest::blocking::Client::builder()
+                .use_rustls_tls()
+                .build()?,
+        )?;
         let endpoint = ListProjectMemberships::builder()
             .project_id_or_name("sandbox")
             .build()?;
@@ -294,7 +302,11 @@ mod test {
     fn test_get_project_membership() -> Result<(), Box<dyn Error>> {
         let _r_project_memberships = PROJECT_MEMBERSHIP_LOCK.read();
         dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
+        let redmine = crate::api::Redmine::from_env(
+            reqwest::blocking::Client::builder()
+                .use_rustls_tls()
+                .build()?,
+        )?;
         let endpoint = GetProjectMembership::builder().id(238).build()?;
         redmine.json_response_body::<_, MembershipWrapper<ProjectMembership>>(&endpoint)?;
         Ok(())
@@ -352,7 +364,11 @@ mod test {
     fn test_completeness_project_membership_type() -> Result<(), Box<dyn Error>> {
         let _r_project_memberships = PROJECT_MEMBERSHIP_LOCK.read();
         dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
+        let redmine = crate::api::Redmine::from_env(
+            reqwest::blocking::Client::builder()
+                .use_rustls_tls()
+                .build()?,
+        )?;
         let endpoint = ListProjectMemberships::builder()
             .project_id_or_name("sandbox")
             .build()?;

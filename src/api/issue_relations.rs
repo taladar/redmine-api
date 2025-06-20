@@ -223,7 +223,11 @@ mod test {
     fn test_list_issue_relations_no_pagination() -> Result<(), Box<dyn Error>> {
         let _r_issue_relation = ISSUE_RELATION_LOCK.read();
         dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
+        let redmine = crate::api::Redmine::from_env(
+            reqwest::blocking::Client::builder()
+                .use_rustls_tls()
+                .build()?,
+        )?;
         let endpoint = ListIssueRelations::builder().issue_id(50017).build()?;
         redmine.json_response_body::<_, RelationsWrapper<IssueRelation>>(&endpoint)?;
         Ok(())
@@ -234,7 +238,11 @@ mod test {
     fn test_get_issue_relation() -> Result<(), Box<dyn Error>> {
         let _r_issue_relation = ISSUE_RELATION_LOCK.read();
         dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
+        let redmine = crate::api::Redmine::from_env(
+            reqwest::blocking::Client::builder()
+                .use_rustls_tls()
+                .build()?,
+        )?;
         let endpoint = GetIssueRelation::builder().id(10).build()?;
         redmine.json_response_body::<_, RelationWrapper<IssueRelation>>(&endpoint)?;
         Ok(())
@@ -315,7 +323,11 @@ mod test {
     fn test_completeness_issue_relation_type() -> Result<(), Box<dyn Error>> {
         let _r_issue_relation = ISSUE_RELATION_LOCK.read();
         dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
+        let redmine = crate::api::Redmine::from_env(
+            reqwest::blocking::Client::builder()
+                .use_rustls_tls()
+                .build()?,
+        )?;
         let endpoint = ListIssueRelations::builder().issue_id(50017).build()?;
         let RelationsWrapper { relations: values } =
             redmine.json_response_body::<_, RelationsWrapper<serde_json::Value>>(&endpoint)?;

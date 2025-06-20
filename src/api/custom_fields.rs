@@ -346,7 +346,11 @@ mod test {
     #[test]
     fn test_list_custom_fields_no_pagination() -> Result<(), Box<dyn Error>> {
         dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
+        let redmine = crate::api::Redmine::from_env(
+            reqwest::blocking::Client::builder()
+                .use_rustls_tls()
+                .build()?,
+        )?;
         let endpoint = ListCustomFields::builder().build()?;
         redmine.json_response_body::<_, CustomFieldsWrapper<CustomField>>(&endpoint)?;
         Ok(())
@@ -360,7 +364,11 @@ mod test {
     #[test]
     fn test_completeness_custom_fields_type() -> Result<(), Box<dyn Error>> {
         dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
+        let redmine = crate::api::Redmine::from_env(
+            reqwest::blocking::Client::builder()
+                .use_rustls_tls()
+                .build()?,
+        )?;
         let endpoint = ListCustomFields::builder().build()?;
         let CustomFieldsWrapper {
             custom_fields: values,

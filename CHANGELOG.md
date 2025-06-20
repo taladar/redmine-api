@@ -1,3 +1,11 @@
+## 0.7.0
+
+update dependencies
+add extra parameter to new/from\_env to allow users to pass in a reqwest::Client
+or reqwest::blocking::Client configured according to their needs, remove rustls-tls
+feature since the user can just use their own dependency on reqwest to configure
+the features
+
 ## 0.6.0
 
 add new trait NoPagination that guards the use of the unpaginated API

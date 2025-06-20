@@ -269,7 +269,11 @@ mod test {
     fn test_list_issue_categories_no_pagination() -> Result<(), Box<dyn Error>> {
         let _r_issue_category = ISSUE_CATEGORY_LOCK.read();
         dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
+        let redmine = crate::api::Redmine::from_env(
+            reqwest::blocking::Client::builder()
+                .use_rustls_tls()
+                .build()?,
+        )?;
         let endpoint = ListIssueCategories::builder()
             .project_id_or_name("336")
             .build()?;
@@ -282,7 +286,11 @@ mod test {
     fn test_get_issue_category() -> Result<(), Box<dyn Error>> {
         let _r_issue_category = ISSUE_CATEGORY_LOCK.read();
         dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
+        let redmine = crate::api::Redmine::from_env(
+            reqwest::blocking::Client::builder()
+                .use_rustls_tls()
+                .build()?,
+        )?;
         let endpoint = GetIssueCategory::builder().id(10).build()?;
         redmine.json_response_body::<_, IssueCategoryWrapper<IssueCategory>>(&endpoint)?;
         Ok(())
@@ -359,7 +367,11 @@ mod test {
     fn test_completeness_issue_category_type() -> Result<(), Box<dyn Error>> {
         let _r_issue_category = ISSUE_CATEGORY_LOCK.read();
         dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
+        let redmine = crate::api::Redmine::from_env(
+            reqwest::blocking::Client::builder()
+                .use_rustls_tls()
+                .build()?,
+        )?;
         let endpoint = ListIssueCategories::builder()
             .project_id_or_name("336")
             .build()?;

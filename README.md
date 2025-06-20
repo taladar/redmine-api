@@ -30,6 +30,11 @@ There are four main ways to call API endpoints:
 * returning a single page from a query that supports pagination
 * returning all pages from a query that supports pagination
 
+All the examples below use the blocking Api but it is also possible to use
+the async API merely by creating a reqwest::Client instead of a
+reqwest::blocking::Client and using RedmineAsync instead of Redmine (and of
+course adding .await where appropriate).
+
 ### The Endpoint trait
 
 Each API endpoint is represented by an object implementing the [Endpoint](api::Endpoint) trait.
@@ -60,7 +65,7 @@ queries since that might have given the user less flexibility.
 ### Using your own return types
 
 Instead of the supplied return types it is possible to use your own types or
-even something like [serde_json::Value]. This allows you to extract the fields
+even something like [serde\_json::Value]. This allows you to extract the fields
 you need directly into your own types, e.g. just the Id.
 
 ### Essentials types
@@ -85,7 +90,8 @@ use redmine_api::api::issues::{Issue, IssuesWrapper, ListIssues};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv::dotenv()?;
-    let redmine = Redmine::from_env()?;
+    let client = reqwest::blocking::Client::builder().use_rustls_tls().build()?;
+    let redmine = Redmine::from_env(client)?;
     let endpoint = ListIssues::builder().build()?;
     redmine.ignore_response_body::<_>(&endpoint)?;
     Ok(())
@@ -110,7 +116,8 @@ use redmine_api::api::issues::{Issue, IssuesWrapper, ListIssues};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv::dotenv()?;
-    let redmine = Redmine::from_env()?;
+    let client = reqwest::blocking::Client::builder().use_rustls_tls().build()?;
+    let redmine = Redmine::from_env(client)?;
     let endpoint = ListIssues::builder().build()?;
     let IssuesWrapper { issues } =
         redmine.json_response_body::<_, IssuesWrapper<Issue>>(&endpoint)?;
@@ -144,7 +151,8 @@ use redmine_api::api::issues::{Issue, ListIssues};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv::dotenv()?;
-    let redmine = Redmine::from_env()?;
+    let client = reqwest::blocking::Client::builder().use_rustls_tls().build()?;
+    let redmine = Redmine::from_env(client)?;
     let endpoint = ListIssues::builder().build()?;
     let ResponsePage { values: issues, total_count, offset, limit} =
         redmine.json_response_body_page::<_, Issue>(&endpoint, 3, 25)?;
@@ -171,7 +179,8 @@ use redmine_api::api::issues::{Issue, ListIssues};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv::dotenv()?;
-    let redmine = Redmine::from_env()?;
+    let client = reqwest::blocking::Client::builder().use_rustls_tls().build()?;
+    let redmine = Redmine::from_env(client)?;
     let endpoint = ListIssues::builder().build()?;
     let issues =
         redmine.json_response_body_all_pages::<_, Issue>(&endpoint)?;

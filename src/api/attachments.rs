@@ -114,7 +114,11 @@ mod test {
     #[test]
     fn test_get_attachment() -> Result<(), Box<dyn Error>> {
         dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
+        let redmine = crate::api::Redmine::from_env(
+            reqwest::blocking::Client::builder()
+                .use_rustls_tls()
+                .build()?,
+        )?;
         let endpoint = GetAttachment::builder().id(38468).build()?;
         redmine.json_response_body::<_, AttachmentWrapper<Attachment>>(&endpoint)?;
         Ok(())
@@ -128,7 +132,11 @@ mod test {
     #[test]
     fn test_completeness_attachment_type() -> Result<(), Box<dyn Error>> {
         dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
+        let redmine = crate::api::Redmine::from_env(
+            reqwest::blocking::Client::builder()
+                .use_rustls_tls()
+                .build()?,
+        )?;
         let endpoint = GetAttachment::builder().id(38468).build()?;
         let AttachmentWrapper { attachment: value } =
             redmine.json_response_body::<_, AttachmentWrapper<serde_json::Value>>(&endpoint)?;

@@ -27,7 +27,11 @@ where
 {
     let _w_projects = PROJECT_LOCK.write();
     dotenvy::dotenv()?;
-    let redmine = crate::api::Redmine::from_env()?;
+    let redmine = crate::api::Redmine::from_env(
+        reqwest::blocking::Client::builder()
+            .use_rustls_tls()
+            .build()?,
+    )?;
     let get_endpoint = GetProject::builder().project_id_or_name(name).build()?;
     let get_result = redmine.json_response_body::<_, ProjectWrapper<Project>>(&get_endpoint);
     trace!("Get result in {} test:\n{:?}", name, get_result);
@@ -77,7 +81,11 @@ where
 {
     let _w_groups = GROUP_LOCK.write();
     dotenvy::dotenv()?;
-    let redmine = crate::api::Redmine::from_env()?;
+    let redmine = crate::api::Redmine::from_env(
+        reqwest::blocking::Client::builder()
+            .use_rustls_tls()
+            .build()?,
+    )?;
     let create_endpoint = CreateGroup::builder().name(name).build()?;
     let GroupWrapper { group } =
         redmine.json_response_body::<_, GroupWrapper<Group>>(&create_endpoint)?;

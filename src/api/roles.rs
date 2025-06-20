@@ -167,7 +167,11 @@ mod test {
     #[test]
     fn test_list_roles_no_pagination() -> Result<(), Box<dyn Error>> {
         dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
+        let redmine = crate::api::Redmine::from_env(
+            reqwest::blocking::Client::builder()
+                .use_rustls_tls()
+                .build()?,
+        )?;
         let endpoint = ListRoles::builder().build()?;
         redmine.json_response_body::<_, RolesWrapper<RoleEssentials>>(&endpoint)?;
         Ok(())
@@ -176,7 +180,11 @@ mod test {
     #[test]
     fn test_get_role() -> Result<(), Box<dyn Error>> {
         dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
+        let redmine = crate::api::Redmine::from_env(
+            reqwest::blocking::Client::builder()
+                .use_rustls_tls()
+                .build()?,
+        )?;
         let endpoint = GetRole::builder().id(8).build()?;
         redmine.json_response_body::<_, RoleWrapper<Role>>(&endpoint)?;
         Ok(())
@@ -190,7 +198,11 @@ mod test {
     #[test]
     fn test_completeness_role_type() -> Result<(), Box<dyn Error>> {
         dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
+        let redmine = crate::api::Redmine::from_env(
+            reqwest::blocking::Client::builder()
+                .use_rustls_tls()
+                .build()?,
+        )?;
         let list_endpoint = ListRoles::builder().build()?;
         let RolesWrapper { roles } =
             redmine.json_response_body::<_, RolesWrapper<RoleEssentials>>(&list_endpoint)?;

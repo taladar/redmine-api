@@ -341,7 +341,11 @@ mod test {
     fn test_list_versions_no_pagination() -> Result<(), Box<dyn Error>> {
         let _r_versions = VERSION_LOCK.read();
         dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
+        let redmine = crate::api::Redmine::from_env(
+            reqwest::blocking::Client::builder()
+                .use_rustls_tls()
+                .build()?,
+        )?;
         let endpoint = ListVersions::builder().project_id_or_name("92").build()?;
         redmine.json_response_body::<_, VersionsWrapper<Version>>(&endpoint)?;
         Ok(())
@@ -352,7 +356,11 @@ mod test {
     fn test_get_version() -> Result<(), Box<dyn Error>> {
         let _r_versions = VERSION_LOCK.read();
         dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
+        let redmine = crate::api::Redmine::from_env(
+            reqwest::blocking::Client::builder()
+                .use_rustls_tls()
+                .build()?,
+        )?;
         let endpoint = GetVersion::builder().id(1182).build()?;
         redmine.json_response_body::<_, VersionWrapper<Version>>(&endpoint)?;
         Ok(())
@@ -407,7 +415,11 @@ mod test {
     fn test_completeness_version_type() -> Result<(), Box<dyn Error>> {
         let _r_versions = VERSION_LOCK.read();
         dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
+        let redmine = crate::api::Redmine::from_env(
+            reqwest::blocking::Client::builder()
+                .use_rustls_tls()
+                .build()?,
+        )?;
         let endpoint = ListVersions::builder().project_id_or_name("92").build()?;
         let VersionsWrapper { versions: values } =
             redmine.json_response_body::<_, VersionsWrapper<serde_json::Value>>(&endpoint)?;

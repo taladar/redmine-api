@@ -21,7 +21,7 @@
 //!   - [x] status_id filter
 //!     - [x] open (default)
 //!     - [x] closed
-//!     - [x] * for both
+//!     - [x] for both
 //!     - [x] status id (multiple are possible, comma separated)
 //!   - [x] category_id filter
 //!     - [x] category id (multiple are possible, comma separated)
@@ -1217,7 +1217,11 @@ pub(crate) mod test {
     fn test_list_issues_first_page() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.read();
         dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
+        let redmine = crate::api::Redmine::from_env(
+            reqwest::blocking::Client::builder()
+                .use_rustls_tls()
+                .build()?,
+        )?;
         let endpoint = ListIssues::builder().build()?;
         redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
         Ok(())
@@ -1232,7 +1236,11 @@ pub(crate) mod test {
     fn test_list_issues_all_pages() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.read();
         dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
+        let redmine = crate::api::Redmine::from_env(
+            reqwest::blocking::Client::builder()
+                .use_rustls_tls()
+                .build()?,
+        )?;
         let endpoint = ListIssues::builder().build()?;
         redmine.json_response_body_all_pages::<_, Issue>(&endpoint)?;
         Ok(())
@@ -1243,7 +1251,11 @@ pub(crate) mod test {
     fn test_get_issue() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.read();
         dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
+        let redmine = crate::api::Redmine::from_env(
+            reqwest::blocking::Client::builder()
+                .use_rustls_tls()
+                .build()?,
+        )?;
         let endpoint = GetIssue::builder().id(40000).build()?;
         redmine.json_response_body::<_, IssueWrapper<Issue>>(&endpoint)?;
         Ok(())
@@ -1318,7 +1330,11 @@ pub(crate) mod test {
     fn test_completeness_issue_type_first_page() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.read();
         dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
+        let redmine = crate::api::Redmine::from_env(
+            reqwest::blocking::Client::builder()
+                .use_rustls_tls()
+                .build()?,
+        )?;
         let endpoint = ListIssues::builder()
             .include(vec![
                 IssueListInclude::Attachments,
@@ -1353,7 +1369,11 @@ pub(crate) mod test {
     fn test_completeness_issue_type_all_pages() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.read();
         dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
+        let redmine = crate::api::Redmine::from_env(
+            reqwest::blocking::Client::builder()
+                .use_rustls_tls()
+                .build()?,
+        )?;
         let endpoint = ListIssues::builder()
             .include(vec![
                 IssueListInclude::Attachments,
@@ -1384,7 +1404,11 @@ pub(crate) mod test {
     fn test_completeness_issue_type_all_pages_all_issue_details() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.read();
         dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
+        let redmine = crate::api::Redmine::from_env(
+            reqwest::blocking::Client::builder()
+                .use_rustls_tls()
+                .build()?,
+        )?;
         let endpoint = ListIssues::builder()
             .include(vec![
                 IssueListInclude::Attachments,

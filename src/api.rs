@@ -127,14 +127,11 @@ impl Redmine {
     /// # Errors
     ///
     /// This will return [`crate::Error::ReqwestError`] if initialization of Reqwest client is failed.
-    pub fn new(redmine_url: url::Url, api_key: &str) -> Result<Self, crate::Error> {
-        #[cfg(not(feature = "rustls-tls"))]
-        let client = reqwest::blocking::Client::new();
-        #[cfg(feature = "rustls-tls")]
-        let client = reqwest::blocking::Client::builder()
-            .use_rustls_tls()
-            .build()?;
-
+    pub fn new(
+        client: reqwest::blocking::Client,
+        redmine_url: url::Url,
+        api_key: &str,
+    ) -> Result<Self, crate::Error> {
         Ok(Self {
             client,
             redmine_url,
@@ -152,13 +149,13 @@ impl Redmine {
     ///
     /// This will return an error if the environment variables are
     /// missing or the URL can not be parsed
-    pub fn from_env() -> Result<Self, crate::Error> {
+    pub fn from_env(client: reqwest::blocking::Client) -> Result<Self, crate::Error> {
         let env_options = envy::from_env::<EnvOptions>()?;
 
         let redmine_url = env_options.redmine_url;
         let api_key = env_options.redmine_api_key;
 
-        Self::new(redmine_url, &api_key)
+        Self::new(client, redmine_url, &api_key)
     }
 
     /// Sets the user id of a user to impersonate in all future API calls
@@ -448,12 +445,11 @@ impl RedmineAsync {
     /// # Errors
     ///
     /// This will return [`crate::Error::ReqwestError`] if initialization of Reqwest client is failed.
-    pub fn new(redmine_url: url::Url, api_key: &str) -> Result<Self, crate::Error> {
-        #[cfg(not(feature = "rustls-tls"))]
-        let client = reqwest::Client::new();
-        #[cfg(feature = "rustls-tls")]
-        let client = reqwest::Client::builder().use_rustls_tls().build()?;
-
+    pub fn new(
+        client: reqwest::Client,
+        redmine_url: url::Url,
+        api_key: &str,
+    ) -> Result<Self, crate::Error> {
         Ok(Self {
             client,
             redmine_url,
@@ -471,13 +467,13 @@ impl RedmineAsync {
     ///
     /// This will return an error if the environment variables are
     /// missing or the URL can not be parsed
-    pub fn from_env() -> Result<Self, crate::Error> {
+    pub fn from_env(client: reqwest::Client) -> Result<Self, crate::Error> {
         let env_options = envy::from_env::<EnvOptions>()?;
 
         let redmine_url = env_options.redmine_url;
         let api_key = env_options.redmine_api_key;
 
-        Self::new(redmine_url, &api_key)
+        Self::new(client, redmine_url, &api_key)
     }
 
     /// Sets the user id of a user to impersonate in all future API calls

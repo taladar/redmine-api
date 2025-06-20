@@ -110,7 +110,11 @@ mod test {
     #[test]
     fn test_list_issue_statuses_no_pagination() -> Result<(), Box<dyn Error>> {
         dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
+        let redmine = crate::api::Redmine::from_env(
+            reqwest::blocking::Client::builder()
+                .use_rustls_tls()
+                .build()?,
+        )?;
         let endpoint = ListIssueStatuses::builder().build()?;
         redmine.json_response_body::<_, IssueStatusesWrapper<IssueStatus>>(&endpoint)?;
         Ok(())
@@ -124,7 +128,11 @@ mod test {
     #[test]
     fn test_completeness_issue_status_type() -> Result<(), Box<dyn Error>> {
         dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
+        let redmine = crate::api::Redmine::from_env(
+            reqwest::blocking::Client::builder()
+                .use_rustls_tls()
+                .build()?,
+        )?;
         let endpoint = ListIssueStatuses::builder().build()?;
         let IssueStatusesWrapper {
             issue_statuses: values,

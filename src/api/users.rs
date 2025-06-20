@@ -485,7 +485,11 @@ mod test {
     fn test_list_users_first_page() -> Result<(), Box<dyn Error>> {
         let _r_user = USER_LOCK.read();
         dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
+        let redmine = crate::api::Redmine::from_env(
+            reqwest::blocking::Client::builder()
+                .use_rustls_tls()
+                .build()?,
+        )?;
         let endpoint = ListUsers::builder().build()?;
         redmine.json_response_body_page::<_, User>(&endpoint, 0, 25)?;
         Ok(())
@@ -496,7 +500,11 @@ mod test {
     fn test_list_users_all_pages() -> Result<(), Box<dyn Error>> {
         let _r_user = USER_LOCK.read();
         dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
+        let redmine = crate::api::Redmine::from_env(
+            reqwest::blocking::Client::builder()
+                .use_rustls_tls()
+                .build()?,
+        )?;
         let endpoint = ListUsers::builder().build()?;
         redmine.json_response_body_all_pages::<_, User>(&endpoint)?;
         Ok(())
@@ -507,7 +515,11 @@ mod test {
     fn test_get_user() -> Result<(), Box<dyn Error>> {
         let _r_user = USER_LOCK.read();
         dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
+        let redmine = crate::api::Redmine::from_env(
+            reqwest::blocking::Client::builder()
+                .use_rustls_tls()
+                .build()?,
+        )?;
         let endpoint = GetUser::builder().id(1).build()?;
         redmine.json_response_body::<_, UserWrapper<User>>(&endpoint)?;
         Ok(())
@@ -520,7 +532,11 @@ mod test {
         let _w_user = USER_LOCK.write();
         let name = format!("unittest_{}", function_name!());
         dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
+        let redmine = crate::api::Redmine::from_env(
+            reqwest::blocking::Client::builder()
+                .use_rustls_tls()
+                .build()?,
+        )?;
         let list_endpoint = ListUsers::builder().name(name.clone()).build()?;
         let users: Vec<User> = redmine.json_response_body_all_pages(&list_endpoint)?;
         for user in users {
@@ -613,7 +629,11 @@ mod test {
         let _w_user = USER_LOCK.write();
         let name = format!("unittest_{}", function_name!());
         dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
+        let redmine = crate::api::Redmine::from_env(
+            reqwest::blocking::Client::builder()
+                .use_rustls_tls()
+                .build()?,
+        )?;
         let list_endpoint = ListUsers::builder().name(name.clone()).build()?;
         let users: Vec<User> = redmine.json_response_body_all_pages(&list_endpoint)?;
         for user in users {
@@ -647,7 +667,11 @@ mod test {
     fn test_completeness_user_type_first_page() -> Result<(), Box<dyn Error>> {
         let _r_user = USER_LOCK.read();
         dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
+        let redmine = crate::api::Redmine::from_env(
+            reqwest::blocking::Client::builder()
+                .use_rustls_tls()
+                .build()?,
+        )?;
         let endpoint = ListUsers::builder().build()?;
         let ResponsePage {
             values,
@@ -675,7 +699,11 @@ mod test {
     fn test_completeness_user_type_all_pages_all_user_details() -> Result<(), Box<dyn Error>> {
         let _r_user = USER_LOCK.read();
         dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
+        let redmine = crate::api::Redmine::from_env(
+            reqwest::blocking::Client::builder()
+                .use_rustls_tls()
+                .build()?,
+        )?;
         let endpoint = ListUsers::builder().build()?;
         let users = redmine.json_response_body_all_pages::<_, User>(&endpoint)?;
         for user in users {

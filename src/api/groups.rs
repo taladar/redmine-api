@@ -354,7 +354,11 @@ pub(crate) mod test {
     fn test_list_groups_no_pagination() -> Result<(), Box<dyn Error>> {
         let _r_groups = GROUP_LOCK.read();
         dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
+        let redmine = crate::api::Redmine::from_env(
+            reqwest::blocking::Client::builder()
+                .use_rustls_tls()
+                .build()?,
+        )?;
         let endpoint = ListGroups::builder().build()?;
         redmine.json_response_body::<_, GroupsWrapper<Group>>(&endpoint)?;
         Ok(())
@@ -365,7 +369,11 @@ pub(crate) mod test {
     fn test_get_group() -> Result<(), Box<dyn Error>> {
         let _r_groups = GROUP_LOCK.read();
         dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
+        let redmine = crate::api::Redmine::from_env(
+            reqwest::blocking::Client::builder()
+                .use_rustls_tls()
+                .build()?,
+        )?;
         let endpoint = GetGroup::builder().id(338).build()?;
         redmine.json_response_body::<_, GroupWrapper<Group>>(&endpoint)?;
         Ok(())
@@ -405,7 +413,11 @@ pub(crate) mod test {
     fn test_completeness_group_type() -> Result<(), Box<dyn Error>> {
         let _r_groups = GROUP_LOCK.read();
         dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
+        let redmine = crate::api::Redmine::from_env(
+            reqwest::blocking::Client::builder()
+                .use_rustls_tls()
+                .build()?,
+        )?;
         let endpoint = ListGroups::builder().build()?;
         let GroupsWrapper { groups: values } =
             redmine.json_response_body::<_, GroupsWrapper<serde_json::Value>>(&endpoint)?;
@@ -429,7 +441,11 @@ pub(crate) mod test {
     fn test_completeness_group_type_all_group_details() -> Result<(), Box<dyn Error>> {
         let _r_groups = GROUP_LOCK.read();
         dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env()?;
+        let redmine = crate::api::Redmine::from_env(
+            reqwest::blocking::Client::builder()
+                .use_rustls_tls()
+                .build()?,
+        )?;
         let endpoint = ListGroups::builder().build()?;
         let GroupsWrapper { groups } =
             redmine.json_response_body::<_, GroupsWrapper<Group>>(&endpoint)?;
