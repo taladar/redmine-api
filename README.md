@@ -33,7 +33,9 @@ There are four main ways to call API endpoints:
 All the examples below use the blocking Api but it is also possible to use
 the async API merely by creating a reqwest::Client instead of a
 reqwest::blocking::Client and using RedmineAsync instead of Redmine (and of
-course adding .await where appropriate).
+course adding .await where appropriate). They do use the re-exported version
+of reqwest to avoid version conflicts if the user has another version of the
+reqwest crate in their dependency graph.
 
 ### The Endpoint trait
 
@@ -90,7 +92,7 @@ use redmine_api::api::issues::{Issue, IssuesWrapper, ListIssues};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv::dotenv()?;
-    let client = reqwest::blocking::Client::builder().use_rustls_tls().build()?;
+    let client = redmine_api::reqwest::blocking::Client::builder().use_rustls_tls().build()?;
     let redmine = Redmine::from_env(client)?;
     let endpoint = ListIssues::builder().build()?;
     redmine.ignore_response_body::<_>(&endpoint)?;
@@ -116,7 +118,7 @@ use redmine_api::api::issues::{Issue, IssuesWrapper, ListIssues};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv::dotenv()?;
-    let client = reqwest::blocking::Client::builder().use_rustls_tls().build()?;
+    let client = redmine_api::reqwest::blocking::Client::builder().use_rustls_tls().build()?;
     let redmine = Redmine::from_env(client)?;
     let endpoint = ListIssues::builder().build()?;
     let IssuesWrapper { issues } =
@@ -151,7 +153,7 @@ use redmine_api::api::issues::{Issue, ListIssues};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv::dotenv()?;
-    let client = reqwest::blocking::Client::builder().use_rustls_tls().build()?;
+    let client = redmine_api::reqwest::blocking::Client::builder().use_rustls_tls().build()?;
     let redmine = Redmine::from_env(client)?;
     let endpoint = ListIssues::builder().build()?;
     let ResponsePage { values: issues, total_count, offset, limit} =
@@ -179,7 +181,7 @@ use redmine_api::api::issues::{Issue, ListIssues};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv::dotenv()?;
-    let client = reqwest::blocking::Client::builder().use_rustls_tls().build()?;
+    let client = redmine_api::reqwest::blocking::Client::builder().use_rustls_tls().build()?;
     let redmine = Redmine::from_env(client)?;
     let endpoint = ListIssues::builder().build()?;
     let issues =

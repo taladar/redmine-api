@@ -1,3 +1,7 @@
+## 0.7.1
+
+re-export reqwest so users can construct clients with the correct reqwest version
+
 ## 0.7.0
 
 update dependencies

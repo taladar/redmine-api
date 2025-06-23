@@ -29,6 +29,9 @@
 #![doc = include_str!("../README.md")]
 
 pub mod api;
+/// re-export the reqwest crate so users of redmine-api can use the exact
+/// dependency version we use for constructing clients
+pub use reqwest;
 
 use thiserror::Error;
 
