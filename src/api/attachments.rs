@@ -41,7 +41,7 @@ pub struct Attachment {
     pub created_on: time::OffsetDateTime,
     /// the URL for the thumbnail for this attachment
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    thumbnail_url: Option<String>,
+    pub thumbnail_url: Option<String>,
 }
 
 /// The endpoint for a specific Redmine attachment

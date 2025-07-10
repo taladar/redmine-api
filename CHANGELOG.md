@@ -1,3 +1,7 @@
+## 0.7.3
+
+forgot to make thumbnail\_url public
+
 ## 0.7.2
 
 update dependencies
