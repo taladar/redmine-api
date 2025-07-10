@@ -1,5 +1,4 @@
 //! Issues Rest API Endpoint definitions
-//!
 //! [Redmine Documentation](https://www.redmine.org/projects/redmine/wiki/Rest_Issues)
 //!
 //! [Redmine Documentation Journals](https://www.redmine.org/projects/redmine/wiki/Rest_IssueJournals)
@@ -237,6 +236,15 @@ pub struct Journal {
         deserialize_with = "crate::api::deserialize_rfc3339"
     )]
     pub created_on: time::OffsetDateTime,
+    /// The time when this comment/change was last updated
+    #[serde(
+        serialize_with = "crate::api::serialize_rfc3339",
+        deserialize_with = "crate::api::deserialize_rfc3339"
+    )]
+    pub updated_on: time::OffsetDateTime,
+    /// The user who updated the comment/change if it differs from the author
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub updated_by: Option<UserEssentials>,
     /// changed issue attributes
     pub details: Vec<JournalChange>,
 }
@@ -342,7 +350,7 @@ pub struct Issue {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub total_spent_hours: Option<f64>,
     /// the total hours estimated on this and sub-tasks
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub total_estimated_hours: Option<f64>,
 }
 
@@ -369,15 +377,15 @@ impl std::fmt::Display for SubProjectFilter {
                     .map(|e| e.to_string())
                     .collect::<Vec<_>>()
                     .join(",");
-                write!(f, "{}", s)
+                write!(f, "{s}")
             }
             SubProjectFilter::NotTheseSubProjects(ids) => {
                 let s: String = ids
                     .iter()
-                    .map(|e| format!("!{}", e))
+                    .map(|e| format!("!{e}"))
                     .collect::<Vec<_>>()
                     .join(",");
-                write!(f, "{}", s)
+                write!(f, "{s}")
             }
         }
     }
@@ -416,15 +424,15 @@ impl std::fmt::Display for StatusFilter {
                     .map(|e| e.to_string())
                     .collect::<Vec<_>>()
                     .join(",");
-                write!(f, "{}", s)
+                write!(f, "{s}")
             }
             StatusFilter::NotTheseStatuses(ids) => {
                 let s: String = ids
                     .iter()
-                    .map(|e| format!("!{}", e))
+                    .map(|e| format!("!{e}"))
                     .collect::<Vec<_>>()
                     .join(",");
-                write!(f, "{}", s)
+                write!(f, "{s}")
             }
         }
     }
@@ -463,15 +471,15 @@ impl std::fmt::Display for AuthorFilter {
                     .map(|e| e.to_string())
                     .collect::<Vec<_>>()
                     .join(",");
-                write!(f, "{}", s)
+                write!(f, "{s}")
             }
             AuthorFilter::NotTheseAuthors(ids) => {
                 let s: String = ids
                     .iter()
-                    .map(|e| format!("!{}", e))
+                    .map(|e| format!("!{e}"))
                     .collect::<Vec<_>>()
                     .join(",");
-                write!(f, "{}", s)
+                write!(f, "{s}")
             }
         }
     }
@@ -512,15 +520,15 @@ impl std::fmt::Display for AssigneeFilter {
                     .map(|e| e.to_string())
                     .collect::<Vec<_>>()
                     .join(",");
-                write!(f, "{}", s)
+                write!(f, "{s}")
             }
             AssigneeFilter::NotTheseAssignees(ids) => {
                 let s: String = ids
                     .iter()
-                    .map(|e| format!("!{}", e))
+                    .map(|e| format!("!{e}"))
                     .collect::<Vec<_>>()
                     .join(",");
-                write!(f, "{}", s)
+                write!(f, "{s}")
             }
             AssigneeFilter::NoAssignee => {
                 write!(f, "!*")
@@ -542,10 +550,10 @@ impl std::fmt::Display for StringFieldFilter {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             StringFieldFilter::ExactMatch(s) => {
-                write!(f, "{}", s)
+                write!(f, "{s}")
             }
             StringFieldFilter::SubStringMatch(s) => {
-                write!(f, "~{}", s)
+                write!(f, "~{s}")
             }
         }
     }
@@ -639,10 +647,10 @@ impl std::fmt::Display for SortByColumn {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             SortByColumn::Forward { column_name } => {
-                write!(f, "{}", column_name)
+                write!(f, "{column_name}")
             }
             SortByColumn::Reverse { column_name } => {
-                write!(f, "{}:desc", column_name)
+                write!(f, "{column_name}:desc")
             }
         }
     }

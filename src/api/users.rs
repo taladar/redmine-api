@@ -234,7 +234,7 @@ impl Endpoint for GetUser {
 
     fn endpoint(&self) -> Cow<'static, str> {
         match self.id {
-            Some(id) => format!("users/{}.json", id).into(),
+            Some(id) => format!("users/{id}.json").into(),
             None => "users/current.json".into(),
         }
     }
@@ -547,7 +547,7 @@ mod test {
             .login(name.clone())
             .firstname("Unit")
             .lastname("Test")
-            .mail(format!("unit-test_{}@example.org", name))
+            .mail(format!("unit-test_{name}@example.org"))
             .build()?;
         let UserWrapper { user } =
             redmine.json_response_body::<_, UserWrapper<User>>(&create_endpoint)?;
@@ -644,13 +644,13 @@ mod test {
             .login(name.clone())
             .firstname("Unit")
             .lastname("Test")
-            .mail(format!("unit-test_{}@example.org", name))
+            .mail(format!("unit-test_{name}@example.org"))
             .build()?;
         let UserWrapper { user } =
             redmine.json_response_body::<_, UserWrapper<User>>(&create_endpoint)?;
         let update_endpoint = super::UpdateUser::builder()
             .id(user.id)
-            .login(format!("new_{}", name))
+            .login(format!("new_{name}"))
             .build()?;
         redmine.ignore_response_body::<_>(&update_endpoint)?;
         let delete_endpoint = DeleteUser::builder().id(user.id).build()?;

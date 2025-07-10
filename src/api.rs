@@ -175,7 +175,7 @@ impl Redmine {
         let Redmine { redmine_url, .. } = self;
         // we can unwrap here because we know /issues/<number>
         // parses successfully as an url fragment
-        redmine_url.join(&format!("/issues/{}", issue_id)).unwrap()
+        redmine_url.join(&format!("/issues/{issue_id}")).unwrap()
     }
 
     /// internal method for shared logic between the methods below which
@@ -200,7 +200,7 @@ impl Redmine {
             .request(method.clone(), url.clone())
             .header("x-redmine-api-key", api_key);
         let req = if let Some(user_id) = impersonate_user_id {
-            req.header("X-Redmine-Switch-User", format!("{}", user_id))
+            req.header("X-Redmine-Switch-User", format!("{user_id}"))
         } else {
             req
         };
@@ -493,7 +493,7 @@ impl RedmineAsync {
         let RedmineAsync { redmine_url, .. } = self;
         // we can unwrap here because we know /issues/<number>
         // parses successfully as an url fragment
-        redmine_url.join(&format!("/issues/{}", issue_id)).unwrap()
+        redmine_url.join(&format!("/issues/{issue_id}")).unwrap()
     }
 
     /// internal method for shared logic between the methods below which
@@ -518,7 +518,7 @@ impl RedmineAsync {
             .request(method.clone(), url.clone())
             .header("x-redmine-api-key", api_key);
         let req = if let Some(user_id) = impersonate_user_id {
-            req.header("X-Redmine-Switch-User", format!("{}", user_id))
+            req.header("X-Redmine-Switch-User", format!("{user_id}"))
         } else {
             req
         };
@@ -847,13 +847,13 @@ impl<'a, 'b: 'a> ParamValue<'a> for &'b Cow<'a, str> {
 
 impl ParamValue<'static> for u64 {
     fn as_value(&self) -> Cow<'static, str> {
-        format!("{}", self).into()
+        format!("{self}").into()
     }
 }
 
 impl ParamValue<'static> for f64 {
     fn as_value(&self) -> Cow<'static, str> {
-        format!("{}", self).into()
+        format!("{self}").into()
     }
 }
 

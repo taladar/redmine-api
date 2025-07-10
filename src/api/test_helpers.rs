@@ -40,7 +40,7 @@ where
         redmine.ignore_response_body::<_>(&delete_endpoint)?;
     }
     let create_endpoint = CreateProject::builder()
-        .name(format!("Unittest redmine-api {}", name))
+        .name(format!("Unittest redmine-api {name}"))
         .identifier(name)
         .build()?;
     let ProjectWrapper { project } =
@@ -50,10 +50,10 @@ where
         let delete_endpoint = DeleteProject::builder()
             .project_id_or_name(name)
             .build()
-            .unwrap_or_else(|_| panic!("Building delete endpoint for project {} failed", name));
+            .unwrap_or_else(|_| panic!("Building delete endpoint for project {name} failed"));
         redmine
             .ignore_response_body::<_>(&delete_endpoint)
-            .unwrap_or_else(|_| panic!("Delete project {} failed", name));
+            .unwrap_or_else(|_| panic!("Delete project {name} failed"));
     });
     trace!(%name, "Actual test body starts here");
     f(&redmine, project.id, name)?;
@@ -95,10 +95,10 @@ where
         let delete_endpoint = DeleteGroup::builder()
             .id(id)
             .build()
-            .unwrap_or_else(|_| panic!("Building delete endpoint for group {} failed", name));
+            .unwrap_or_else(|_| panic!("Building delete endpoint for group {name} failed"));
         redmine
             .ignore_response_body::<_>(&delete_endpoint)
-            .unwrap_or_else(|_| panic!("Delete group {} failed", name));
+            .unwrap_or_else(|_| panic!("Delete group {name} failed"));
     });
     trace!(%name, "Actual test body starts here");
     f(&redmine, id, name)?;

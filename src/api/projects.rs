@@ -708,6 +708,11 @@ pub(crate) mod test {
             .build()?;
         let projects = redmine.json_response_body_all_pages::<_, Project>(&endpoint)?;
         for project in projects {
+            tracing::debug!(
+                "Now calling individual GetProject for project id {} name {}",
+                project.id,
+                project.name
+            );
             let get_endpoint = GetProject::builder()
                 .project_id_or_name(project.id.to_string())
                 .include(vec![

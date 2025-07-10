@@ -89,6 +89,8 @@ pub struct CustomField {
     pub name: String,
     /// description
     pub description: Option<String>,
+    /// is the field editable
+    pub editable: bool,
     /// type of Redmine object this field is customizing
     pub customized_type: CustomizedType,
     /// data type of the field
@@ -180,7 +182,7 @@ impl serde::Serialize for CustomFieldEssentialsWithValue {
                     state.serialize_field("value", &s)?;
                 }
                 values => {
-                    return Err(serde::ser::Error::custom(format!("CustomFieldEssentialsWithValue multiple was set to false but value contained more than one value: {:?}", values)));
+                    return Err(serde::ser::Error::custom(format!("CustomFieldEssentialsWithValue multiple was set to false but value contained more than one value: {values:?}")));
                 }
             }
         } else {

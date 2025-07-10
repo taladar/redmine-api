@@ -1,3 +1,13 @@
+## 0.7.2
+
+update dependencies
+fix clippy lint uninlined\_format\_args
+fix some completeness test failures
+  thumbnail\_url in attachments
+  editable in custom\_fields
+  updated\_on and updated\_by in journal entries
+  skip serializing total\_estimated\_hours if it is None
+
 ## 0.7.1
 
 re-export reqwest so users can construct clients with the correct reqwest version
