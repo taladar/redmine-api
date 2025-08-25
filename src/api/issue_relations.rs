@@ -221,7 +221,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_issue_relations_no_pagination() -> Result<(), Box<dyn Error>> {
-        let _r_issue_relation = ISSUE_RELATION_LOCK.read();
+        let _r_issue_relation = ISSUE_RELATION_LOCK.blocking_read();
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
@@ -236,7 +236,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_get_issue_relation() -> Result<(), Box<dyn Error>> {
-        let _r_issue_relation = ISSUE_RELATION_LOCK.read();
+        let _r_issue_relation = ISSUE_RELATION_LOCK.blocking_read();
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
@@ -252,8 +252,8 @@ mod test {
     #[traced_test]
     #[test]
     fn test_create_issue_relation() -> Result<(), Box<dyn Error>> {
-        let _w_issues = ISSUES_LOCK.write();
-        let _w_issue_relation = ISSUE_RELATION_LOCK.write();
+        let _w_issues = ISSUES_LOCK.blocking_write();
+        let _w_issue_relation = ISSUE_RELATION_LOCK.blocking_write();
         let name = format!("unittest_{}", function_name!());
         with_project(&name, |redmine, project_id, _name| {
             let create_issue1_endpoint = CreateIssue::builder()
@@ -283,8 +283,8 @@ mod test {
     #[traced_test]
     #[test]
     fn test_delete_issue_relation() -> Result<(), Box<dyn Error>> {
-        let _w_issues = ISSUES_LOCK.write();
-        let _w_issue_relation = ISSUE_RELATION_LOCK.write();
+        let _w_issues = ISSUES_LOCK.blocking_write();
+        let _w_issue_relation = ISSUE_RELATION_LOCK.blocking_write();
         let name = format!("unittest_{}", function_name!());
         with_project(&name, |redmine, project_id, _name| {
             let create_issue1_endpoint = CreateIssue::builder()
@@ -321,7 +321,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_completeness_issue_relation_type() -> Result<(), Box<dyn Error>> {
-        let _r_issue_relation = ISSUE_RELATION_LOCK.read();
+        let _r_issue_relation = ISSUE_RELATION_LOCK.blocking_read();
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()

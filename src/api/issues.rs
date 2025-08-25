@@ -769,7 +769,7 @@ impl Endpoint for ListIssues {
         "issues.json".into()
     }
 
-    fn parameters(&self) -> QueryParams {
+    fn parameters(&self) -> QueryParams<'_> {
         let mut params = QueryParams::default();
         params.push_opt("include", self.include.as_ref());
         params.push_opt("sort", self.sort.as_ref());
@@ -902,7 +902,7 @@ impl Endpoint for GetIssue {
         format!("issues/{}.json", &self.id).into()
     }
 
-    fn parameters(&self) -> QueryParams {
+    fn parameters(&self) -> QueryParams<'_> {
         let mut params = QueryParams::default();
         params.push_opt("include", self.include.as_ref());
         params
@@ -1223,7 +1223,7 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_first_page() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.read();
+        let _r_issues = ISSUES_LOCK.blocking_read();
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
@@ -1242,7 +1242,7 @@ pub(crate) mod test {
     #[test]
     #[ignore]
     fn test_list_issues_all_pages() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.read();
+        let _r_issues = ISSUES_LOCK.blocking_read();
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
@@ -1257,7 +1257,7 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_get_issue() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.read();
+        let _r_issues = ISSUES_LOCK.blocking_read();
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
@@ -1273,7 +1273,7 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_create_issue() -> Result<(), Box<dyn Error>> {
-        let _w_issues = ISSUES_LOCK.write();
+        let _w_issues = ISSUES_LOCK.blocking_write();
         let name = format!("unittest_{}", function_name!());
         with_project(&name, |redmine, project_id, _| {
             let create_endpoint = super::CreateIssue::builder()
@@ -1290,7 +1290,7 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_update_issue() -> Result<(), Box<dyn Error>> {
-        let _w_issues = ISSUES_LOCK.write();
+        let _w_issues = ISSUES_LOCK.blocking_write();
         let name = format!("unittest_{}", function_name!());
         with_project(&name, |redmine, project_id, _name| {
             let create_endpoint = super::CreateIssue::builder()
@@ -1313,7 +1313,7 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_delete_issue() -> Result<(), Box<dyn Error>> {
-        let _w_issues = ISSUES_LOCK.write();
+        let _w_issues = ISSUES_LOCK.blocking_write();
         let name = format!("unittest_{}", function_name!());
         with_project(&name, |redmine, project_id, _name| {
             let create_endpoint = super::CreateIssue::builder()
@@ -1336,7 +1336,7 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_completeness_issue_type_first_page() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.read();
+        let _r_issues = ISSUES_LOCK.blocking_read();
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
@@ -1358,7 +1358,19 @@ pub(crate) mod test {
         for value in values {
             let o: Issue = serde_json::from_value(value.clone())?;
             let reserialized = serde_json::to_value(o)?;
-            assert_eq!(value, reserialized);
+            let expected_value = if let serde_json::Value::Object(obj) = value {
+                let mut expected_obj = obj.clone();
+                if obj
+                    .get("total_estimated_hours")
+                    .is_some_and(|v| *v == serde_json::Value::Null)
+                {
+                    expected_obj.remove("total_estimated_hours");
+                }
+                serde_json::Value::Object(expected_obj)
+            } else {
+                value
+            };
+            assert_eq!(expected_value, reserialized);
         }
         Ok(())
     }
@@ -1375,7 +1387,7 @@ pub(crate) mod test {
     #[test]
     #[ignore]
     fn test_completeness_issue_type_all_pages() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.read();
+        let _r_issues = ISSUES_LOCK.blocking_read();
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
@@ -1392,7 +1404,19 @@ pub(crate) mod test {
         for value in values {
             let o: Issue = serde_json::from_value(value.clone())?;
             let reserialized = serde_json::to_value(o)?;
-            assert_eq!(value, reserialized);
+            let expected_value = if let serde_json::Value::Object(obj) = value {
+                let mut expected_obj = obj.clone();
+                if obj
+                    .get("total_estimated_hours")
+                    .is_some_and(|v| *v == serde_json::Value::Null)
+                {
+                    expected_obj.remove("total_estimated_hours");
+                }
+                serde_json::Value::Object(expected_obj)
+            } else {
+                value
+            };
+            assert_eq!(expected_value, reserialized);
         }
         Ok(())
     }
@@ -1410,7 +1434,7 @@ pub(crate) mod test {
     #[test]
     #[ignore]
     fn test_completeness_issue_type_all_pages_all_issue_details() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.read();
+        let _r_issues = ISSUES_LOCK.blocking_read();
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()

@@ -143,7 +143,7 @@ impl Endpoint for GetGroup {
         format!("groups/{}.json", &self.id).into()
     }
 
-    fn parameters(&self) -> QueryParams {
+    fn parameters(&self) -> QueryParams<'_> {
         let mut params = QueryParams::default();
         params.push_opt("include", self.include.as_ref());
         params
@@ -339,7 +339,9 @@ pub struct GroupWrapper<T> {
 #[cfg(test)]
 pub(crate) mod test {
     use super::*;
+    use crate::api::project_memberships::test::PROJECT_MEMBERSHIP_LOCK;
     use crate::api::test_helpers::with_group;
+    use crate::api::users::test::USER_LOCK;
     use pretty_assertions::assert_eq;
     use std::error::Error;
     use tokio::sync::RwLock;
@@ -352,7 +354,7 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_groups_no_pagination() -> Result<(), Box<dyn Error>> {
-        let _r_groups = GROUP_LOCK.read();
+        let _r_groups = GROUP_LOCK.blocking_read();
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
@@ -367,7 +369,7 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_get_group() -> Result<(), Box<dyn Error>> {
-        let _r_groups = GROUP_LOCK.read();
+        let _r_groups = GROUP_LOCK.blocking_read();
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
@@ -391,7 +393,7 @@ pub(crate) mod test {
     #[function_name::named]
     #[traced_test]
     #[test]
-    fn test_update_project() -> Result<(), Box<dyn Error>> {
+    fn test_update_group() -> Result<(), Box<dyn Error>> {
         let name = format!("unittest_{}", function_name!());
         with_group(&name, |redmine, id, _name| {
             let update_endpoint = super::UpdateGroup::builder()
@@ -411,7 +413,7 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_completeness_group_type() -> Result<(), Box<dyn Error>> {
-        let _r_groups = GROUP_LOCK.read();
+        let _r_groups = GROUP_LOCK.blocking_read();
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
@@ -439,7 +441,9 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_completeness_group_type_all_group_details() -> Result<(), Box<dyn Error>> {
-        let _r_groups = GROUP_LOCK.read();
+        let _r_user = USER_LOCK.blocking_read();
+        let _r_groups = GROUP_LOCK.blocking_read();
+        let _r_project_memberships = PROJECT_MEMBERSHIP_LOCK.blocking_read();
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()

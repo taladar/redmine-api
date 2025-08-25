@@ -25,7 +25,7 @@ pub fn with_project<F>(name: &str, f: F) -> Result<(), Box<dyn Error>>
 where
     F: FnOnce(&crate::api::Redmine, u64, &str) -> Result<(), Box<dyn Error>>,
 {
-    let _w_projects = PROJECT_LOCK.write();
+    let _w_projects = PROJECT_LOCK.blocking_write();
     dotenvy::dotenv()?;
     let redmine = crate::api::Redmine::from_env(
         reqwest::blocking::Client::builder()
@@ -79,7 +79,7 @@ pub fn with_group<F>(name: &str, f: F) -> Result<(), Box<dyn Error>>
 where
     F: FnOnce(&crate::api::Redmine, u64, &str) -> Result<(), Box<dyn Error>>,
 {
-    let _w_groups = GROUP_LOCK.write();
+    let _w_groups = GROUP_LOCK.blocking_write();
     dotenvy::dotenv()?;
     let redmine = crate::api::Redmine::from_env(
         reqwest::blocking::Client::builder()

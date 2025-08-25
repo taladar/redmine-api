@@ -251,7 +251,7 @@ pub struct MembershipWrapper<T> {
 }
 
 #[cfg(test)]
-mod test {
+pub(crate) mod test {
     use super::*;
     use crate::api::test_helpers::with_project;
     use pretty_assertions::assert_eq;
@@ -261,12 +261,12 @@ mod test {
 
     /// needed so we do not get 404s when listing while
     /// creating/deleting or creating/updating/deleting
-    static PROJECT_MEMBERSHIP_LOCK: RwLock<()> = RwLock::const_new(());
+    pub static PROJECT_MEMBERSHIP_LOCK: RwLock<()> = RwLock::const_new(());
 
     #[traced_test]
     #[test]
     fn test_list_project_memberships_first_page() -> Result<(), Box<dyn Error>> {
-        let _r_project_memberships = PROJECT_MEMBERSHIP_LOCK.read();
+        let _r_project_memberships = PROJECT_MEMBERSHIP_LOCK.blocking_read();
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
@@ -283,7 +283,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_project_memberships_all_pages() -> Result<(), Box<dyn Error>> {
-        let _r_project_memberships = PROJECT_MEMBERSHIP_LOCK.read();
+        let _r_project_memberships = PROJECT_MEMBERSHIP_LOCK.blocking_read();
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
@@ -300,7 +300,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_get_project_membership() -> Result<(), Box<dyn Error>> {
-        let _r_project_memberships = PROJECT_MEMBERSHIP_LOCK.read();
+        let _r_project_memberships = PROJECT_MEMBERSHIP_LOCK.blocking_read();
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
@@ -316,7 +316,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_create_project_membership() -> Result<(), Box<dyn Error>> {
-        let _w_project_memberships = PROJECT_MEMBERSHIP_LOCK.write();
+        let _w_project_memberships = PROJECT_MEMBERSHIP_LOCK.blocking_write();
         let name = format!("unittest_{}", function_name!());
         with_project(&name, |redmine, project_id, _| {
             let create_endpoint = super::CreateProjectMembership::builder()
@@ -335,7 +335,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_update_project_membership() -> Result<(), Box<dyn Error>> {
-        let _w_project_memberships = PROJECT_MEMBERSHIP_LOCK.write();
+        let _w_project_memberships = PROJECT_MEMBERSHIP_LOCK.blocking_write();
         let name = format!("unittest_{}", function_name!());
         with_project(&name, |redmine, project_id, _name| {
             let create_endpoint = super::CreateProjectMembership::builder()
@@ -362,7 +362,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_completeness_project_membership_type() -> Result<(), Box<dyn Error>> {
-        let _r_project_memberships = PROJECT_MEMBERSHIP_LOCK.read();
+        let _r_project_memberships = PROJECT_MEMBERSHIP_LOCK.blocking_read();
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()

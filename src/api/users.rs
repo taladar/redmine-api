@@ -173,7 +173,7 @@ impl Endpoint for ListUsers<'_> {
         "users.json".into()
     }
 
-    fn parameters(&self) -> QueryParams {
+    fn parameters(&self) -> QueryParams<'_> {
         let mut params = QueryParams::default();
         params.push_opt("status", self.status.as_ref().map(|s| s.to_string()));
         params.push_opt("name", self.name.as_ref());
@@ -239,7 +239,7 @@ impl Endpoint for GetUser {
         }
     }
 
-    fn parameters(&self) -> QueryParams {
+    fn parameters(&self) -> QueryParams<'_> {
         let mut params = QueryParams::default();
         params.push_opt("include", self.include.as_ref());
         params
@@ -467,8 +467,10 @@ pub struct UserWrapperWithSendInformation<T> {
 }
 
 #[cfg(test)]
-mod test {
-    use crate::api::ResponsePage;
+pub(crate) mod test {
+    use crate::api::{
+        groups::test::GROUP_LOCK, project_memberships::test::PROJECT_MEMBERSHIP_LOCK, ResponsePage,
+    };
 
     use super::*;
     use pretty_assertions::assert_eq;
@@ -478,12 +480,12 @@ mod test {
 
     /// needed so we do not get 404s when listing while
     /// creating/deleting or creating/updating/deleting
-    static USER_LOCK: RwLock<()> = RwLock::const_new(());
+    pub static USER_LOCK: RwLock<()> = RwLock::const_new(());
 
     #[traced_test]
     #[test]
     fn test_list_users_first_page() -> Result<(), Box<dyn Error>> {
-        let _r_user = USER_LOCK.read();
+        let _r_user = USER_LOCK.blocking_read();
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
@@ -498,7 +500,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_users_all_pages() -> Result<(), Box<dyn Error>> {
-        let _r_user = USER_LOCK.read();
+        let _r_user = USER_LOCK.blocking_read();
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
@@ -513,7 +515,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_get_user() -> Result<(), Box<dyn Error>> {
-        let _r_user = USER_LOCK.read();
+        let _r_user = USER_LOCK.blocking_read();
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
@@ -529,7 +531,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_create_user() -> Result<(), Box<dyn Error>> {
-        let _w_user = USER_LOCK.write();
+        let _w_user = USER_LOCK.blocking_write();
         let name = format!("unittest_{}", function_name!());
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
@@ -564,7 +566,7 @@ mod test {
     // #[traced_test]
     // #[test]
     // fn test_create_user_send_account_info() -> Result<(), Box<dyn Error>> {
-    //     let _w_user = USER_LOCK.write();
+    //     let _w_user = USER_LOCK.blocking_write();
     //     let name = format!("unittest_{}", function_name!());
     //     dotenvy::dotenv()?;
     //     let redmine = crate::api::Redmine::from_env()?;
@@ -597,7 +599,7 @@ mod test {
     // #[traced_test]
     // #[test]
     // fn test_create_admin_user() -> Result<(), Box<dyn Error>> {
-    //     let _w_user = USER_LOCK.write();
+    //     let _w_user = USER_LOCK.blocking_write();
     //     let name = format!("unittest_{}", function_name!());
     //     dotenvy::dotenv()?;
     //     let redmine = crate::api::Redmine::from_env()?;
@@ -626,7 +628,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_update_user() -> Result<(), Box<dyn Error>> {
-        let _w_user = USER_LOCK.write();
+        let _w_user = USER_LOCK.blocking_write();
         let name = format!("unittest_{}", function_name!());
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
@@ -665,7 +667,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_completeness_user_type_first_page() -> Result<(), Box<dyn Error>> {
-        let _r_user = USER_LOCK.read();
+        let _r_user = USER_LOCK.blocking_read();
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
@@ -697,7 +699,9 @@ mod test {
     #[traced_test]
     #[test]
     fn test_completeness_user_type_all_pages_all_user_details() -> Result<(), Box<dyn Error>> {
-        let _r_user = USER_LOCK.read();
+        let _r_user = USER_LOCK.blocking_read();
+        let _r_groups = GROUP_LOCK.blocking_read();
+        let _r_project_memberships = PROJECT_MEMBERSHIP_LOCK.blocking_read();
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()

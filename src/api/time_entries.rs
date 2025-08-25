@@ -118,7 +118,7 @@ impl Endpoint for ListTimeEntries<'_> {
         "time_entries.json".into()
     }
 
-    fn parameters(&self) -> QueryParams {
+    fn parameters(&self) -> QueryParams<'_> {
         let mut params = QueryParams::default();
         params.push_opt("user_id", self.user_id);
         params.push_opt("project_id", self.project_id_or_name.as_ref());
@@ -344,7 +344,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_time_entries_first_page() -> Result<(), Box<dyn Error>> {
-        let _r_time_entries = TIME_ENTRY_LOCK.read();
+        let _r_time_entries = TIME_ENTRY_LOCK.blocking_read();
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
@@ -361,7 +361,7 @@ mod test {
     // #[test]
     // #[ignore]
     // fn test_list_time_entries_all_pages() -> Result<(), Box<dyn Error>> {
-    //     let _r_time_entries = TIME_ENTRY_LOCK.read();
+    //     let _r_time_entries = TIME_ENTRY_LOCK.blocking_read();
     //     dotenvy::dotenv()?;
     //     let redmine = crate::api::Redmine::from_env()?;
     //     let endpoint = ListTimeEntries::builder().build()?;
@@ -372,7 +372,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_get_time_entry() -> Result<(), Box<dyn Error>> {
-        let _r_time_entries = TIME_ENTRY_LOCK.read();
+        let _r_time_entries = TIME_ENTRY_LOCK.blocking_read();
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
@@ -387,7 +387,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_create_time_entry() -> Result<(), Box<dyn Error>> {
-        let _w_time_entries = TIME_ENTRY_LOCK.write();
+        let _w_time_entries = TIME_ENTRY_LOCK.blocking_write();
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
@@ -406,7 +406,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_update_time_entry() -> Result<(), Box<dyn Error>> {
-        let _w_time_entries = TIME_ENTRY_LOCK.write();
+        let _w_time_entries = TIME_ENTRY_LOCK.blocking_write();
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
@@ -435,7 +435,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_completeness_time_entry_type_first_page() -> Result<(), Box<dyn Error>> {
-        let _r_time_entries = TIME_ENTRY_LOCK.read();
+        let _r_time_entries = TIME_ENTRY_LOCK.blocking_read();
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()

@@ -267,7 +267,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_issue_categories_no_pagination() -> Result<(), Box<dyn Error>> {
-        let _r_issue_category = ISSUE_CATEGORY_LOCK.read();
+        let _r_issue_category = ISSUE_CATEGORY_LOCK.blocking_read();
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
@@ -284,7 +284,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_get_issue_category() -> Result<(), Box<dyn Error>> {
-        let _r_issue_category = ISSUE_CATEGORY_LOCK.read();
+        let _r_issue_category = ISSUE_CATEGORY_LOCK.blocking_read();
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
@@ -300,7 +300,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_create_issue_category() -> Result<(), Box<dyn Error>> {
-        let _w_issue_category = ISSUE_CATEGORY_LOCK.write();
+        let _w_issue_category = ISSUE_CATEGORY_LOCK.blocking_write();
         let name = format!("unittest_{}", function_name!());
         with_project(&name, |redmine, _id, name| {
             let create_endpoint = super::CreateIssueCategory::builder()
@@ -317,7 +317,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_update_issue_category() -> Result<(), Box<dyn Error>> {
-        let _w_issue_category = ISSUE_CATEGORY_LOCK.write();
+        let _w_issue_category = ISSUE_CATEGORY_LOCK.blocking_write();
         let name = format!("unittest_{}", function_name!());
         with_project(&name, |redmine, _id, name| {
             let create_endpoint = super::CreateIssueCategory::builder()
@@ -341,7 +341,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_delete_issue_category() -> Result<(), Box<dyn Error>> {
-        let _w_issue_category = ISSUE_CATEGORY_LOCK.write();
+        let _w_issue_category = ISSUE_CATEGORY_LOCK.blocking_write();
         let name = format!("unittest_{}", function_name!());
         with_project(&name, |redmine, _id, name| {
             let create_endpoint = super::CreateIssueCategory::builder()
@@ -365,7 +365,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_completeness_issue_category_type() -> Result<(), Box<dyn Error>> {
-        let _r_issue_category = ISSUE_CATEGORY_LOCK.read();
+        let _r_issue_category = ISSUE_CATEGORY_LOCK.blocking_read();
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()

@@ -339,7 +339,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_versions_no_pagination() -> Result<(), Box<dyn Error>> {
-        let _r_versions = VERSION_LOCK.read();
+        let _r_versions = VERSION_LOCK.blocking_read();
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
@@ -354,7 +354,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_get_version() -> Result<(), Box<dyn Error>> {
-        let _r_versions = VERSION_LOCK.read();
+        let _r_versions = VERSION_LOCK.blocking_read();
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
@@ -370,7 +370,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_create_version() -> Result<(), Box<dyn Error>> {
-        let _w_versions = VERSION_LOCK.write();
+        let _w_versions = VERSION_LOCK.blocking_write();
         let name = format!("unittest_{}", function_name!());
         with_project(&name, |redmine, _, name| {
             let create_endpoint = CreateVersion::builder()
@@ -387,7 +387,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_update_version() -> Result<(), Box<dyn Error>> {
-        let _w_versions = VERSION_LOCK.write();
+        let _w_versions = VERSION_LOCK.blocking_write();
         let name = format!("unittest_{}", function_name!());
         with_project(&name, |redmine, _, name| {
             let create_endpoint = CreateVersion::builder()
@@ -413,7 +413,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_completeness_version_type() -> Result<(), Box<dyn Error>> {
-        let _r_versions = VERSION_LOCK.read();
+        let _r_versions = VERSION_LOCK.blocking_read();
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()

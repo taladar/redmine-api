@@ -206,7 +206,7 @@ impl Endpoint for ListProjects {
         "projects.json".into()
     }
 
-    fn parameters(&self) -> QueryParams {
+    fn parameters(&self) -> QueryParams<'_> {
         let mut params = QueryParams::default();
         params.push_opt("include", self.include.as_ref());
         params
@@ -282,7 +282,7 @@ impl Endpoint for GetProject<'_> {
         format!("projects/{}.json", &self.project_id_or_name).into()
     }
 
-    fn parameters(&self) -> QueryParams {
+    fn parameters(&self) -> QueryParams<'_> {
         let mut params = QueryParams::default();
         params.push_opt("include", self.include.as_ref());
         params
@@ -554,7 +554,7 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_projects_first_page() -> Result<(), Box<dyn Error>> {
-        let _r_project = PROJECT_LOCK.read();
+        let _r_project = PROJECT_LOCK.blocking_read();
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
@@ -569,7 +569,7 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_projects_all_pages() -> Result<(), Box<dyn Error>> {
-        let _r_project = PROJECT_LOCK.read();
+        let _r_project = PROJECT_LOCK.blocking_read();
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
@@ -584,7 +584,7 @@ pub(crate) mod test {
     #[traced_test]
     #[tokio::test]
     async fn test_list_projects_async_first_page() -> Result<(), Box<dyn Error>> {
-        let _r_project = PROJECT_LOCK.read();
+        let _r_project = PROJECT_LOCK.read().await;
         dotenvy::dotenv()?;
         let redmine = crate::api::RedmineAsync::from_env(
             reqwest::Client::builder().use_rustls_tls().build()?,
@@ -599,7 +599,7 @@ pub(crate) mod test {
     #[traced_test]
     #[tokio::test]
     async fn test_list_projects_async_all_pages() -> Result<(), Box<dyn Error>> {
-        let _r_project = PROJECT_LOCK.read();
+        let _r_project = PROJECT_LOCK.read().await;
         dotenvy::dotenv()?;
         let redmine = crate::api::RedmineAsync::from_env(
             reqwest::Client::builder().use_rustls_tls().build()?,
@@ -614,7 +614,7 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_get_project() -> Result<(), Box<dyn Error>> {
-        let _r_project = PROJECT_LOCK.read();
+        let _r_project = PROJECT_LOCK.blocking_read();
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
@@ -660,7 +660,7 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_completeness_project_type() -> Result<(), Box<dyn Error>> {
-        let _r_project = PROJECT_LOCK.read();
+        let _r_project = PROJECT_LOCK.blocking_read();
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
@@ -690,7 +690,7 @@ pub(crate) mod test {
     #[test]
     fn test_completeness_project_type_all_pages_all_project_details() -> Result<(), Box<dyn Error>>
     {
-        let _r_project = PROJECT_LOCK.read();
+        let _r_project = PROJECT_LOCK.blocking_read();
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()

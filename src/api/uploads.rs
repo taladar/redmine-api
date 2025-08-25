@@ -64,7 +64,7 @@ impl Endpoint for UploadFile<'_> {
         "uploads.json".into()
     }
 
-    fn parameters(&self) -> QueryParams {
+    fn parameters(&self) -> QueryParams<'_> {
         let mut params = QueryParams::default();
         if let Some(ref filename) = self.filename {
             params.push("filename", filename);
@@ -109,7 +109,7 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_create_issue_with_attachment() -> Result<(), Box<dyn Error>> {
-        let _w_issues = ISSUES_LOCK.write();
+        let _w_issues = ISSUES_LOCK.blocking_write();
         let name = format!("unittest_{}", function_name!());
         with_project(&name, |redmine, project_id, _| {
             let upload_endpoint = UploadFile::builder().file("README.md").build()?;
@@ -137,7 +137,7 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_update_issue_with_attachment() -> Result<(), Box<dyn Error>> {
-        let _w_issues = ISSUES_LOCK.write();
+        let _w_issues = ISSUES_LOCK.blocking_write();
         let name = format!("unittest_{}", function_name!());
         with_project(&name, |redmine, project_id, _| {
             let upload_endpoint = UploadFile::builder().file("README.md").build()?;

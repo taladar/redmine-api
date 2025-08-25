@@ -39,7 +39,8 @@ reqwest crate in their dependency graph.
 
 ### The Endpoint trait
 
-Each API endpoint is represented by an object implementing the [Endpoint](api::Endpoint) trait.
+Each API endpoint is represented by an object implementing the
+[Endpoint](api::Endpoint) trait.
 
 Each of them has a Builder to set any potential parameters. For uniformity this
 pattern is used even when there are no parameters.
@@ -67,14 +68,14 @@ queries since that might have given the user less flexibility.
 ### Using your own return types
 
 Instead of the supplied return types it is possible to use your own types or
-even something like [serde\_json::Value]. This allows you to extract the fields
+even something like `serde_json::Value`. This allows you to extract the fields
 you need directly into your own types, e.g. just the Id.
 
 ### Essentials types
 
-In the API responses we often find lists of other entities in a minimal form, e.g.
-just the id and name. I have named these types after the main entity followed by
-Essentials, e.g. [IssueEssentials](api::issues::IssueEssentials).
+In the API responses we often find lists of other entities in a minimal form,
+e.g. just the id and name. I have named these types after the main entity
+followed by Essentials, e.g. [IssueEssentials](api::issues::IssueEssentials).
 
 ### Ignoring the response body
 
@@ -82,19 +83,22 @@ This is mainly useful in practice for queries that do not have a response body
 (e.g. delete queries) or for queries that have a side-effect (like creating an
 issue) where we do not care about the response body.
 
-For illustrative purposes I am using the [ListIssues](api::issues::ListIssues)
-endpoint here mainly to avoid accidental data loss from running
-a delete example copied from here on a production Redmine instance.
+For illustrative purposes I am using the [GetIssue](api::issues::GetIssue)
+endpoint here mainly to avoid accidental data loss from running a delete example
+copied from here on a production Redmine instance.
 
-```
+```rust
 use redmine_api::api::Redmine;
-use redmine_api::api::issues::{Issue, IssuesWrapper, ListIssues};
+use redmine_api::api::issues::{Issue, IssuesWrapper, GetIssue};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    dotenv::dotenv()?;
-    let client = redmine_api::reqwest::blocking::Client::builder().use_rustls_tls().build()?;
+    dotenvy::dotenv()?;
+    let client =
+      redmine_api::reqwest::blocking::Client::builder()
+        .use_rustls_tls()
+        .build()?;
     let redmine = Redmine::from_env(client)?;
-    let endpoint = ListIssues::builder().build()?;
+    let endpoint = GetIssue::builder().id(1).build()?;
     redmine.ignore_response_body::<_>(&endpoint)?;
     Ok(())
 }
@@ -112,20 +116,21 @@ will be emitted to avoid accidentally writing code that ignores all but the
 first page. This is implemented by having all endpoints that do not implement
 pagination implement the NoPagination trait.
 
-```
+```rust
 use redmine_api::api::Redmine;
-use redmine_api::api::issues::{Issue, IssuesWrapper, ListIssues};
+use redmine_api::api::issues::{Issue, IssueWrapper, GetIssue};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    dotenv::dotenv()?;
-    let client = redmine_api::reqwest::blocking::Client::builder().use_rustls_tls().build()?;
+    dotenvy::dotenv()?;
+    let client =
+      redmine_api::reqwest::blocking::Client::builder()
+        .use_rustls_tls()
+        .build()?;
     let redmine = Redmine::from_env(client)?;
-    let endpoint = ListIssues::builder().build()?;
-    let IssuesWrapper { issues } =
-        redmine.json_response_body::<_, IssuesWrapper<Issue>>(&endpoint)?;
-    for issue in issues {
-        println!("Issue found:\n{:#?}", issue);
-    }
+    let endpoint = GetIssue::builder().id(1).build()?;
+    let IssueWrapper { issue } =
+        redmine.json_response_body::<_, IssueWrapper<Issue>>(&endpoint)?;
+    println!("Issue found:\n{:#?}", issue);
     Ok(())
 }
 ```
@@ -147,13 +152,16 @@ However the call does require the offset and limit parameters and the response
 is wrapped in the [ResponsePage](api::ResponsePage) struct to
 return these values.
 
-```
+```rust
 use redmine_api::api::{Redmine,ResponsePage};
 use redmine_api::api::issues::{Issue, ListIssues};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    dotenv::dotenv()?;
-    let client = redmine_api::reqwest::blocking::Client::builder().use_rustls_tls().build()?;
+    dotenvy::dotenv()?;
+    let client =
+      redmine_api::reqwest::blocking::Client::builder()
+        .use_rustls_tls()
+        .build()?;
     let redmine = Redmine::from_env(client)?;
     let endpoint = ListIssues::builder().build()?;
     let ResponsePage { values: issues, total_count, offset, limit} =
@@ -175,13 +183,16 @@ Most of the things said in the previous section also apply here.
 Since we request all pages we do not require an offset or limit parameter
 nor are the results wrapped in an extra object.
 
-```
+```rust
 use redmine_api::api::Redmine;
 use redmine_api::api::issues::{Issue, ListIssues};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    dotenv::dotenv()?;
-    let client = redmine_api::reqwest::blocking::Client::builder().use_rustls_tls().build()?;
+    dotenvy::dotenv()?;
+    let client =
+      redmine_api::reqwest::blocking::Client::builder()
+        .use_rustls_tls()
+        .build()?;
     let redmine = Redmine::from_env(client)?;
     let endpoint = ListIssues::builder().build()?;
     let issues =

@@ -1,3 +1,10 @@
+# Changelog
+
+## 0.7.4
+
+update dependencies
+fix test locking and some other minor test issues
+
 ## 0.7.3
 
 forgot to make thumbnail\_url public
@@ -14,15 +21,16 @@ fix some completeness test failures
 
 ## 0.7.1
 
-re-export reqwest so users can construct clients with the correct reqwest version
+re-export reqwest so users can construct clients with the correct reqwest
+version
 
 ## 0.7.0
 
 update dependencies
 add extra parameter to new/from\_env to allow users to pass in a reqwest::Client
-or reqwest::blocking::Client configured according to their needs, remove rustls-tls
-feature since the user can just use their own dependency on reqwest to configure
-the features
+or reqwest::blocking::Client configured according to their needs, remove
+rustls-tls feature since the user can just use their own dependency on reqwest
+to configure the features
 
 ## 0.6.0
 
@@ -144,19 +152,22 @@ make issues custom_fields optional
 
 optional rustls support contributed by Alexander Yekimov <av.yekimov@yandex.ru>
 fix clippy lints about unused lifetimes in impl blocks
-add IssueStatusEssentials field is_closed which seems to be included in recent Redmine versions
+add IssueStatusEssentials field is_closed which seems to be included in recent
+Redmine versions
 
 ## 0.1.6
 
-Fix missing #[builder(default)] on GetUser id field
+Fix missing `#[builder(default)]` on GetUser id field
 
 ## 0.1.5
 
-Add From implementations for shared references for all existing From implementations
+Add From implementations for shared references for all existing From
+implementations
 
 ## 0.1.4
 
-Add From implementations for the Essentials types from the respective full types where possible
+Add From implementations for the Essentials types from the respective full types
+where possible
 
 ## 0.1.3
 
@@ -165,19 +176,17 @@ Fix typos in comments
 
 ## 0.1.2
 
-## Fixed
-
 Make fields in TrackerEssentials public
 
 ## 0.1.1
 
-## Fixed
-
-SortByColumn in descending direction for issues should use :desc instead of :rev keyword
+SortByColumn in descending direction for issues should use :desc instead of
+:rev keyword
 
 Add some docs Errors sections
 
-Add some must_use attributes to methods where that made sense (mostly the builder() methods)
+Add some must_use attributes to methods where that made sense (mostly the
+builder() methods)
 
 ## 0.1.0
 
