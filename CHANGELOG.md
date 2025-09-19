@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.7.5
+
+update dependencies
+
 ## 0.7.4
 
 update dependencies
