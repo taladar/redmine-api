@@ -469,7 +469,7 @@ pub struct UserWrapperWithSendInformation<T> {
 #[cfg(test)]
 pub(crate) mod test {
     use crate::api::{
-        groups::test::GROUP_LOCK, project_memberships::test::PROJECT_MEMBERSHIP_LOCK, ResponsePage,
+        ResponsePage, groups::test::GROUP_LOCK, project_memberships::test::PROJECT_MEMBERSHIP_LOCK,
     };
 
     use super::*;

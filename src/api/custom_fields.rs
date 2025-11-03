@@ -182,7 +182,9 @@ impl serde::Serialize for CustomFieldEssentialsWithValue {
                     state.serialize_field("value", &s)?;
                 }
                 values => {
-                    return Err(serde::ser::Error::custom(format!("CustomFieldEssentialsWithValue multiple was set to false but value contained more than one value: {values:?}")));
+                    return Err(serde::ser::Error::custom(format!(
+                        "CustomFieldEssentialsWithValue multiple was set to false but value contained more than one value: {values:?}"
+                    )));
                 }
             }
         } else {

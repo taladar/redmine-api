@@ -45,12 +45,14 @@ pub mod users;
 pub mod versions;
 pub mod wiki_pages;
 
+use futures::future::FutureExt as _;
+
 use std::str::from_utf8;
 
-use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use serde::Deserializer;
 use serde::Serialize;
+use serde::de::DeserializeOwned;
 
 use reqwest::Method;
 use std::borrow::Cow;
@@ -210,8 +212,7 @@ impl Redmine {
             } else {
                 trace!(
                     "Request body (Content-Type: {}) could not be parsed as UTF-8:\n{:?}",
-                    mime,
-                    data
+                    mime, data
                 );
             }
             req.body(data).header("Content-Type", mime)
@@ -232,8 +233,7 @@ impl Redmine {
             Err(e) => {
                 trace!(
                     "Response body that could not be parsed as utf8 because of {}:\n{:?}",
-                    &e,
-                    &response_body
+                    &e, &response_body
                 );
             }
         }
@@ -437,6 +437,21 @@ impl Redmine {
         }
         Ok(total_results)
     }
+
+    /// use this to get the results for all pages of a paginated JSON response
+    /// as an Iterator
+    pub fn json_response_body_all_pages_iter<'a, 'e, 'i, E, R>(
+        &'a self,
+        endpoint: &'e E,
+    ) -> AllPages<'i, E, R>
+    where
+        E: Endpoint + ReturnsJsonResponse + Pageable,
+        R: DeserializeOwned + std::fmt::Debug,
+        'a: 'i,
+        'e: 'i,
+    {
+        AllPages::new(self, endpoint)
+    }
 }
 
 impl RedmineAsync {
@@ -449,13 +464,13 @@ impl RedmineAsync {
         client: reqwest::Client,
         redmine_url: url::Url,
         api_key: &str,
-    ) -> Result<Self, crate::Error> {
-        Ok(Self {
+    ) -> Result<std::sync::Arc<Self>, crate::Error> {
+        Ok(std::sync::Arc::new(Self {
             client,
             redmine_url,
             api_key: api_key.to_string(),
             impersonate_user_id: None,
-        })
+        }))
     }
 
     /// create a [RedmineAsync] object from the environment variables
@@ -467,7 +482,7 @@ impl RedmineAsync {
     ///
     /// This will return an error if the environment variables are
     /// missing or the URL can not be parsed
-    pub fn from_env(client: reqwest::Client) -> Result<Self, crate::Error> {
+    pub fn from_env(client: reqwest::Client) -> Result<std::sync::Arc<Self>, crate::Error> {
         let env_options = envy::from_env::<EnvOptions>()?;
 
         let redmine_url = env_options.redmine_url;
@@ -499,7 +514,7 @@ impl RedmineAsync {
     /// internal method for shared logic between the methods below which
     /// diff in how they parse the response body and how often they call this
     async fn rest(
-        &self,
+        self: std::sync::Arc<Self>,
         method: reqwest::Method,
         endpoint: &str,
         parameters: QueryParams<'_>,
@@ -510,7 +525,7 @@ impl RedmineAsync {
             redmine_url,
             api_key,
             impersonate_user_id,
-        } = self;
+        } = self.as_ref();
         let mut url = redmine_url.join(endpoint)?;
         parameters.add_to_url(&mut url);
         debug!(%url, %method, "Calling redmine");
@@ -528,8 +543,7 @@ impl RedmineAsync {
             } else {
                 trace!(
                     "Request body (Content-Type: {}) could not be parsed as UTF-8:\n{:?}",
-                    mime,
-                    data
+                    mime, data
                 );
             }
             req.body(data).header("Content-Type", mime)
@@ -550,8 +564,7 @@ impl RedmineAsync {
             Err(e) => {
                 trace!(
                     "Response body that could not be parsed as utf8 because of {}:\n{:?}",
-                    &e,
-                    &response_body
+                    &e, &response_body
                 );
             }
         }
@@ -570,10 +583,14 @@ impl RedmineAsync {
     ///
     /// This can return an error if the endpoint returns an error when creating the request
     /// body or when the web request fails
-    pub async fn ignore_response_body<E>(&self, endpoint: &E) -> Result<(), crate::Error>
+    pub async fn ignore_response_body<E>(
+        self: std::sync::Arc<Self>,
+        endpoint: impl EndpointParameter<E>,
+    ) -> Result<(), crate::Error>
     where
         E: Endpoint,
     {
+        let endpoint: std::sync::Arc<E> = endpoint.into_arc();
         let method = endpoint.method();
         let url = endpoint.endpoint();
         let parameters = endpoint.parameters();
@@ -592,11 +609,15 @@ impl RedmineAsync {
     /// This can return an error if the endpoint returns an error when creating the request body,
     /// when the web request fails or when the response can not be parsed as a JSON object
     /// into the result type
-    pub async fn json_response_body<E, R>(&self, endpoint: &E) -> Result<R, crate::Error>
+    pub async fn json_response_body<E, R>(
+        self: std::sync::Arc<Self>,
+        endpoint: impl EndpointParameter<E>,
+    ) -> Result<R, crate::Error>
     where
         E: Endpoint + ReturnsJsonResponse + NoPagination,
         R: DeserializeOwned + std::fmt::Debug,
     {
+        let endpoint: std::sync::Arc<E> = endpoint.into_arc();
         let method = endpoint.method();
         let url = endpoint.endpoint();
         let parameters = endpoint.parameters();
@@ -623,8 +644,8 @@ impl RedmineAsync {
     /// as a JSON object, when any of the pagination keys or the value key are missing
     /// in the JSON object or when the values can not be parsed as the result type.
     pub async fn json_response_body_page<E, R>(
-        &self,
-        endpoint: &E,
+        self: std::sync::Arc<Self>,
+        endpoint: impl EndpointParameter<E>,
         offset: u64,
         limit: u64,
     ) -> Result<ResponsePage<R>, crate::Error>
@@ -632,6 +653,7 @@ impl RedmineAsync {
         E: Endpoint + ReturnsJsonResponse + Pageable,
         R: DeserializeOwned + std::fmt::Debug,
     {
+        let endpoint: std::sync::Arc<E> = endpoint.into_arc();
         let method = endpoint.method();
         let url = endpoint.endpoint();
         let mut parameters = endpoint.parameters();
@@ -699,13 +721,14 @@ impl RedmineAsync {
     /// in the JSON object or when the values can not be parsed as the result type.
     ///
     pub async fn json_response_body_all_pages<E, R>(
-        &self,
-        endpoint: &E,
+        self: std::sync::Arc<Self>,
+        endpoint: impl EndpointParameter<E>,
     ) -> Result<Vec<R>, crate::Error>
     where
         E: Endpoint + ReturnsJsonResponse + Pageable,
         R: DeserializeOwned + std::fmt::Debug,
     {
+        let endpoint: std::sync::Arc<E> = endpoint.into_arc();
         let method = endpoint.method();
         let url = endpoint.endpoint();
         let mut offset = 0;
@@ -717,6 +740,7 @@ impl RedmineAsync {
             page_parameters.push("limit", limit);
             let mime_type_and_body = endpoint.body()?;
             let (status, response_body) = self
+                .clone()
                 .rest(method.clone(), &url, page_parameters, mime_type_and_body)
                 .await?;
             if response_body.is_empty() {
@@ -766,6 +790,20 @@ impl RedmineAsync {
         }
         Ok(total_results)
     }
+
+    /// use this to get the results for all pages of a paginated JSON response
+    /// as a Stream
+    pub fn json_response_body_all_pages_stream<E, R>(
+        self: std::sync::Arc<Self>,
+        endpoint: impl EndpointParameter<E>,
+    ) -> AllPagesAsync<E, R>
+    where
+        E: Endpoint + ReturnsJsonResponse + Pageable,
+        R: DeserializeOwned + std::fmt::Debug,
+    {
+        let endpoint: std::sync::Arc<E> = endpoint.into_arc();
+        AllPagesAsync::new(self, endpoint)
+    }
 }
 
 /// A trait representing a parameter value.
@@ -777,11 +815,7 @@ pub trait ParamValue<'a> {
 
 impl ParamValue<'static> for bool {
     fn as_value(&self) -> Cow<'static, str> {
-        if *self {
-            "true".into()
-        } else {
-            "false".into()
-        }
+        if *self { "true".into() } else { "false".into() }
     }
 }
 
@@ -1051,5 +1085,243 @@ where
     } else {
         let n: Option<String> = None;
         n.serialize(serializer)
+    }
+}
+
+/// represents an Iterator over all result pages
+#[derive(Debug)]
+pub struct AllPages<'i, E, R> {
+    /// the redmine object to fetch data from
+    redmine: &'i Redmine,
+    /// the endpoint to request data from
+    endpoint: &'i E,
+    /// the offset to fetch next
+    offset: u64,
+    /// the limit for each fetch
+    limit: u64,
+    /// the cached total count value from the last request
+    total_count: Option<u64>,
+    /// the number of elements already yielded
+    yielded: u64,
+    /// the cached values from the last fetch that have not been
+    /// consumed yet, in reverse order to allow pop to remove them
+    reversed_rest: Vec<R>,
+}
+
+impl<'i, E, R> AllPages<'i, E, R> {
+    /// create a new AllPages Iterator
+    pub fn new(redmine: &'i Redmine, endpoint: &'i E) -> Self {
+        Self {
+            redmine,
+            endpoint,
+            offset: 0,
+            limit: 100,
+            total_count: None,
+            yielded: 0,
+            reversed_rest: Vec::new(),
+        }
+    }
+}
+
+impl<'i, E, R> Iterator for AllPages<'i, E, R>
+where
+    E: Endpoint + ReturnsJsonResponse + Pageable,
+    R: DeserializeOwned + std::fmt::Debug,
+{
+    type Item = Result<R, crate::Error>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(next) = self.reversed_rest.pop() {
+            self.yielded += 1;
+            return Some(Ok(next));
+        }
+        if let Some(total_count) = self.total_count
+            && self.offset > total_count
+        {
+            return None;
+        }
+        match self
+            .redmine
+            .json_response_body_page(self.endpoint, self.offset, self.limit)
+        {
+            Err(e) => Some(Err(e)),
+            Ok(ResponsePage {
+                values,
+                total_count,
+                offset,
+                limit,
+            }) => {
+                self.total_count = Some(total_count);
+                self.offset = offset + limit;
+                self.reversed_rest = values;
+                self.reversed_rest.reverse();
+                if let Some(next) = self.reversed_rest.pop() {
+                    self.yielded += 1;
+                    return Some(Ok(next));
+                }
+                None
+            }
+        }
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        if let Some(total_count) = self.total_count {
+            (
+                self.reversed_rest.len(),
+                Some((total_count - self.yielded) as usize),
+            )
+        } else {
+            (0, None)
+        }
+    }
+}
+
+/// represents an async Stream over all result pages
+#[pin_project::pin_project]
+pub struct AllPagesAsync<E, R> {
+    /// the inner future while we are fetching new data
+    #[allow(clippy::type_complexity)]
+    #[pin]
+    inner: Option<
+        std::pin::Pin<Box<dyn futures::Future<Output = Result<ResponsePage<R>, crate::Error>>>>,
+    >,
+    /// the redmine object to fetch data from
+    redmine: std::sync::Arc<RedmineAsync>,
+    /// the endpoint to request data from
+    endpoint: std::sync::Arc<E>,
+    /// the offset to fetch next
+    offset: u64,
+    /// the limit for each fetch
+    limit: u64,
+    /// the cached total count value from the last request
+    total_count: Option<u64>,
+    /// the number of elements already yielded
+    yielded: u64,
+    /// the cached values from the last fetch that have not been
+    /// consumed yet, in reverse order to allow pop to remove them
+    reversed_rest: Vec<R>,
+}
+
+impl<E, R> std::fmt::Debug for AllPagesAsync<E, R>
+where
+    R: std::fmt::Debug,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("AllPagesAsync")
+            .field("redmine", &self.redmine)
+            .field("offset", &self.offset)
+            .field("limit", &self.limit)
+            .field("total_count", &self.total_count)
+            .field("yielded", &self.yielded)
+            .field("reversed_rest", &self.reversed_rest)
+            .finish()
+    }
+}
+
+impl<E, R> AllPagesAsync<E, R> {
+    /// create a new AllPagesAsync Stream
+    pub fn new(redmine: std::sync::Arc<RedmineAsync>, endpoint: std::sync::Arc<E>) -> Self {
+        Self {
+            inner: None,
+            redmine,
+            endpoint,
+            offset: 0,
+            limit: 100,
+            total_count: None,
+            yielded: 0,
+            reversed_rest: Vec::new(),
+        }
+    }
+}
+
+impl<E, R> futures::stream::Stream for AllPagesAsync<E, R>
+where
+    E: Endpoint + ReturnsJsonResponse + Pageable + 'static,
+    R: DeserializeOwned + std::fmt::Debug + 'static,
+{
+    type Item = Result<R, crate::Error>;
+
+    fn poll_next(
+        mut self: std::pin::Pin<&mut Self>,
+        ctx: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<Option<Self::Item>> {
+        if let Some(mut inner) = self.inner.take() {
+            match inner.as_mut().poll(ctx) {
+                std::task::Poll::Pending => {
+                    self.inner = Some(inner);
+                    std::task::Poll::Pending
+                }
+                std::task::Poll::Ready(Err(e)) => std::task::Poll::Ready(Some(Err(e))),
+                std::task::Poll::Ready(Ok(ResponsePage {
+                    values,
+                    total_count,
+                    offset,
+                    limit,
+                })) => {
+                    self.total_count = Some(total_count);
+                    self.offset = offset + limit;
+                    self.reversed_rest = values;
+                    self.reversed_rest.reverse();
+                    if let Some(next) = self.reversed_rest.pop() {
+                        self.yielded += 1;
+                        return std::task::Poll::Ready(Some(Ok(next)));
+                    }
+                    std::task::Poll::Ready(None)
+                }
+            }
+        } else {
+            if let Some(next) = self.reversed_rest.pop() {
+                self.yielded += 1;
+                return std::task::Poll::Ready(Some(Ok(next)));
+            }
+            if let Some(total_count) = self.total_count
+                && self.offset > total_count
+            {
+                return std::task::Poll::Ready(None);
+            }
+            self.inner = Some(
+                self.redmine
+                    .clone()
+                    .json_response_body_page(self.endpoint.clone(), self.offset, self.limit)
+                    .boxed_local(),
+            );
+            self.poll_next(ctx)
+        }
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        if let Some(total_count) = self.total_count {
+            (
+                self.reversed_rest.len(),
+                Some((total_count - self.yielded) as usize),
+            )
+        } else {
+            (0, None)
+        }
+    }
+}
+
+/// trait to allow both `&E` and `std::sync::Arc<E>` as parameters for endpoints
+/// we can not just use Into because that tries to treat &Endpoint as the value E
+/// and screws up our other trait bounds
+///
+/// if we just used Arc the users would have to change all old call sites
+pub trait EndpointParameter<E> {
+    /// convert the endpoint parameter into an Arc
+    fn into_arc(self) -> std::sync::Arc<E>;
+}
+
+impl<E> EndpointParameter<E> for &E
+where
+    E: Clone,
+{
+    fn into_arc(self) -> std::sync::Arc<E> {
+        std::sync::Arc::new(self.to_owned())
+    }
+}
+
+impl<E> EndpointParameter<E> for std::sync::Arc<E> {
+    fn into_arc(self) -> std::sync::Arc<E> {
+        self
     }
 }

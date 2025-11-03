@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.8.0
+
+change Rust edition to 2024
+add Iterator/Stream interface
+to avoid loading large results completely into memory
+update dependencies
+
 ## 0.7.6
 
 update dependencies
@@ -179,7 +186,7 @@ where possible
 
 ## 0.1.3
 
-Fix typo TimeEntryActvity -> TimeEntryActivity
+Fix typo in TimeEntryActivity
 Fix typos in comments
 
 ## 0.1.2

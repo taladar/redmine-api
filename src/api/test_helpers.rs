@@ -2,9 +2,9 @@
 use std::error::Error;
 use tracing::trace;
 
-use crate::api::groups::{test::GROUP_LOCK, CreateGroup, DeleteGroup, Group, GroupWrapper};
+use crate::api::groups::{CreateGroup, DeleteGroup, Group, GroupWrapper, test::GROUP_LOCK};
 use crate::api::projects::{
-    test::PROJECT_LOCK, CreateProject, DeleteProject, GetProject, Project, ProjectWrapper,
+    CreateProject, DeleteProject, GetProject, Project, ProjectWrapper, test::PROJECT_LOCK,
 };
 
 /// Create a project for testing and then call the function with the project

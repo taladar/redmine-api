@@ -23,12 +23,13 @@ All the examples in this README file assume that REDMINE\_API\_KEY and
 REDMINE\_URL are set in either the environment or a .env file (if you do not use
 the .env file you can skip the dotenv line).
 
-There are four main ways to call API endpoints:
+There are five main ways to call API endpoints:
 
 * ignoring the response body
 * returning the JSON response body
 * returning a single page from a query that supports pagination
 * returning all pages from a query that supports pagination
+* using an Iterator (for the sync API) or a Stream (for the async API)
 
 All the examples below use the blocking Api but it is also possible to use
 the async API merely by creating a reqwest::Client instead of a
@@ -183,6 +184,12 @@ Most of the things said in the previous section also apply here.
 Since we request all pages we do not require an offset or limit parameter
 nor are the results wrapped in an extra object.
 
+The downside of this is that it needs to accumulate all results in memory
+before returning them so it is more meant to be used with something like
+projects or groups where common numbers of results might just be over one
+page and not so much for those where hundreds of result pages are expected
+like unfiltered issues.
+
 ```rust
 use redmine_api::api::Redmine;
 use redmine_api::api::issues::{Issue, ListIssues};
@@ -198,6 +205,41 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let issues =
         redmine.json_response_body_all_pages::<_, Issue>(&endpoint)?;
     for issue in issues {
+        println!("Issue found:\n{:#?}", issue);
+    }
+    Ok(())
+}
+```
+
+### Iterator
+
+This is available on endpoints that require pagination as it is obviously
+useless if no results are returned and the result from a single call can
+easily be turned into an Iterator as seen in our loop above.
+
+The main advantage over the all pages version is that the results can be
+streamed instead of having to keep them all in memory at the same time.
+
+This means the main advantage is for e.g. getting all the issues in a
+redmine instance, not for entities like projects where the number of pages
+are in the low single digits on most instances.
+
+```rust
+use redmine_api::api::Redmine;
+use redmine_api::api::issues::{Issue, ListIssues};
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    dotenvy::dotenv()?;
+    let client =
+      redmine_api::reqwest::blocking::Client::builder()
+        .use_rustls_tls()
+        .build()?;
+    let redmine = Redmine::from_env(client)?;
+    let endpoint = ListIssues::builder().build()?;
+    let issues =
+        redmine.json_response_body_all_pages_iter::<_, Issue>(&endpoint);
+    for issue in issues {
+        let issue = issue?;
         println!("Issue found:\n{:#?}", issue);
     }
     Ok(())

@@ -1209,8 +1209,8 @@ pub struct IssueWrapper<T> {
 #[cfg(test)]
 pub(crate) mod test {
     use super::*;
-    use crate::api::test_helpers::with_project;
     use crate::api::ResponsePage;
+    use crate::api::test_helpers::with_project;
     use pretty_assertions::assert_eq;
     use std::error::Error;
     use tokio::sync::RwLock;
@@ -1251,6 +1251,55 @@ pub(crate) mod test {
         )?;
         let endpoint = ListIssues::builder().build()?;
         redmine.json_response_body_all_pages::<_, Issue>(&endpoint)?;
+        Ok(())
+    }
+
+    /// this version of the test will load all pages of issues which means it
+    /// can take a while (a minute or more) so you need to use --include-ignored
+    /// or --ignored to run it
+    #[traced_test]
+    #[test]
+    #[ignore]
+    fn test_list_issues_all_pages_iter() -> Result<(), Box<dyn Error>> {
+        let _r_issues = ISSUES_LOCK.blocking_read();
+        dotenvy::dotenv()?;
+        let redmine = crate::api::Redmine::from_env(
+            reqwest::blocking::Client::builder()
+                .use_rustls_tls()
+                .build()?,
+        )?;
+        let endpoint = ListIssues::builder().build()?;
+        let mut i = 0;
+        for issue in redmine.json_response_body_all_pages_iter::<_, Issue>(&endpoint) {
+            let _issue = issue?;
+            i += 1;
+        }
+        assert!(i > 0);
+
+        Ok(())
+    }
+
+    /// this version of the test will load all pages of issues which means it
+    /// can take a while (a minute or more) so you need to use --include-ignored
+    /// or --ignored to run it
+    #[traced_test]
+    #[tokio::test]
+    #[ignore]
+    async fn test_list_issues_all_pages_stream() -> Result<(), Box<dyn Error>> {
+        let _r_issues = ISSUES_LOCK.read().await;
+        dotenvy::dotenv()?;
+        let redmine = crate::api::RedmineAsync::from_env(
+            reqwest::Client::builder().use_rustls_tls().build()?,
+        )?;
+        let endpoint = ListIssues::builder().build()?;
+        let mut i = 0;
+        let mut stream = redmine.json_response_body_all_pages_stream::<_, Issue>(&endpoint);
+        while let Some(issue) = <_ as futures::stream::StreamExt>::next(&mut stream).await {
+            let _issue = issue?;
+            i += 1;
+        }
+        assert!(i > 0);
+
         Ok(())
     }
 

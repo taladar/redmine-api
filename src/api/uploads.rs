@@ -99,7 +99,7 @@ pub struct UploadWrapper<T> {
 pub(crate) mod test {
     use super::*;
     use crate::api::issues::{
-        test::ISSUES_LOCK, CreateIssue, Issue, IssueWrapper, UpdateIssue, UploadedAttachment,
+        CreateIssue, Issue, IssueWrapper, UpdateIssue, UploadedAttachment, test::ISSUES_LOCK,
     };
     use crate::api::test_helpers::with_project;
     use std::error::Error;
