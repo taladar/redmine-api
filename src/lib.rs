@@ -68,4 +68,7 @@ pub enum Error {
     /// Error reading a file we are supposed to upload
     #[error("Error when opening or reading file {0} to upload: {1}")]
     UploadFileError(std::path::PathBuf, std::io::Error),
+    /// HTTP Error response
+    #[error("HTTP Error response: {0}")]
+    HttpErrorResponse(reqwest::StatusCode),
 }

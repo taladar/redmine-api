@@ -239,8 +239,10 @@ impl Redmine {
         }
         if status.is_client_error() {
             error!(%url, %method, "Redmine status error (client error): {:?}", status);
+            return Err(crate::Error::HttpErrorResponse(status));
         } else if status.is_server_error() {
             error!(%url, %method, "Redmine status error (server error): {:?}", status);
+            return Err(crate::Error::HttpErrorResponse(status));
         }
         Ok((status, response_body))
     }
