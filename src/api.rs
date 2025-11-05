@@ -991,13 +991,13 @@ pub trait ReturnsJsonResponse {}
 /// or in other words that the non-pagination API should not be used on it or one
 /// might miss some results
 #[diagnostic::on_unimplemented(
-    message = "{Self} is an endpoint that requires pagination, use `.json_response_body_page(&endpoint, offset, limit)` or `.json_response_body_all_pages(&endpoint)` instead of `.json_response_body(&endpoint)`"
+    message = "{Self} is an endpoint that either returns nothing or requires pagination, use `.ignore_response_body(&endpoint)`, `.json_response_body_page(&endpoint, offset, limit)` or `.json_response_body_all_pages(&endpoint)` instead of `.json_response_body(&endpoint)`"
 )]
 pub trait NoPagination {}
 
 /// A trait to indicate that an endpoint is pageable.
 #[diagnostic::on_unimplemented(
-    message = "{Self} is an endpoint that does not implement pagination, use `.json_response_body(&endpoint)` instead of `.json_response_body_page(&endpoint, offset, limit)` or `.json_response_body_all_pages(&endpoint)`"
+    message = "{Self} is an endpoint that does not implement pagination or returns nothing, use `.ignore_response_body(&endpoint)` or `.json_response_body(&endpoint)` instead of `.json_response_body_page(&endpoint, offset, limit)` or `.json_response_body_all_pages(&endpoint)`"
 )]
 pub trait Pageable {
     /// returns the name of the key in the response that contains the list of results
