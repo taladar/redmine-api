@@ -347,7 +347,7 @@ pub(crate) mod test {
                 .json_response_body::<_, MembershipWrapper<ProjectMembership>>(&create_endpoint)?;
             let update_endpoint = super::UpdateProjectMembership::builder()
                 .id(membership.id)
-                .role_ids(vec![9])
+                .role_ids(vec![8])
                 .build()?;
             redmine.ignore_response_body::<_>(&update_endpoint)?;
             Ok(())
