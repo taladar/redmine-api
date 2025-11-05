@@ -5,8 +5,8 @@
 //! - [X] project specific wiki page endpoint
 //! - [X] specific wiki page endpoint
 //! - [X] specific wiki page old version endpoint
-//! - [ ] create or update wiki page endpoint
-//! - [ ] delete wiki page endpoint
+//! - [X] create or update wiki page endpoint
+//! - [X] delete wiki page endpoint
 //! - [ ] attachments
 
 use derive_builder::Builder;
@@ -240,6 +240,95 @@ impl Endpoint for GetProjectWikiPageVersion<'_> {
     }
 }
 
+/// The endpoint to create or update a Redmine project wiki page
+#[derive(Debug, Clone, Builder, serde::Serialize, serde::Deserialize)]
+#[builder(setter(strip_option))]
+pub struct CreateOrUpdateProjectWikiPage<'a> {
+    /// the project id or name as it appears in the URL
+    #[serde(skip_serializing)]
+    #[builder(setter(into))]
+    project_id_or_name: Cow<'a, str>,
+    /// the title as it appears in the URL
+    #[serde(skip_serializing)]
+    #[builder(setter(into))]
+    title: Cow<'a, str>,
+    /// the version to update, if the version is not this a 409 Conflict is returned
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
+    version: Option<u64>,
+    /// the body text of the page
+    #[builder(setter(into))]
+    text: Cow<'a, str>,
+    /// the comment for the update history
+    #[builder(setter(into))]
+    comments: Cow<'a, str>,
+}
+
+impl<'a> CreateOrUpdateProjectWikiPage<'a> {
+    /// Create a builder for the endpoint.
+    #[must_use]
+    pub fn builder() -> CreateOrUpdateProjectWikiPageBuilder<'a> {
+        CreateOrUpdateProjectWikiPageBuilder::default()
+    }
+}
+
+impl Endpoint for CreateOrUpdateProjectWikiPage<'_> {
+    fn method(&self) -> Method {
+        Method::PUT
+    }
+
+    fn endpoint(&self) -> Cow<'static, str> {
+        format!(
+            "projects/{}/wiki/{}.json",
+            &self.project_id_or_name, &self.title
+        )
+        .into()
+    }
+
+    fn body(&self) -> Result<Option<(&'static str, Vec<u8>)>, crate::Error> {
+        Ok(Some((
+            "application/json",
+            serde_json::to_vec(&WikiPageWrapper::<CreateOrUpdateProjectWikiPage> {
+                wiki_page: (*self).to_owned(),
+            })?,
+        )))
+    }
+}
+
+/// The endpoint to delete a Redmine project wiki page
+#[derive(Debug, Clone, Builder)]
+#[builder(setter(strip_option))]
+pub struct DeleteProjectWikiPage<'a> {
+    /// the project id or name as it appears in the URL
+    #[builder(setter(into))]
+    project_id_or_name: Cow<'a, str>,
+    /// the title as it appears in the URL
+    #[builder(setter(into))]
+    title: Cow<'a, str>,
+}
+
+impl<'a> DeleteProjectWikiPage<'a> {
+    /// Create a builder for the endpoint.
+    #[must_use]
+    pub fn builder() -> DeleteProjectWikiPageBuilder<'a> {
+        DeleteProjectWikiPageBuilder::default()
+    }
+}
+
+impl<'a> Endpoint for DeleteProjectWikiPage<'a> {
+    fn method(&self) -> Method {
+        Method::DELETE
+    }
+
+    fn endpoint(&self) -> Cow<'static, str> {
+        format!(
+            "projects/{}/wiki/{}.json",
+            &self.project_id_or_name, &self.title
+        )
+        .into()
+    }
+}
+
 /// helper struct for outer layers with a wiki_pages field holding the inner data
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, serde::Deserialize)]
 pub struct WikiPagesWrapper<T> {
@@ -433,6 +522,52 @@ pub(crate) mod test {
             .version(18)
             .build()?;
         redmine.json_response_body::<_, WikiPageWrapper<WikiPage>>(&endpoint)?;
+        Ok(())
+    }
+
+    #[traced_test]
+    #[test]
+    fn test_create_update_and_delete_project_wiki_page() -> Result<(), Box<dyn Error>> {
+        let _r_project = PROJECT_LOCK.blocking_read();
+        let _w_project_wiki_pages = PROJECT_WIKI_PAGE_LOCK.blocking_write();
+        dotenvy::dotenv()?;
+        let redmine = crate::api::Redmine::from_env(
+            reqwest::blocking::Client::builder()
+                .use_rustls_tls()
+                .build()?,
+        )?;
+        let endpoint = GetProjectWikiPage::builder()
+            .project_id_or_name("25")
+            .title("CreateWikiPageTest")
+            .build()?;
+        if redmine.ignore_response_body(&endpoint).is_ok() {
+            // left-over from past test that failed to complete
+            let endpoint = DeleteProjectWikiPage::builder()
+                .project_id_or_name("25")
+                .title("CreateWikiPageTest")
+                .build()?;
+            redmine.ignore_response_body(&endpoint)?;
+        }
+        let endpoint = CreateOrUpdateProjectWikiPage::builder()
+            .project_id_or_name("25")
+            .title("CreateWikiPageTest")
+            .text("Test Content")
+            .comments("Create Page Test")
+            .build()?;
+        redmine.ignore_response_body(&endpoint)?;
+        let endpoint = CreateOrUpdateProjectWikiPage::builder()
+            .project_id_or_name("25")
+            .title("CreateWikiPageTest")
+            .text("Test Content Updates")
+            .version(1)
+            .comments("Update Page Test")
+            .build()?;
+        redmine.ignore_response_body(&endpoint)?;
+        let endpoint = DeleteProjectWikiPage::builder()
+            .project_id_or_name("25")
+            .title("CreateWikiPageTest")
+            .build()?;
+        redmine.ignore_response_body(&endpoint)?;
         Ok(())
     }
 }
