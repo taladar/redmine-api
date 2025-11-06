@@ -86,6 +86,7 @@
 //! - [x] delete issue endpoint
 //! - [x] add watcher endpoint
 //! - [x] remove watcher endpoint
+//! - [ ] fields for issue changesets
 //!
 use derive_builder::Builder;
 use reqwest::Method;
@@ -187,6 +188,22 @@ impl From<&Issue> for IssueEssentials {
     fn from(v: &Issue) -> Self {
         IssueEssentials { id: v.id }
     }
+}
+
+/// the minimal data about a code repository included in other
+/// redmine objects
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct RepositoryEssentials {
+    /// numeric id
+    pub id: u64,
+    /// the textual identifier
+    pub identifier: String,
+}
+
+/// the type of issue changesets
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct IssueChangeset {
+    // TODO: figure out the fields this has
 }
 
 /// the type of journal change
@@ -334,6 +351,9 @@ pub struct Issue {
     /// issue relations (only when include parameter is used)
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub relations: Option<Vec<IssueRelation>>,
+    /// issue changesets (only when include parameter is used)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub changesets: Option<Vec<IssueChangeset>>,
     /// journal entries (comments and changes), only when include parameter is used
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub journals: Option<Vec<Journal>>,
@@ -856,7 +876,7 @@ impl std::fmt::Display for IssueInclude {
                 write!(f, "relations")
             }
             Self::Changesets => {
-                write!(f, "relations")
+                write!(f, "changesets")
             }
             Self::Journals => {
                 write!(f, "journals")
