@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.9.0 - 2025-11-06 13:28:39Z
+
+### 🚀 Features
+
+- *(wiki)* Add read-only parts of wiki page API
+- *(wiki)* Add create/update and delete endpoints for wiki pages
+
+### 🐛 Bug Fixes
+
+- *(http)* Actually return Err on Http error status codes
+- *(traits)* Fix the unimplemented_on message to take ignore_response_body into
+  account
+- *(test)* Fix the update project membership test
+
+### 💼 Other
+
+- *(release)* Add shell script to create a release
+
+### ⚙️ Miscellaneous Tasks
+
+- *(changelog)* Add git-cliff config file for CHANGELOG.md
+
 ## 0.8.0
 
 change Rust edition to 2024
@@ -29,10 +51,10 @@ forgot to make thumbnail\_url public
 update dependencies
 fix clippy lint uninlined\_format\_args
 fix some completeness test failures
-  thumbnail\_url in attachments
-  editable in custom\_fields
-  updated\_on and updated\_by in journal entries
-  skip serializing total\_estimated\_hours if it is None
+thumbnail\_url in attachments
+editable in custom\_fields
+updated\_on and updated\_by in journal entries
+skip serializing total\_estimated\_hours if it is None
 
 ## 0.7.1
 
