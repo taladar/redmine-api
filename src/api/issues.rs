@@ -203,7 +203,18 @@ pub struct RepositoryEssentials {
 /// the type of issue changesets
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct IssueChangeset {
-    // TODO: figure out the fields this has
+    /// the revision of the changeset (e.g. commit id or number depending on VCS)
+    revision: String,
+    /// the committer
+    user: UserEssentials,
+    /// the commit message
+    comments: String,
+    /// the timestamp when this was committed
+    #[serde(
+        serialize_with = "crate::api::serialize_rfc3339",
+        deserialize_with = "crate::api::deserialize_rfc3339"
+    )]
+    committed_on: time::OffsetDateTime,
 }
 
 /// the type of journal change
