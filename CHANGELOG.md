@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.9.1 - 2025-11-07 12:17:32Z
+
+### 🚀 Features
+
+- *(changesets)* Add fields to IssueChangesets
+
+### 🐛 Bug Fixes
+
+- *(changesets)* Fix serialization of IssueInclude
+
+### 💼 Other
+
+- *(release)* Replace hand-written line-break algorithm with rumdl
+
 ## 0.9.0 - 2025-11-06 13:28:39Z
 
 ### 🚀 Features
