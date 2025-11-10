@@ -26,8 +26,8 @@ git commit -m "chore(release): Release version ${version}"
 git tag "redmine_api_${version}"
 
 for remote in origin github taladar; do
-  echo git push "${remote}"
-  echo git push "${remote}" "redmine_api_${version}"
+  git push "${remote}"
+  git push "${remote}" "redmine_api_${version}"
 done
 
 cargo publish --dry-run
