@@ -601,16 +601,16 @@ pub trait ComparableFilterValue {
 
 impl ComparableFilterValue for time::Date {
     fn value_string(&self) -> Cow<'static, str> {
-        let format = time::format_description::parse("[year]-[month]-[day]").unwrap();
+        let format = time::macros::format_description!("[year]-[month]-[day]");
         self.format(&format).unwrap().into()
     }
 }
 
 impl ComparableFilterValue for time::OffsetDateTime {
     fn value_string(&self) -> Cow<'static, str> {
-        self.format(&time::format_description::well_known::Rfc3339)
-            .unwrap()
-            .into()
+        let format =
+            time::macros::format_description!("[year]-[month]-[day]T[hour]:[minute]:[second]Z");
+        self.format(&format).unwrap().into()
     }
 }
 
