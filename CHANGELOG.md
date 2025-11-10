@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.10.0 - 2025-11-10 14:13:22Z
+
+### 🐛 Bug Fixes
+
+- *(issues)* Fix the created_on, updated_on, start_date and due_date filters
+
+### 💼 Other
+
+- *(release)* Actually perform pushes in release.sh instead of just echoing them
+
 ## 0.9.2 - 2025-11-10 11:53:30Z
 
 ### 🐛 Bug Fixes
