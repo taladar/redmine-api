@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.2 - 2025-11-10 11:53:30Z
+
+### 🐛 Bug Fixes
+
+- *(issues)* Fix updated_on format (remove fractional seconds)
+
 ## 0.9.1 - 2025-11-07 12:17:32Z
 
 ### 🚀 Features
