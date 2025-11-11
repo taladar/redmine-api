@@ -41,11 +41,11 @@
 //!     - [x] none (!*)
 //!   - [x] fixed_version_id filter (Target version, API uses old name)
 //!     - [x] version id (multiple are possible, comma separated)
-//!   - [ ] is_private filter
+//!   - [x] is_private filter
 //!   - [x] parent_id filter
 //!     - [x] issue id (multiple are possible, comma separated)
-//!   - [ ] custom field filter
-//!     - [ ] exact match
+//!   - [x] custom field filter
+//!     - [x] exact match
 //!     - [ ] substring match
 //!     - [ ] what about multiple value custom fields?
 //!   - [x] subject filter
@@ -54,14 +54,14 @@
 //!   - [x] description filter
 //!     - [x] exact match
 //!     - [x] substring match
-//!   - [ ] done_ratio filter
-//!     - [ ] exact match
-//!     - [ ] less than, greater than ?
-//!     - [ ] range?
-//!   - [ ] estimated_hours filter
-//!     - [ ] exact match
-//!     - [ ] less than, greater than ?
-//!     - [ ] range?
+//!   - [x] done_ratio filter
+//!     - [x] exact match
+//!     - [x] less than, greater than ?
+//!     - [x] range?
+//!   - [x] estimated_hours filter
+//!     - [x] exact match
+//!     - [x] less than, greater than ?
+//!     - [x] range?
 //!   - [x] created_on filter
 //!     - [x] exact match
 //!     - [x] less than, greater than
@@ -100,6 +100,7 @@ use crate::api::issue_categories::IssueCategoryEssentials;
 use crate::api::issue_relations::IssueRelation;
 use crate::api::issue_statuses::IssueStatusEssentials;
 use crate::api::projects::ProjectEssentials;
+use crate::api::projects::ProjectStatusFilter;
 use crate::api::trackers::TrackerEssentials;
 use crate::api::users::UserEssentials;
 use crate::api::versions::VersionEssentials;
@@ -471,32 +472,32 @@ impl std::fmt::Display for StatusFilter {
 
 /// ways to filter for users in author (always a user (not group), never !*)
 #[derive(Debug, Clone)]
-pub enum AuthorFilter {
+pub enum UserFilter {
     /// match any user
-    AnyAuthor,
+    AnyUser,
     /// match the current API user
     Me,
-    /// match any author but the current API user
+    /// match any user but the current API user
     NotMe,
     /// match a specific list of users
-    TheseAuthors(Vec<u64>),
+    TheseUsers(Vec<u64>),
     /// match a negated specific list of users
-    NotTheseAuthors(Vec<u64>),
+    NotTheseUsers(Vec<u64>),
 }
 
-impl std::fmt::Display for AuthorFilter {
+impl std::fmt::Display for UserFilter {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            AuthorFilter::AnyAuthor => {
+            UserFilter::AnyUser => {
                 write!(f, "*")
             }
-            AuthorFilter::Me => {
+            UserFilter::Me => {
                 write!(f, "me")
             }
-            AuthorFilter::NotMe => {
+            UserFilter::NotMe => {
                 write!(f, "!me")
             }
-            AuthorFilter::TheseAuthors(ids) => {
+            UserFilter::TheseUsers(ids) => {
                 let s: String = ids
                     .iter()
                     .map(|e| e.to_string())
@@ -504,13 +505,114 @@ impl std::fmt::Display for AuthorFilter {
                     .join(",");
                 write!(f, "{s}")
             }
-            AuthorFilter::NotTheseAuthors(ids) => {
+            UserFilter::NotTheseUsers(ids) => {
                 let s: String = ids
                     .iter()
                     .map(|e| format!("!{e}"))
                     .collect::<Vec<_>>()
                     .join(",");
                 write!(f, "{s}")
+            }
+        }
+    }
+}
+
+/// ways to filter for roles
+#[derive(Debug, Clone)]
+pub enum RoleFilter {
+    /// match any role
+    AnyRole,
+    /// match a specific list of role ids
+    TheseRoles(Vec<u64>),
+    /// match any role but a specific list of role ids
+    NotTheseRoles(Vec<u64>),
+}
+
+impl std::fmt::Display for RoleFilter {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            RoleFilter::AnyRole => {
+                write!(f, "*")
+            }
+            RoleFilter::TheseRoles(ids) => {
+                let s: String = ids
+                    .iter()
+                    .map(|e| e.to_string())
+                    .collect::<Vec<_>>()
+                    .join(",");
+                write!(f, "{s}")
+            }
+            RoleFilter::NotTheseRoles(ids) => {
+                let s: String = ids
+                    .iter()
+                    .map(|e| format!("!{e}"))
+                    .collect::<Vec<_>>()
+                    .join(",");
+                write!(f, "{s}")
+            }
+        }
+    }
+}
+
+/// ways to filter for groups the assignee is a member of
+#[derive(Debug, Clone)]
+pub enum MemberOfGroupFilter {
+    /// match any group
+    AnyGroup,
+    /// match a specific list of group ids
+    TheseGroups(Vec<u64>),
+    /// match any group but a specific list of group ids
+    NotTheseGroups(Vec<u64>),
+}
+
+impl std::fmt::Display for MemberOfGroupFilter {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            MemberOfGroupFilter::AnyGroup => {
+                write!(f, "*")
+            }
+            MemberOfGroupFilter::TheseGroups(ids) => {
+                let s: String = ids
+                    .iter()
+                    .map(|e| e.to_string())
+                    .collect::<Vec<_>>()
+                    .join(",");
+                write!(f, "{s}")
+            }
+            MemberOfGroupFilter::NotTheseGroups(ids) => {
+                let s: String = ids
+                    .iter()
+                    .map(|e| format!("!{e}"))
+                    .collect::<Vec<_>>()
+                    .join(",");
+                write!(f, "{s}")
+            }
+        }
+    }
+}
+
+/// ways to filter for users or groups in assignee
+#[derive(Debug, Clone)]
+pub enum FixedVersionStatusFilter {
+    /// match open versions
+    Open,
+    /// match locked versions
+    Locked,
+    /// match closed versions
+    Closed,
+}
+
+impl std::fmt::Display for FixedVersionStatusFilter {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            FixedVersionStatusFilter::Open => {
+                write!(f, "open")
+            }
+            FixedVersionStatusFilter::Locked => {
+                write!(f, "locked")
+            }
+            FixedVersionStatusFilter::Closed => {
+                write!(f, "closed")
             }
         }
     }
@@ -914,6 +1016,45 @@ impl std::fmt::Display for FloatFilter {
     }
 }
 
+/// Filter for integer values, supporting various comparison operators.
+#[derive(Debug, Clone)]
+pub enum IntegerFilter {
+    /// An exact match for the integer value.
+    ExactMatch(u64),
+    /// A range match (inclusive) for two integer values.
+    Range(u64, u64),
+    /// Values less than or equal to the specified integer.
+    LessThanOrEqual(u64),
+    /// Values greater than or equal to the specified integer.
+    GreaterThanOrEqual(u64),
+    /// Any value (equivalent to `> 0`).
+    Any,
+    /// No value (equivalent to `= 0`).
+    None,
+}
+
+impl std::fmt::Display for IntegerFilter {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            IntegerFilter::ExactMatch(v) => write!(f, "{}", v),
+            IntegerFilter::Range(v_start, v_end) => write!(f, "><{}|{}", v_start, v_end),
+            IntegerFilter::LessThanOrEqual(v) => write!(f, "<={}", v),
+            IntegerFilter::GreaterThanOrEqual(v) => write!(f, ">={}", v),
+            IntegerFilter::Any => write!(f, "*"),
+            IntegerFilter::None => write!(f, "!*"),
+        }
+    }
+}
+
+/// A filter for a custom field, consisting of its ID and a StringFieldFilter for its value.
+#[derive(Debug, Clone)]
+pub struct CustomFieldFilter {
+    /// The ID of the custom field to filter by.
+    pub id: u64,
+    /// The value to filter the custom field by, using a `StringFieldFilter`.
+    pub value: StringFieldFilter,
+}
+
 /// Sort by this column
 #[derive(Debug, Clone)]
 pub enum SortByColumn {
@@ -945,20 +1086,20 @@ impl std::fmt::Display for SortByColumn {
 /// The types of associated data which can be fetched along with a issue
 #[derive(Debug, Clone)]
 pub enum IssueListInclude {
-    /// Issue Attachments
-    Attachments,
     /// Issue relations
     Relations,
+    /// Issue time entries
+    TimeEntries,
 }
 
 impl std::fmt::Display for IssueListInclude {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Attachments => {
-                write!(f, "attachments")
-            }
             Self::Relations => {
                 write!(f, "relations")
+            }
+            Self::TimeEntries => {
+                write!(f, "time_entries")
             }
         }
     }
@@ -1004,9 +1145,36 @@ pub struct ListIssues {
     /// Filter by description
     #[builder(default)]
     description: Option<StringFieldFilter>,
+    /// Filter by notes (journal content)
+    #[builder(default)]
+    notes: Option<StringFieldFilter>,
+    /// Filter by watcher id
+    #[builder(default)]
+    watcher_id: Option<Vec<u64>>,
     /// Filter by author
     #[builder(default)]
-    author: Option<AuthorFilter>,
+    author: Option<UserFilter>,
+    /// Filter by updated_by
+    #[builder(default)]
+    updated_by: Option<UserFilter>,
+    /// Filter by last_updated_by
+    #[builder(default)]
+    last_updated_by: Option<UserFilter>,
+    /// Filter by attachment
+    #[builder(default)]
+    attachment: Option<bool>,
+    /// Filter by attachment description
+    #[builder(default)]
+    attachment_description: Option<StringFieldFilter>,
+    /// Filter by project status
+    #[builder(default)]
+    project_status: Option<ProjectStatusFilter>,
+    /// Filter by any searchable field (free-text search)
+    #[builder(default)]
+    any_searchable: Option<StringFieldFilter>,
+    /// Filter by custom fields
+    #[builder(default)]
+    custom_field_filters: Option<Vec<CustomFieldFilter>>,
     /// Filter by assignee
     #[builder(default)]
     assignee: Option<AssigneeFilter>,
@@ -1031,9 +1199,39 @@ pub struct ListIssues {
     /// Filter by spent time
     #[builder(default)]
     spent_time: Option<FloatFilter>,
+    /// Filter by closed on date
+    #[builder(default)]
+    closed_on: Option<DateTimeFilterPast>,
+    /// Filter by estimated hours
+    #[builder(default)]
+    estimated_hours: Option<FloatFilter>,
+    /// Filter by done ratio
+    #[builder(default)]
+    done_ratio: Option<IntegerFilter>,
+    /// Filter by author group
+    #[builder(default)]
+    author_group: Option<MemberOfGroupFilter>,
+    /// Filter by author role
+    #[builder(default)]
+    author_role: Option<RoleFilter>,
+    /// Filter by groups the assignee is a member of
+    #[builder(default)]
+    member_of_group: Option<MemberOfGroupFilter>,
+    /// Filter by roles the assignee has
+    #[builder(default)]
+    assigned_to_role: Option<RoleFilter>,
+    /// Filter by fixed version due date
+    #[builder(default)]
+    fixed_version_due_date: Option<DateFilter>,
+    /// Filter by fixed version status
+    #[builder(default)]
+    fixed_version_status: Option<FixedVersionStatusFilter>,
     /// Filter by child issue id
     #[builder(default)]
     child_id: Option<Vec<u64>>,
+    /// Filter by private status
+    #[builder(default)]
+    is_private: Option<bool>,
 }
 
 impl ReturnsJsonResponse for ListIssues {}
@@ -1081,7 +1279,34 @@ impl Endpoint for ListIssues {
             "description",
             self.description.as_ref().map(|s| s.to_string()),
         );
+        params.push_opt("notes", self.notes.as_ref().map(|s| s.to_string()));
         params.push_opt("author_id", self.author.as_ref().map(|s| s.to_string()));
+        params.push_opt(
+            "updated_by_id",
+            self.updated_by.as_ref().map(|s| s.to_string()),
+        );
+        params.push_opt(
+            "last_updated_by_id",
+            self.last_updated_by.as_ref().map(|s| s.to_string()),
+        );
+        params.push_opt("attachment", self.attachment);
+        params.push_opt(
+            "attachment_description",
+            self.attachment_description.as_ref().map(|s| s.to_string()),
+        );
+        params.push_opt(
+            "project_status",
+            self.project_status.as_ref().map(|s| s.to_string()),
+        );
+        params.push_opt(
+            "any_searchable",
+            self.any_searchable.as_ref().map(|s| s.to_string()),
+        );
+        if let Some(filters) = self.custom_field_filters.as_ref() {
+            for filter in filters {
+                params.push(format!("cf_{}", filter.id), filter.value.to_string());
+            }
+        }
         params.push_opt(
             "assigned_to_id",
             self.assignee.as_ref().map(|s| s.to_string()),
@@ -1105,7 +1330,50 @@ impl Endpoint for ListIssues {
             "spent_time",
             self.spent_time.as_ref().map(|s| s.to_string()),
         );
+        params.push_opt("closed_on", self.closed_on.as_ref().map(|s| s.to_string()));
+        params.push_opt(
+            "estimated_hours",
+            self.estimated_hours.as_ref().map(|s| s.to_string()),
+        );
+        params.push_opt(
+            "done_ratio",
+            self.done_ratio.as_ref().map(|s| s.to_string()),
+        );
+        params.push_opt(
+            "author.group",
+            self.author_group.as_ref().map(|s| s.to_string()),
+        );
+        params.push_opt(
+            "author.role",
+            self.author_role.as_ref().map(|s| s.to_string()),
+        );
+        params.push_opt(
+            "member_of_group",
+            self.member_of_group.as_ref().map(|s| s.to_string()),
+        );
+        params.push_opt(
+            "assigned_to_role",
+            self.assigned_to_role.as_ref().map(|s| s.to_string()),
+        );
+        params.push_opt(
+            "fixed_version.due_date",
+            self.fixed_version_due_date.as_ref().map(|s| s.to_string()),
+        );
+        params.push_opt(
+            "fixed_version.status",
+            self.fixed_version_status.as_ref().map(|s| s.to_string()),
+        );
         params.push_opt("child_id", self.child_id.as_ref());
+        params.push_opt("is_private", self.is_private);
+        params.push_opt(
+            "watcher_id",
+            self.watcher_id.as_ref().map(|ids| {
+                ids.iter()
+                    .map(std::string::ToString::to_string)
+                    .collect::<Vec<String>>()
+                    .join(",")
+            }),
+        );
         params
     }
 }
@@ -1691,7 +1959,7 @@ pub(crate) mod test {
         )?;
         let endpoint = ListIssues::builder()
             .include(vec![
-                IssueListInclude::Attachments,
+                IssueListInclude::TimeEntries,
                 IssueListInclude::Relations,
             ])
             .build()?;
@@ -1742,7 +2010,7 @@ pub(crate) mod test {
         )?;
         let endpoint = ListIssues::builder()
             .include(vec![
-                IssueListInclude::Attachments,
+                IssueListInclude::TimeEntries,
                 IssueListInclude::Relations,
             ])
             .build()?;
@@ -1789,7 +2057,7 @@ pub(crate) mod test {
         )?;
         let endpoint = ListIssues::builder()
             .include(vec![
-                IssueListInclude::Attachments,
+                IssueListInclude::TimeEntries,
                 IssueListInclude::Relations,
             ])
             .build()?;
