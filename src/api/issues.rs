@@ -223,7 +223,7 @@ pub enum ChangePropertyType {
     /// issue attribute change
     #[serde(rename = "attr")]
     Attr,
-    /// TODO: not quite sure what cf stands for
+    /// Custom field change
     #[serde(rename = "cf")]
     Cf,
     /// change in issue relations
