@@ -998,6 +998,9 @@ pub struct ListIssues {
     /// Filter by due date
     #[builder(default)]
     due_date: Option<DateFilter>,
+    /// Filter by child issue id
+    #[builder(default)]
+    child_id: Option<Vec<u64>>,
 }
 
 impl ReturnsJsonResponse for ListIssues {}
@@ -1065,6 +1068,7 @@ impl Endpoint for ListIssues {
             self.start_date.as_ref().map(|s| s.to_string()),
         );
         params.push_opt("due_date", self.due_date.as_ref().map(|s| s.to_string()));
+        params.push_opt("child_id", self.child_id.as_ref());
         params
     }
 }
@@ -3424,6 +3428,23 @@ pub(crate) mod test {
         )?;
 
         let endpoint = ListIssues::builder().due_date(DateFilter::Any).build()?;
+        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
+
+        Ok(())
+    }
+
+    #[traced_test]
+    #[test]
+    fn test_list_issues_child_id_filter() -> Result<(), Box<dyn Error>> {
+        let _r_issues = ISSUES_LOCK.blocking_read();
+        dotenvy::dotenv()?;
+        let redmine = crate::api::Redmine::from_env(
+            reqwest::blocking::Client::builder()
+                .use_rustls_tls()
+                .build()?,
+        )?;
+
+        let endpoint = ListIssues::builder().child_id(vec![123, 456]).build()?;
         redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
         Ok(())

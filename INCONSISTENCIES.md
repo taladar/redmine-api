@@ -20,10 +20,6 @@ The `issues` endpoint in the client is missing a significant number of filters.
 The following filters are available on the Redmine server but are not
 implemented in the `redmine-api` client.
 
-#### Hierarchy
-
-- `child_id`
-
 #### Time Tracking
 
 - `spent_time`
