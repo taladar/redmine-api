@@ -173,6 +173,28 @@ impl std::fmt::Display for ProjectsInclude {
     }
 }
 
+/// The project status values for filtering
+#[derive(Debug, Clone)]
+pub enum ProjectStatusFilter {
+    /// open and active projects
+    Active,
+    /// closed projects
+    Closed,
+}
+
+impl std::fmt::Display for ProjectStatusFilter {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Active => {
+                write!(f, "1")
+            }
+            Self::Closed => {
+                write!(f, "5")
+            }
+        }
+    }
+}
+
 /// The endpoint for all Redmine projects
 #[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
@@ -180,6 +202,9 @@ pub struct ListProjects {
     /// the types of associate data to include
     #[builder(default)]
     include: Option<Vec<ProjectsInclude>>,
+    /// Filter by project status
+    #[builder(default)]
+    status: Option<Vec<ProjectStatusFilter>>,
 }
 
 impl ReturnsJsonResponse for ListProjects {}
@@ -209,6 +234,16 @@ impl Endpoint for ListProjects {
     fn parameters(&self) -> QueryParams<'_> {
         let mut params = QueryParams::default();
         params.push_opt("include", self.include.as_ref());
+        params.push_opt(
+            "status",
+            self.status.as_ref().map(|statuses| {
+                statuses
+                    .iter()
+                    .map(|s| s.to_string())
+                    .collect::<Vec<String>>()
+                    .join(",")
+            }),
+        );
         params
     }
 }
