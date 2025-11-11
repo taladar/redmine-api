@@ -884,6 +884,36 @@ impl std::fmt::Display for DateFilter {
     }
 }
 
+/// Filter for float values, supporting various comparison operators.
+#[derive(Debug, Clone)]
+pub enum FloatFilter {
+    /// An exact match for the float value.
+    ExactMatch(f64),
+    /// A range match (inclusive) for two float values.
+    Range(f64, f64),
+    /// Values less than or equal to the specified float.
+    LessThanOrEqual(f64),
+    /// Values greater than or equal to the specified float.
+    GreaterThanOrEqual(f64),
+    /// Any value (equivalent to `> 0`).
+    Any,
+    /// No value (equivalent to `= 0`).
+    None,
+}
+
+impl std::fmt::Display for FloatFilter {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            FloatFilter::ExactMatch(v) => write!(f, "{}", v),
+            FloatFilter::Range(v_start, v_end) => write!(f, "><{}|{}", v_start, v_end),
+            FloatFilter::LessThanOrEqual(v) => write!(f, "<={}", v),
+            FloatFilter::GreaterThanOrEqual(v) => write!(f, ">={}", v),
+            FloatFilter::Any => write!(f, "*"),
+            FloatFilter::None => write!(f, "!*"),
+        }
+    }
+}
+
 /// Sort by this column
 #[derive(Debug, Clone)]
 pub enum SortByColumn {
@@ -998,6 +1028,9 @@ pub struct ListIssues {
     /// Filter by due date
     #[builder(default)]
     due_date: Option<DateFilter>,
+    /// Filter by spent time
+    #[builder(default)]
+    spent_time: Option<FloatFilter>,
     /// Filter by child issue id
     #[builder(default)]
     child_id: Option<Vec<u64>>,
@@ -1068,6 +1101,10 @@ impl Endpoint for ListIssues {
             self.start_date.as_ref().map(|s| s.to_string()),
         );
         params.push_opt("due_date", self.due_date.as_ref().map(|s| s.to_string()));
+        params.push_opt(
+            "spent_time",
+            self.spent_time.as_ref().map(|s| s.to_string()),
+        );
         params.push_opt("child_id", self.child_id.as_ref());
         params
     }

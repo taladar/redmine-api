@@ -22,7 +22,6 @@ implemented in the `redmine-api` client.
 
 #### Time Tracking
 
-- `spent_time`
 - `closed_on`
 - `estimated_hours` (noted as TODO in client)
 - `done_ratio` (noted as TODO in client)
