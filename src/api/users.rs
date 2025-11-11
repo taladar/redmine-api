@@ -20,7 +20,10 @@ use std::borrow::Cow;
 use crate::api::custom_fields::CustomFieldEssentialsWithValue;
 use crate::api::groups::GroupEssentials;
 use crate::api::project_memberships::UserProjectMembership;
-use crate::api::{Endpoint, NoPagination, Pageable, QueryParams, ReturnsJsonResponse};
+use crate::api::{
+    CustomFieldFilter, DateTimeFilterPast, Endpoint, NoPagination, Pageable, QueryParams,
+    ReturnsJsonResponse,
+};
 use serde::Serialize;
 
 /// a minimal type for Redmine users used in
@@ -195,6 +198,41 @@ pub struct ListUsers<'a> {
     /// Users need to be members of this group
     #[builder(default)]
     group_id: Option<u64>,
+    /// Filter by authentication source
+    #[builder(default)]
+    auth_source_id: Option<u64>,
+    /// Filter by the two-factor authentication scheme
+    #[builder(default)]
+    #[builder(setter(into))]
+    twofa_scheme: Option<Cow<'a, str>>,
+    /// A boolean filter to find only administrators
+    #[builder(default)]
+    admin: Option<bool>,
+    /// Filter by creation time
+    #[builder(default)]
+    created_on: Option<DateTimeFilterPast>,
+    /// Filter by last login time
+    #[builder(default)]
+    last_login_on: Option<DateTimeFilterPast>,
+    /// Filter by login
+    #[builder(default)]
+    #[builder(setter(into))]
+    login: Option<Cow<'a, str>>,
+    /// Filter by firstname
+    #[builder(default)]
+    #[builder(setter(into))]
+    firstname: Option<Cow<'a, str>>,
+    /// Filter by lastname
+    #[builder(default)]
+    #[builder(setter(into))]
+    lastname: Option<Cow<'a, str>>,
+    /// Filter by mail
+    #[builder(default)]
+    #[builder(setter(into))]
+    mail: Option<Cow<'a, str>>,
+    /// Filter by custom fields
+    #[builder(default)]
+    custom_field_filters: Option<Vec<CustomFieldFilter>>,
 }
 
 impl ReturnsJsonResponse for ListUsers<'_> {}
@@ -226,6 +264,26 @@ impl Endpoint for ListUsers<'_> {
         params.push_opt("status", self.status.as_ref().map(|s| s.to_string()));
         params.push_opt("name", self.name.as_ref());
         params.push_opt("group_id", self.group_id);
+        params.push_opt("auth_source_id", self.auth_source_id);
+        params.push_opt("twofa_scheme", self.twofa_scheme.as_ref());
+        params.push_opt("admin", self.admin);
+        params.push_opt(
+            "created_on",
+            self.created_on.as_ref().map(|s| s.to_string()),
+        );
+        params.push_opt(
+            "last_login_on",
+            self.last_login_on.as_ref().map(|s| s.to_string()),
+        );
+        params.push_opt("login", self.login.as_ref());
+        params.push_opt("firstname", self.firstname.as_ref());
+        params.push_opt("lastname", self.lastname.as_ref());
+        params.push_opt("mail", self.mail.as_ref());
+        if let Some(filters) = self.custom_field_filters.as_ref() {
+            for filter in filters {
+                params.push(format!("cf_{}", filter.id), filter.value.to_string());
+            }
+        }
         params
     }
 }

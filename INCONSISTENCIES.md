@@ -11,22 +11,6 @@ implementation and the `redmine-api` Rust client. The primary source of truth
 for the server-side implementation is the Redmine codebase itself (e.g.,
 `app/models/issue_query.rb` ).
 
-## `users` Endpoint
-
-### Missing Filters
-
-The `ListUsers` endpoint is missing numerous filters supported by the server:
-
-- `auth_source_id`: Filter by authentication source.
-- `twofa_scheme`: Filter by the two-factor authentication scheme.
-- `admin`: A boolean filter to find only administrators.
-- `created_on`, `last_login_on`: Date-based filters.
-- `login` , `firstname` , `lastname` , `mail` : While the generic `name` filter
-  exists, the API also supports exact matches on these individual fields.
-- Custom Fields: Filtering by custom fields (e.g., `cf_x`) is not implemented.
-
----
-
 ## `time_entries` Endpoint
 
 ### Missing Filters
