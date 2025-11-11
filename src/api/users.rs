@@ -40,11 +40,9 @@ pub struct UserEssentials {
 pub struct User {
     /// numeric id
     pub id: u64,
-    /// user status (seemingly numeric here, unlike filters)
-    ///
-    /// TODO: turn this into the Enum UserStatus?
+    /// user status
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<u64>,
+    pub status: Option<UserStatus>,
     /// login name
     pub login: String,
     /// is this user an admin
@@ -100,8 +98,8 @@ pub struct User {
     pub memberships: Option<Vec<UserProjectMembership>>,
 }
 
-/// The user status values for filtering
-#[derive(Debug, Clone)]
+/// The user status values
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum UserStatus {
     /// User can login and use their account (default)
     Active,
@@ -109,25 +107,76 @@ pub enum UserStatus {
     Registered,
     /// User was once active and is now locked, User can not login
     Locked,
-    /// Specify this to get users with any status
-    AnyStatus,
 }
 
-impl std::fmt::Display for UserStatus {
+impl serde::Serialize for UserStatus {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match self {
+            Self::Active => serializer.serialize_u64(1),
+            Self::Registered => serializer.serialize_u64(2),
+            Self::Locked => serializer.serialize_u64(3),
+        }
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for UserStatus {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let status_code = u64::deserialize(deserializer)?;
+        match status_code {
+            1 => Ok(Self::Active),
+            2 => Ok(Self::Registered),
+            3 => Ok(Self::Locked),
+            _ => Err(serde::de::Error::custom(format!(
+                "unknown user status code: {status_code}"
+            ))),
+        }
+    }
+}
+
+/// The user status values for filtering
+#[derive(Debug, Clone)]
+pub enum UserStatusFilter {
+    /// User can login and use their account (default)
+    Active,
+    /// User has registered but not yet confirmed their email address or was not yet activated by an administrator. User can not login
+    Registered,
+    /// User was once active and is now locked, User can not login
+    Locked,
+    /// Specify this to get users with any status
+    Any,
+}
+
+impl std::fmt::Display for UserStatusFilter {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Active => {
-                write!(f, "Active")
+                write!(f, "1")
             }
             Self::Registered => {
-                write!(f, "Registered")
+                write!(f, "2")
             }
             Self::Locked => {
-                write!(f, "Locked")
+                write!(f, "3")
             }
-            Self::AnyStatus => {
-                write!(f, "")
+            Self::Any => {
+                write!(f, "*")
             }
+        }
+    }
+}
+
+impl From<UserStatus> for UserStatusFilter {
+    fn from(value: UserStatus) -> Self {
+        match value {
+            UserStatus::Active => Self::Active,
+            UserStatus::Registered => Self::Registered,
+            UserStatus::Locked => Self::Locked,
         }
     }
 }
@@ -138,10 +187,9 @@ impl std::fmt::Display for UserStatus {
 pub struct ListUsers<'a> {
     /// Filter by user status
     #[builder(default)]
-    /// The status of the users (locked, registered but not confirmed yet,...)
-    status: Option<UserStatus>,
+    status: Option<UserStatusFilter>,
     #[builder(default)]
-    /// Filter by name, this matches login, firstname, lastname and if it contains a space also firstname and lastname
+    /// Filter by name, this matches login, firstname, lastname, mail and if it contains a space also firstname and lastname
     #[builder(setter(into))]
     name: Option<Cow<'a, str>>,
     /// Users need to be members of this group
