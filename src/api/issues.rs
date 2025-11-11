@@ -428,7 +428,7 @@ impl std::fmt::Display for SubProjectFilter {
 
 /// ways to filter for issue status
 #[derive(Debug, Clone)]
-pub enum StatusFilter {
+pub enum IssueStatusFilter {
     /// match all open statuses (default if no status filter is specified
     Open,
     /// match all closed statuses
@@ -441,19 +441,19 @@ pub enum StatusFilter {
     NotTheseStatuses(Vec<u64>),
 }
 
-impl std::fmt::Display for StatusFilter {
+impl std::fmt::Display for IssueStatusFilter {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            StatusFilter::Open => {
+            IssueStatusFilter::Open => {
                 write!(f, "open")
             }
-            StatusFilter::Closed => {
+            IssueStatusFilter::Closed => {
                 write!(f, "closed")
             }
-            StatusFilter::All => {
+            IssueStatusFilter::All => {
                 write!(f, "*")
             }
-            StatusFilter::TheseStatuses(ids) => {
+            IssueStatusFilter::TheseStatuses(ids) => {
                 let s: String = ids
                     .iter()
                     .map(|e| e.to_string())
@@ -461,7 +461,7 @@ impl std::fmt::Display for StatusFilter {
                     .join(",");
                 write!(f, "{s}")
             }
-            StatusFilter::NotTheseStatuses(ids) => {
+            IssueStatusFilter::NotTheseStatuses(ids) => {
                 let s: String = ids
                     .iter()
                     .map(|e| format!("!{e}"))
@@ -756,7 +756,7 @@ pub struct ListIssues {
     category_id: Option<Vec<u64>>,
     /// Filter by issue status
     #[builder(default)]
-    status_id: Option<StatusFilter>,
+    status_id: Option<IssueStatusFilter>,
     /// Filter by subject
     #[builder(default)]
     subject: Option<StringFieldFilter>,

@@ -1131,6 +1131,120 @@ impl std::fmt::Display for IntegerFilter {
     }
 }
 
+/// Filter for tracker IDs.
+#[derive(Debug, Clone)]
+pub enum TrackerFilter {
+    /// Match any tracker.
+    Any,
+    /// Match no tracker.
+    None,
+    /// Match a specific list of trackers.
+    TheseTrackers(Vec<u64>),
+    /// Match any tracker but a specific list of trackers.
+    NotTheseTrackers(Vec<u64>),
+}
+
+impl std::fmt::Display for TrackerFilter {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TrackerFilter::Any => write!(f, "*"),
+            TrackerFilter::None => write!(f, "!*"),
+            TrackerFilter::TheseTrackers(ids) => {
+                let s: String = ids
+                    .iter()
+                    .map(|e| e.to_string())
+                    .collect::<Vec<_>>()
+                    .join(",");
+                write!(f, "{s}")
+            }
+            TrackerFilter::NotTheseTrackers(ids) => {
+                let s: String = ids
+                    .iter()
+                    .map(|e| format!("!{e}"))
+                    .collect::<Vec<_>>()
+                    .join(",");
+                write!(f, "{s}")
+            }
+        }
+    }
+}
+
+/// Filter for activity IDs.
+#[derive(Debug, Clone)]
+pub enum ActivityFilter {
+    /// Match any activity.
+    Any,
+    /// Match no activity.
+    None,
+    /// Match a specific list of activities.
+    TheseActivities(Vec<u64>),
+    /// Match any activity but a specific list of activities.
+    NotTheseActivities(Vec<u64>),
+}
+
+impl std::fmt::Display for ActivityFilter {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ActivityFilter::Any => write!(f, "*"),
+            ActivityFilter::None => write!(f, "!*"),
+            ActivityFilter::TheseActivities(ids) => {
+                let s: String = ids
+                    .iter()
+                    .map(|e| e.to_string())
+                    .collect::<Vec<_>>()
+                    .join(",");
+                write!(f, "{s}")
+            }
+            ActivityFilter::NotTheseActivities(ids) => {
+                let s: String = ids
+                    .iter()
+                    .map(|e| format!("!{e}"))
+                    .collect::<Vec<_>>()
+                    .join(",");
+                write!(f, "{s}")
+            }
+        }
+    }
+}
+
+/// Filter for fixed version IDs.
+#[derive(Debug, Clone)]
+pub enum VersionFilter {
+    /// Match any version.
+    Any,
+    /// Match no version.
+    None,
+    /// Match a specific list of versions.
+    TheseVersions(Vec<u64>),
+    /// Match any version but a specific list of versions.
+    NotTheseVersions(Vec<u64>),
+}
+
+impl std::fmt::Display for VersionFilter {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            VersionFilter::Any => write!(f, "*"),
+            VersionFilter::None => write!(f, "!*"),
+            VersionFilter::TheseVersions(ids) => {
+                let s: String = ids
+                    .iter()
+                    .map(|e| e.to_string())
+                    .collect::<Vec<_>>()
+                    .join(",");
+                write!(f, "{s}")
+            }
+            VersionFilter::NotTheseVersions(ids) => {
+                let s: String = ids
+                    .iter()
+                    .map(|e| format!("!{e}"))
+                    .collect::<Vec<_>>()
+                    .join(",");
+                write!(f, "{s}")
+            }
+        }
+    }
+}
+
 /// Filter for date values, supporting various comparison operators.
 #[derive(Debug, Clone)]
 pub enum DateFilter {

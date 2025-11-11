@@ -21,10 +21,15 @@ use std::borrow::Cow;
 
 use crate::api::custom_fields::CustomFieldEssentialsWithValue;
 use crate::api::enumerations::TimeEntryActivityEssentials;
-use crate::api::issues::IssueEssentials;
-use crate::api::projects::ProjectEssentials;
+use crate::api::issues::{
+    IssueEssentials, IssueStatusFilter, MemberOfGroupFilter, RoleFilter, UserFilter,
+};
+use crate::api::projects::{ProjectEssentials, ProjectFilter, ProjectStatusFilter};
 use crate::api::users::UserEssentials;
-use crate::api::{Endpoint, NoPagination, Pageable, QueryParams, ReturnsJsonResponse};
+use crate::api::{
+    ActivityFilter, CustomFieldFilter, DateFilter, Endpoint, FloatFilter, NoPagination, Pageable,
+    QueryParams, ReturnsJsonResponse, StringFieldFilter, TrackerFilter, VersionFilter,
+};
 use serde::Serialize;
 
 /// a type for time entries to use as an API return type
@@ -73,25 +78,49 @@ pub struct TimeEntry {
 pub struct ListTimeEntries<'a> {
     /// user who spent the time
     #[builder(default)]
-    user_id: Option<u64>,
+    author_id: Option<UserFilter>,
     /// project id or name as it appears in the URL on which the time was spent
     #[builder(setter(into), default)]
     project_id_or_name: Option<Cow<'a, str>>,
-    /// issue on which the time was spent
+    /// Filter by time entry activity.
     #[builder(default)]
-    issue_id: Option<u64>,
-    /// activity for the spent time
-    #[builder(default)]
-    activity_id: Option<u64>,
+    activity_id: Option<ActivityFilter>,
     /// day the time was spent on
     #[builder(default)]
-    spent_on: Option<time::Date>,
-    /// from day filter for spent on
+    spent_on: Option<DateFilter>,
+    /// comments text search
+    #[builder(setter(into), default)]
+    comments: Option<StringFieldFilter>,
+    /// hours spent
     #[builder(default)]
-    from: Option<time::Date>,
-    /// to day filter for spent on
+    hours: Option<FloatFilter>,
+    /// Filter by issue tracker.
     #[builder(default)]
-    to: Option<time::Date>,
+    tracker_id: Option<TrackerFilter>,
+    /// issue status id
+    #[builder(default)]
+    status_id: Option<IssueStatusFilter>,
+    /// Filter by the ID of the target version (milestone) to which the issue is assigned.
+    #[builder(default)]
+    fixed_version_id: Option<VersionFilter>,
+    /// issue subject text search
+    #[builder(setter(into), default)]
+    subject: Option<StringFieldFilter>,
+    /// user group id
+    #[builder(default)]
+    group_id: Option<MemberOfGroupFilter>,
+    /// user role id
+    #[builder(default)]
+    role_id: Option<RoleFilter>,
+    /// Filter by project status (e.g., active, closed). Uses the ProjectStatusFilter enum.
+    #[builder(default)]
+    project_status: Option<ProjectStatusFilter>,
+    /// Filter by subproject.
+    #[builder(default)]
+    subproject_id: Option<ProjectFilter>,
+    /// custom field filters
+    #[builder(default)]
+    custom_field_filters: Option<Vec<CustomFieldFilter>>,
 }
 
 impl ReturnsJsonResponse for ListTimeEntries<'_> {}
@@ -120,13 +149,41 @@ impl Endpoint for ListTimeEntries<'_> {
 
     fn parameters(&self) -> QueryParams<'_> {
         let mut params = QueryParams::default();
-        params.push_opt("user_id", self.user_id);
+        params.push_opt("user_id", self.author_id.as_ref().map(|f| f.to_string()));
         params.push_opt("project_id", self.project_id_or_name.as_ref());
-        params.push_opt("issue_id", self.issue_id);
-        params.push_opt("activity_id", self.activity_id);
-        params.push_opt("spent_on", self.spent_on);
-        params.push_opt("from", self.from);
-        params.push_opt("to", self.to);
+        params.push_opt(
+            "activity_id",
+            self.activity_id.as_ref().map(|f| f.to_string()),
+        );
+        params.push_opt("spent_on", self.spent_on.as_ref().map(|f| f.to_string()));
+        params.push_opt("comments", self.comments.as_ref().map(|f| f.to_string()));
+        params.push_opt("hours", self.hours.as_ref().map(|f| f.to_string()));
+        params.push_opt(
+            "tracker_id",
+            self.tracker_id.as_ref().map(|f| f.to_string()),
+        );
+        params.push_opt("status_id", self.status_id.as_ref().map(|f| f.to_string()));
+        params.push_opt(
+            "fixed_version_id",
+            self.fixed_version_id.as_ref().map(|f| f.to_string()),
+        );
+        params.push_opt("subject", self.subject.as_ref().map(|f| f.to_string()));
+        params.push_opt("group_id", self.group_id.as_ref().map(|f| f.to_string()));
+        params.push_opt("role_id", self.role_id.as_ref().map(|f| f.to_string()));
+        params.push_opt(
+            "project_status",
+            self.project_status.as_ref().map(|f| f.to_string()),
+        );
+        params.push_opt(
+            "subproject_id",
+            self.subproject_id.as_ref().map(|f| f.to_string()),
+        );
+
+        if let Some(custom_field_filters) = &self.custom_field_filters {
+            for cf_filter in custom_field_filters {
+                params.push(format!("cf_{}", cf_filter.id), cf_filter.value.to_string());
+            }
+        }
         params
     }
 }

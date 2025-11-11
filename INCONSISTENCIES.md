@@ -11,28 +11,6 @@ implementation and the `redmine-api` Rust client. The primary source of truth
 for the server-side implementation is the Redmine codebase itself (e.g.,
 `app/models/issue_query.rb` ).
 
-## `time_entries` Endpoint
-
-### Missing Filters
-
-The `ListTimeEntries` endpoint is missing a large number of filters supported by
-the server. The client only supports basic filtering, while the server allows
-filtering on attributes of the time entry, the associated issue, user, project,
-and custom fields.
-
-#### Key Missing Filters
-
-- **Time Entry Attributes** : `author_id` , `comments` (text search), `hours`
-  (float comparison).
-- **Associated Issue Attributes** : `issue.tracker_id` , `issue.status_id` ,
-  `issue.fixed_version_id` , `issue.subject` , etc.
-- **Associated User Attributes**: `user.group`, `user.role`.
-- **Project Attributes**: `project.status`, `subproject_id`.
-- **Custom Fields** : A generic mechanism to filter on custom fields for time
-  entries and their associated objects.
-
----
-
 ## `attachments` Endpoint
 
 ### Missing Endpoint

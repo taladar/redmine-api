@@ -195,6 +195,44 @@ impl std::fmt::Display for ProjectStatusFilter {
     }
 }
 
+/// Filter for project IDs.
+#[derive(Debug, Clone)]
+pub enum ProjectFilter {
+    /// Match any project.
+    Any,
+    /// Match no project.
+    None,
+    /// Match a specific list of project IDs.
+    TheseProjects(Vec<u64>),
+    /// Match any project but a specific list of project IDs.
+    NotTheseProjects(Vec<u64>),
+}
+
+impl std::fmt::Display for ProjectFilter {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ProjectFilter::Any => write!(f, "*"),
+            ProjectFilter::None => write!(f, "!*"),
+            ProjectFilter::TheseProjects(ids) => {
+                let s: String = ids
+                    .iter()
+                    .map(|e| e.to_string())
+                    .collect::<Vec<_>>()
+                    .join(",");
+                write!(f, "{s}")
+            }
+            ProjectFilter::NotTheseProjects(ids) => {
+                let s: String = ids
+                    .iter()
+                    .map(|e| format!("!{e}"))
+                    .collect::<Vec<_>>()
+                    .join(",");
+                write!(f, "{s}")
+            }
+        }
+    }
+}
+
 /// The endpoint for all Redmine projects
 #[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
