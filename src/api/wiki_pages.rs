@@ -414,6 +414,10 @@ pub(crate) mod test {
                 // TODO: some projects return a 404 for their wiki for unknown reasons even with an
                 //       enabled wiki module. They also do not have a wiki tab so I assume
                 //       it is intentional, they are not closed or archived either
+                //
+                //       Further analysis seems to indicate that this should not happen and is most
+                //       likely an issue resulting from a database state from a buggy old version of
+                //       Redmine
                 continue;
             };
             checked_projects += 1;
@@ -485,6 +489,10 @@ pub(crate) mod test {
                 // TODO: some projects return a 404 for their wiki for unknown reasons even with an
                 //       enabled wiki module. They also do not have a wiki tab so I assume
                 //       it is intentional, they are not closed or archived either
+                //
+                //       Further analysis seems to indicate that this should not happen and is most
+                //       likely an issue resulting from a database state from a buggy old version of
+                //       Redmine
                 continue;
             };
             checked_pages += 1;
