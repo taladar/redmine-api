@@ -42,9 +42,43 @@ where
     let create_endpoint = CreateProject::builder()
         .name(format!("Unittest redmine-api {name}"))
         .identifier(name)
+        .enabled_module_names(vec![
+            "files".into(),
+            "issue_tracking".into(),
+            "news".into(),
+            "wiki".into(),
+        ])
         .build()?;
     let ProjectWrapper { project } =
         redmine.json_response_body::<_, ProjectWrapper<Project>>(&create_endpoint)?;
+
+    // Add current user to the project with a role that has manage_files permission
+    let current_user_endpoint = crate::api::my_account::GetMyAccount::builder().build()?;
+    let current_user_wrapper = redmine.json_response_body::<_, crate::api::users::UserWrapper<
+        crate::api::my_account::MyAccount,
+    >>(&current_user_endpoint)?;
+    let current_user_id = current_user_wrapper.user.id;
+
+    let list_roles_endpoint = crate::api::roles::ListRoles::builder().build()?;
+    let roles_wrapper = redmine.json_response_body::<_, crate::api::roles::RolesWrapper<
+        crate::api::roles::RoleEssentials,
+    >>(&list_roles_endpoint)?;
+
+    // Find a role that is likely to have manage_files permission (e.g., Manager)
+    let manager_role = roles_wrapper
+        .roles
+        .into_iter()
+        .find(|role| role.name.contains("Manager"))
+        .ok_or("No Manager role found")?;
+
+    let create_membership_endpoint =
+        crate::api::project_memberships::CreateProjectMembership::builder()
+            .project_id_or_name(project.id.to_string())
+            .user_ids(vec![current_user_id])
+            .role_ids(vec![manager_role.id])
+            .build()?;
+    redmine.ignore_response_body::<_>(&create_membership_endpoint)?;
+
     let _fb = finally_block::finally(|| {
         trace!(%name, "Deleting test project");
         let delete_endpoint = DeleteProject::builder()
