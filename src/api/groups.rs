@@ -67,7 +67,11 @@ pub struct Group {
 /// The endpoint for all Redmine groups
 #[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
-pub struct ListGroups {}
+pub struct ListGroups {
+    /// filter for builtin groups
+    #[builder(default)]
+    builtin: Option<bool>,
+}
 
 impl ReturnsJsonResponse for ListGroups {}
 impl NoPagination for ListGroups {}
@@ -87,6 +91,12 @@ impl Endpoint for ListGroups {
 
     fn endpoint(&self) -> Cow<'static, str> {
         "groups.json".into()
+    }
+
+    fn parameters(&self) -> QueryParams<'_> {
+        let mut params = QueryParams::default();
+        params.push_opt("builtin", self.builtin);
+        params
     }
 }
 
@@ -151,12 +161,16 @@ impl Endpoint for GetGroup {
 }
 
 /// The endpoint to create a Redmine group
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Builder, Serialize)]
 #[builder(setter(strip_option))]
 pub struct CreateGroup<'a> {
     /// name of the group
     #[builder(setter(into))]
     name: Cow<'a, str>,
+    /// whether two-factor authentication is required for this group
+    #[builder(default)]
+    twofa_required: Option<bool>,
     /// user ids of users to put in the group initially
     #[builder(default)]
     user_ids: Option<Vec<u64>>,
@@ -193,6 +207,7 @@ impl Endpoint for CreateGroup<'_> {
 }
 
 /// The endpoint to update an existing Redmine group
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Builder, Serialize)]
 #[builder(setter(strip_option))]
 pub struct UpdateGroup<'a> {
@@ -202,6 +217,9 @@ pub struct UpdateGroup<'a> {
     /// name of the group
     #[builder(setter(into))]
     name: Cow<'a, str>,
+    /// whether two-factor authentication is required for this group
+    #[builder(default)]
+    twofa_required: Option<bool>,
     /// user ids of the group members
     #[builder(default)]
     user_ids: Option<Vec<u64>>,
