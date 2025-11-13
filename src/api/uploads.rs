@@ -24,8 +24,10 @@ use crate::api::{Endpoint, NoPagination, QueryParams, ReturnsJsonResponse};
 /// calling [UploadFile] is useless
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct FileUploadToken {
+    /// the numeric id of the uploaded file
+    pub id: u64,
     /// the file upload token to be used in other endpoints
-    token: String,
+    pub token: String,
 }
 
 /// endpoint to upload a file for use in either project files or issue attachments
@@ -42,6 +44,9 @@ pub struct UploadFile<'a> {
     /// the file
     #[builder(default, setter(into))]
     filename: Option<Cow<'a, str>>,
+    /// the content type of the file
+    #[builder(default, setter(into))]
+    content_type: Option<Cow<'a, str>>,
 }
 
 impl ReturnsJsonResponse for UploadFile<'_> {}
@@ -74,6 +79,7 @@ impl Endpoint for UploadFile<'_> {
                 params.push_opt("filename", filename.to_str());
             }
         }
+        params.push_opt("content_type", self.content_type.as_ref());
         params
     }
 
@@ -114,7 +120,7 @@ pub(crate) mod test {
         with_project(&name, |redmine, project_id, _| {
             let upload_endpoint = UploadFile::builder().file("README.md").build()?;
             let UploadWrapper {
-                upload: FileUploadToken { token },
+                upload: FileUploadToken { id: _, token },
             } = redmine
                 .json_response_body::<_, UploadWrapper<FileUploadToken>>(&upload_endpoint)?;
             let create_endpoint = CreateIssue::builder()
@@ -124,7 +130,7 @@ pub(crate) mod test {
                     token: token.into(),
                     filename: "README.md".into(),
                     description: Some("Uploaded as part of unit test for redmine-api".into()),
-                    content_type: "text/markdown".into(),
+                    content_type: "application/octet-stream".into(),
                 }])
                 .build()?;
             redmine.json_response_body::<_, IssueWrapper<Issue>>(&create_endpoint)?;
@@ -142,7 +148,7 @@ pub(crate) mod test {
         with_project(&name, |redmine, project_id, _| {
             let upload_endpoint = UploadFile::builder().file("README.md").build()?;
             let UploadWrapper {
-                upload: FileUploadToken { token },
+                upload: FileUploadToken { id: _, token },
             } = redmine
                 .json_response_body::<_, UploadWrapper<FileUploadToken>>(&upload_endpoint)?;
             let create_endpoint = CreateIssue::builder()
@@ -158,7 +164,7 @@ pub(crate) mod test {
                     token: token.into(),
                     filename: "README.md".into(),
                     description: Some("Uploaded as part of unit test for redmine-api".into()),
-                    content_type: "text/markdown".into(),
+                    content_type: "application/octet-stream".into(),
                 }])
                 .build()?;
             redmine.ignore_response_body::<_>(&update_endpoint)?;

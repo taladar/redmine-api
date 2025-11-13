@@ -3,7 +3,7 @@
 //! [Redmine Documentation](https://www.redmine.org/projects/redmine/wiki/Rest_Attachments)
 //!
 //! - [x] specific attachment endpoint
-//! - [ ] update attachment endpoint (not documented and the link to the issue in the wiki points to an issue about something else)
+//! - [x] update attachment endpoint
 //! - [x] delete attachment endpoint
 
 use derive_builder::Builder;
@@ -42,6 +42,12 @@ pub struct Attachment {
     /// the URL for the thumbnail for this attachment
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub thumbnail_url: Option<String>,
+    /// A string containing a hash of the file content (e.g., SHA256 or MD5).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub digest: Option<String>,
+    /// An integer representing the download count.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub downloads: Option<u64>,
 }
 
 /// The endpoint for a specific Redmine attachment
@@ -71,6 +77,57 @@ impl Endpoint for GetAttachment {
     fn endpoint(&self) -> Cow<'static, str> {
         format!("attachments/{}.json", &self.id).into()
     }
+}
+
+/// The endpoint to update a Redmine attachment
+#[derive(Debug, Clone, Builder)]
+#[builder(setter(strip_option))]
+pub struct UpdateAttachment {
+    /// id of the attachment to update
+    id: u64,
+    /// the attachment update data
+    attachment: AttachmentUpdate,
+}
+
+impl UpdateAttachment {
+    /// Create a builder for the endpoint.
+    #[must_use]
+    pub fn builder() -> UpdateAttachmentBuilder {
+        UpdateAttachmentBuilder::default()
+    }
+}
+
+impl ReturnsJsonResponse for UpdateAttachment {}
+impl NoPagination for UpdateAttachment {}
+
+impl Endpoint for UpdateAttachment {
+    fn method(&self) -> Method {
+        Method::PUT
+    }
+
+    fn endpoint(&self) -> Cow<'static, str> {
+        format!("attachments/{}.json", &self.id).into()
+    }
+
+    fn body(&self) -> Result<Option<(&'static str, Vec<u8>)>, crate::Error> {
+        Ok(Some((
+            "application/json",
+            serde_json::to_vec(&AttachmentWrapper {
+                attachment: self.attachment.clone(),
+            })?,
+        )))
+    }
+}
+
+/// The attachment update data
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize, Default)]
+pub struct AttachmentUpdate {
+    /// new filename
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub filename: Option<String>,
+    /// new description
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
 }
 
 /// The endpoint to delete a Redmine attachment
@@ -116,15 +173,42 @@ mod test {
     #[traced_test]
     #[test]
     fn test_get_attachment() -> Result<(), Box<dyn Error>> {
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = GetAttachment::builder().id(38468).build()?;
-        redmine.json_response_body::<_, AttachmentWrapper<Attachment>>(&endpoint)?;
-        Ok(())
+        use crate::api::issues::{CreateIssue, GetIssue, Issue, IssueWrapper, UploadedAttachment};
+        use crate::api::test_helpers::with_project;
+        use crate::api::uploads::{FileUploadToken, UploadFile, UploadWrapper};
+
+        with_project("test_get_attachment", |redmine, project_id, _| {
+            let upload_endpoint = UploadFile::builder().file("README.md").build()?;
+            let UploadWrapper {
+                upload: FileUploadToken { id: _, token },
+            } = redmine
+                .json_response_body::<_, UploadWrapper<FileUploadToken>>(&upload_endpoint)?;
+            let create_issue_endpoint = CreateIssue::builder()
+                .project_id(project_id)
+                .subject("Attachment Test Issue")
+                .uploads(vec![UploadedAttachment {
+                    token: token.into(),
+                    filename: "README.md".into(),
+                    description: Some("Uploaded as part of unit test for redmine-api".into()),
+                    content_type: "application/octet-stream".into(),
+                }])
+                .build()?;
+            let IssueWrapper {
+                issue: created_issue,
+            } = redmine.json_response_body::<_, IssueWrapper<Issue>>(&create_issue_endpoint)?;
+
+            let get_issue_endpoint = GetIssue::builder()
+                .id(created_issue.id)
+                .include(vec![crate::api::issues::IssueInclude::Attachments])
+                .build()?;
+            let IssueWrapper { issue } =
+                redmine.json_response_body::<_, IssueWrapper<Issue>>(&get_issue_endpoint)?;
+            let attachment_id = issue.attachments.unwrap().first().unwrap().id;
+
+            let endpoint = GetAttachment::builder().id(attachment_id).build()?;
+            redmine.json_response_body::<_, AttachmentWrapper<Attachment>>(&endpoint)?;
+            Ok(())
+        })
     }
 
     /// this tests if any of the results contain a field we are not deserializing
@@ -147,5 +231,69 @@ mod test {
         let reserialized = serde_json::to_value(o)?;
         assert_eq!(value, reserialized);
         Ok(())
+    }
+
+    #[traced_test]
+    #[test]
+    fn test_update_delete_attachment() -> Result<(), Box<dyn Error>> {
+        use crate::api::issues::{CreateIssue, GetIssue, Issue, IssueWrapper, UploadedAttachment};
+        use crate::api::test_helpers::with_project;
+        use crate::api::uploads::{FileUploadToken, UploadFile, UploadWrapper};
+
+        with_project("test_update_delete_attachment", |redmine, project_id, _| {
+            let upload_endpoint = UploadFile::builder().file("README.md").build()?;
+            let UploadWrapper {
+                upload: FileUploadToken { id: _, token },
+            } = redmine
+                .json_response_body::<_, UploadWrapper<FileUploadToken>>(&upload_endpoint)?;
+            let create_issue_endpoint = CreateIssue::builder()
+                .project_id(project_id)
+                .subject("Attachment Test Issue")
+                .uploads(vec![UploadedAttachment {
+                    token: token.into(),
+                    filename: "README.md".into(),
+                    description: Some("Uploaded as part of unit test for redmine-api".into()),
+                    content_type: "application/octet-stream".into(),
+                }])
+                .build()?;
+            let IssueWrapper {
+                issue: created_issue,
+            } = redmine.json_response_body::<_, IssueWrapper<Issue>>(&create_issue_endpoint)?;
+
+            let get_issue_endpoint = GetIssue::builder()
+                .id(created_issue.id)
+                .include(vec![crate::api::issues::IssueInclude::Attachments])
+                .build()?;
+            let IssueWrapper { issue } =
+                redmine.json_response_body::<_, IssueWrapper<Issue>>(&get_issue_endpoint)?;
+            let attachment_id = issue.attachments.unwrap().first().unwrap().id;
+
+            let update_endpoint = UpdateAttachment::builder()
+                .id(attachment_id)
+                .attachment(AttachmentUpdate {
+                    filename: Some("new_readme.md".to_string()),
+                    description: Some("new description".to_string()),
+                })
+                .build()?;
+            redmine.ignore_response_body(&update_endpoint)?;
+
+            let get_endpoint = GetAttachment::builder().id(attachment_id).build()?;
+            let AttachmentWrapper { attachment } =
+                redmine.json_response_body::<_, AttachmentWrapper<Attachment>>(&get_endpoint)?;
+            assert_eq!(attachment.filename, "new_readme.md");
+            assert_eq!(attachment.description.unwrap(), "new description");
+
+            let delete_endpoint = DeleteAttachment::builder().id(attachment_id).build()?;
+            redmine.ignore_response_body(&delete_endpoint)?;
+
+            let get_issue_endpoint = GetIssue::builder()
+                .id(issue.id)
+                .include(vec![crate::api::issues::IssueInclude::Attachments])
+                .build()?;
+            let IssueWrapper { issue } =
+                redmine.json_response_body::<_, IssueWrapper<Issue>>(&get_issue_endpoint)?;
+            assert!(issue.attachments.is_none_or(|v| v.is_empty()));
+            Ok(())
+        })
     }
 }
