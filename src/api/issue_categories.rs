@@ -14,7 +14,7 @@ use std::borrow::Cow;
 
 use crate::api::issues::AssigneeEssentials;
 use crate::api::projects::ProjectEssentials;
-use crate::api::{Endpoint, NoPagination, ReturnsJsonResponse};
+use crate::api::{Endpoint, NoPagination, QueryParams, ReturnsJsonResponse};
 use serde::Serialize;
 
 /// a minimal type for Redmine issue categories used in
@@ -216,6 +216,12 @@ impl Endpoint for UpdateIssueCategory<'_> {
 pub struct DeleteIssueCategory {
     /// the id of the issue category to delete
     id: u64,
+    /// reassign issues to this category
+    #[builder(default)]
+    reassign_to_id: Option<u64>,
+    /// what to do with issues in the category being deleted
+    #[builder(default)]
+    todo: Option<String>,
 }
 
 impl DeleteIssueCategory {
@@ -233,6 +239,13 @@ impl Endpoint for DeleteIssueCategory {
 
     fn endpoint(&self) -> Cow<'static, str> {
         format!("issue_categories/{}.json", &self.id).into()
+    }
+
+    fn parameters(&self) -> QueryParams<'_> {
+        let mut params = QueryParams::default();
+        params.push_opt("reassign_to_id", self.reassign_to_id);
+        params.push_opt("todo", self.todo.as_ref());
+        params
     }
 }
 
