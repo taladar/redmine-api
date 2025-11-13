@@ -122,7 +122,7 @@ pub enum IssueRelationType {
 pub struct CreateIssueRelation {
     /// id of the issue where the relation is created
     #[serde(skip_serializing)]
-    issue_id: u64,
+    issue_from_id: u64,
     /// id of the issue the relation is created to
     issue_to_id: u64,
     /// the type of issue relation to create
@@ -149,7 +149,7 @@ impl Endpoint for CreateIssueRelation {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-        format!("issues/{}/relations.json", self.issue_id).into()
+        format!("issues/{}/relations.json", self.issue_from_id).into()
     }
 
     fn body(&self) -> Result<Option<(&'static str, Vec<u8>)>, crate::Error> {
@@ -269,7 +269,7 @@ mod test {
             let IssueWrapper { issue: issue2 }: IssueWrapper<Issue> =
                 redmine.json_response_body::<_, _>(&create_issue2_endpoint)?;
             let create_endpoint = super::CreateIssueRelation::builder()
-                .issue_id(issue1.id)
+                .issue_from_id(issue1.id)
                 .issue_to_id(issue2.id)
                 .relation_type(IssueRelationType::Relates)
                 .build()?;
@@ -300,7 +300,7 @@ mod test {
             let IssueWrapper { issue: issue2 }: IssueWrapper<Issue> =
                 redmine.json_response_body::<_, _>(&create_issue2_endpoint)?;
             let create_endpoint = super::CreateIssueRelation::builder()
-                .issue_id(issue1.id)
+                .issue_from_id(issue1.id)
                 .issue_to_id(issue2.id)
                 .relation_type(IssueRelationType::Relates)
                 .build()?;
