@@ -144,4 +144,18 @@ mod test {
         }
         Ok(())
     }
+
+    #[test]
+    fn test_issue_status_essentials_from_issue_status() {
+        let issue_status = IssueStatus {
+            id: 1,
+            name: "New".to_string(),
+            description: Some("new issue".to_string()),
+            is_closed: false,
+        };
+        let issue_status_essentials: IssueStatusEssentials = issue_status.into();
+        assert_eq!(issue_status_essentials.id, 1);
+        assert_eq!(issue_status_essentials.name, "New");
+        assert_eq!(issue_status_essentials.is_closed, Some(false));
+    }
 }
