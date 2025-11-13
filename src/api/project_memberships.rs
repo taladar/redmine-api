@@ -134,8 +134,8 @@ pub struct CreateProjectMembership<'a> {
     #[builder(setter(into))]
     #[serde(skip_serializing)]
     project_id_or_name: Cow<'a, str>,
-    /// user to add to the project
-    user_id: u64,
+    /// users to add to the project
+    user_ids: Vec<u64>,
     /// roles for the user to add to the project
     role_ids: Vec<u64>,
 }
@@ -321,7 +321,7 @@ pub(crate) mod test {
         with_project(&name, |redmine, project_id, _| {
             let create_endpoint = super::CreateProjectMembership::builder()
                 .project_id_or_name(project_id.to_string())
-                .user_id(1)
+                .user_ids(vec![1])
                 .role_ids(vec![8])
                 .build()?;
             redmine
@@ -340,7 +340,7 @@ pub(crate) mod test {
         with_project(&name, |redmine, project_id, _name| {
             let create_endpoint = super::CreateProjectMembership::builder()
                 .project_id_or_name(project_id.to_string())
-                .user_id(1)
+                .user_ids(vec![1])
                 .role_ids(vec![8])
                 .build()?;
             let MembershipWrapper { membership } = redmine
