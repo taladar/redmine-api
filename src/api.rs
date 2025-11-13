@@ -167,6 +167,12 @@ impl Redmine {
         self.impersonate_user_id = Some(id);
     }
 
+    /// returns the redmine base url
+    #[must_use]
+    pub fn redmine_url(&self) -> &Url {
+        &self.redmine_url
+    }
+
     /// returns the issue URL for a given issue id
     ///
     /// this is mostly for convenience since we are already storing the
@@ -498,6 +504,12 @@ impl RedmineAsync {
     /// this requires Redmine admin privileges
     pub fn impersonate_user(&mut self, id: u64) {
         self.impersonate_user_id = Some(id);
+    }
+
+    /// returns the redmine base url
+    #[must_use]
+    pub fn redmine_url(&self) -> &Url {
+        &self.redmine_url
     }
 
     /// returns the issue URL for a given issue id
