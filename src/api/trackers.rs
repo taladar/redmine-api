@@ -53,8 +53,7 @@ pub struct Tracker {
     /// description
     pub description: Option<String>,
     /// standard fields enabled in this tracker (available in Redmine 5.0)
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub enabled_standard_fields: Option<Vec<String>>,
+    pub enabled_standard_fields: Vec<String>,
 }
 
 /// The endpoint for all trackers
