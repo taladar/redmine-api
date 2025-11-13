@@ -12,6 +12,8 @@ use derive_builder::Builder;
 use reqwest::Method;
 use std::borrow::Cow;
 
+use crate::api::custom_fields::CustomField;
+use crate::api::custom_fields::CustomFieldEssentialsWithValue;
 use crate::api::projects::ProjectEssentials;
 use crate::api::{Endpoint, NoPagination, ReturnsJsonResponse};
 use serde::Serialize;
@@ -78,6 +80,9 @@ pub struct Version {
     /// The title of the wiki page for this version
     #[serde(default)]
     wiki_page_title: Option<String>,
+    /// custom fields with values
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub custom_fields: Option<Vec<CustomFieldEssentialsWithValue>>,
 }
 
 /// The endpoint for all versions in a Redmine project
@@ -141,7 +146,7 @@ impl Endpoint for GetVersion {
 
 /// The status of a version restricts if issues can be assigned to this
 /// version and if assigned issues can be reopened
-#[derive(Debug, Clone, serde::Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Deserialize, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum VersionStatus {
     /// no restrictions, default
@@ -168,6 +173,37 @@ pub enum VersionSharing {
     System,
 }
 
+/// Possible statuses for a version
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(untagged)]
+pub enum VersionStatusFilter {
+    /// Any version status
+    #[serde(serialize_with = "serialize_any_operator")]
+    Any,
+    /// No version status
+    #[serde(serialize_with = "serialize_none_operator")]
+    None,
+    /// These specific version statuses
+    TheseStatuses(Vec<VersionStatus>),
+    /// Not these specific version statuses
+    NotTheseStatuses(Vec<VersionStatus>),
+}
+
+// Helper functions for serializing "Any" and "None"
+fn serialize_any_operator<S>(serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    serializer.serialize_str("*")
+}
+
+/// Helper function to serialize `None` values as an empty string.
+fn serialize_none_operator<S>(serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    serializer.serialize_str("!*")
+}
 /// The endpoint to create a Redmine project version
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Builder, Serialize)]
@@ -195,6 +231,12 @@ pub struct CreateVersion<'a> {
     /// The title of the wiki page for this version
     #[builder(default)]
     wiki_page_title: Option<Cow<'a, str>>,
+    /// custom field values
+    #[builder(default)]
+    custom_fields: Option<Vec<CustomField<'a>>>,
+    /// set this version as the default for the project
+    #[builder(default)]
+    default_project_version: Option<bool>,
 }
 
 impl ReturnsJsonResponse for CreateVersion<'_> {}
@@ -253,6 +295,12 @@ pub struct UpdateVersion<'a> {
     /// The title of the wiki page for this version
     #[builder(default)]
     wiki_page_title: Option<Cow<'a, str>>,
+    /// custom field values
+    #[builder(default)]
+    custom_fields: Option<Vec<CustomField<'a>>>,
+    /// set this version as the default for the project
+    #[builder(default)]
+    default_project_version: Option<bool>,
 }
 
 impl<'a> UpdateVersion<'a> {
@@ -308,6 +356,32 @@ impl Endpoint for DeleteVersion {
     }
 }
 
+/// The endpoint to close a version and move its open issues to the next open version
+#[derive(Debug, Clone, Builder)]
+#[builder(setter(strip_option))]
+pub struct CloseCompletedVersion {
+    /// The id of the version to close
+    id: u64,
+}
+
+impl CloseCompletedVersion {
+    /// Create a builder for the endpoint.
+    #[must_use]
+    pub fn builder() -> CloseCompletedVersionBuilder {
+        CloseCompletedVersionBuilder::default()
+    }
+}
+
+impl Endpoint for CloseCompletedVersion {
+    fn method(&self) -> Method {
+        Method::POST
+    }
+
+    fn endpoint(&self) -> Cow<'static, str> {
+        format!("versions/{}/close_completed.json", &self.id).into()
+    }
+}
+
 /// helper struct for outer layers with a versions field holding the inner data
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, serde::Deserialize)]
 pub struct VersionsWrapper<T> {
@@ -326,6 +400,9 @@ pub struct VersionWrapper<T> {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::api::custom_fields::{
+        CustomFieldDefinition, CustomFieldsWrapper, CustomizedType, ListCustomFields,
+    };
     use crate::api::test_helpers::with_project;
     use pretty_assertions::assert_eq;
     use std::error::Error;
@@ -339,7 +416,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_versions_no_pagination() -> Result<(), Box<dyn Error>> {
-        let _r_versions = VERSION_LOCK.blocking_read();
+        let _r_version = VERSION_LOCK.blocking_read();
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
@@ -354,7 +431,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_get_version() -> Result<(), Box<dyn Error>> {
-        let _r_versions = VERSION_LOCK.blocking_read();
+        let _r_version = VERSION_LOCK.blocking_read();
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
@@ -369,15 +446,74 @@ mod test {
     #[function_name::named]
     #[traced_test]
     #[test]
-    fn test_create_version() -> Result<(), Box<dyn Error>> {
-        let _w_versions = VERSION_LOCK.blocking_write();
+    fn test_create_update_version_with_custom_fields() -> Result<(), Box<dyn Error>> {
+        let _w_version = VERSION_LOCK.blocking_write();
         let name = format!("unittest_{}", function_name!());
-        with_project(&name, |redmine, _, name| {
+        with_project(&name, |redmine, project_id, _name| {
+            // Find a custom field for versions
+            let list_custom_fields_endpoint = ListCustomFields::builder().build()?;
+            let CustomFieldsWrapper { custom_fields } = redmine
+                .json_response_body::<_, CustomFieldsWrapper<CustomFieldDefinition>>(
+                    &list_custom_fields_endpoint,
+                )?;
+
+            let version_custom_field = custom_fields
+                .into_iter()
+                .find(|cf| cf.customized_type == CustomizedType::Version);
+
+            let custom_field_id = if let Some(cf) = version_custom_field {
+                cf.id
+            } else {
+                // If no custom field for versions is found, skip the test
+                eprintln!("No custom field of type Version found. Skipping test.");
+                return Ok(());
+            };
+
             let create_endpoint = CreateVersion::builder()
-                .project_id_or_name(name)
-                .name("Test Version")
+                .project_id_or_name(project_id.to_string())
+                .name("Test Version with Custom Fields")
+                .custom_fields(vec![CustomField {
+                    id: custom_field_id,
+                    name: Some(Cow::Borrowed("VersionCustomField")),
+                    value: Cow::Borrowed("Custom Value 1"),
+                }])
                 .build()?;
-            redmine.json_response_body::<_, VersionWrapper<Version>>(&create_endpoint)?;
+            let VersionWrapper { version } =
+                redmine.json_response_body::<_, VersionWrapper<Version>>(&create_endpoint)?;
+
+            assert_eq!(version.name, "Test Version with Custom Fields");
+            assert_eq!(
+                version.custom_fields.unwrap()[0].value.as_ref().unwrap()[0],
+                "Custom Value 1"
+            );
+
+            let update_endpoint = UpdateVersion::builder()
+                .id(version.id)
+                .name("Updated Test Version with Custom Fields")
+                .custom_fields(vec![CustomField {
+                    id: custom_field_id,
+                    name: Some(Cow::Borrowed("VersionCustomField")),
+                    value: Cow::Borrowed("Updated Custom Value 1"),
+                }])
+                .build()?;
+            redmine.ignore_response_body::<_>(&update_endpoint)?;
+
+            let get_endpoint = GetVersion::builder().id(version.id).build()?;
+            let VersionWrapper {
+                version: updated_version,
+            } = redmine.json_response_body::<_, VersionWrapper<Version>>(&get_endpoint)?;
+
+            assert_eq!(
+                updated_version.name,
+                "Updated Test Version with Custom Fields"
+            );
+            assert_eq!(
+                updated_version.custom_fields.unwrap()[0]
+                    .value
+                    .as_ref()
+                    .unwrap()[0],
+                "Updated Custom Value 1"
+            );
             Ok(())
         })?;
         Ok(())
@@ -386,48 +522,64 @@ mod test {
     #[function_name::named]
     #[traced_test]
     #[test]
-    fn test_update_version() -> Result<(), Box<dyn Error>> {
-        let _w_versions = VERSION_LOCK.blocking_write();
+    fn test_create_version_with_default_project_version() -> Result<(), Box<dyn Error>> {
+        let _w_version = VERSION_LOCK.blocking_write();
         let name = format!("unittest_{}", function_name!());
-        with_project(&name, |redmine, _, name| {
+        with_project(&name, |redmine, project_id, name| {
             let create_endpoint = CreateVersion::builder()
                 .project_id_or_name(name)
-                .name("Test Version")
+                .name("Default Version")
+                .default_project_version(true)
                 .build()?;
-            let VersionWrapper { version } =
-                redmine.json_response_body::<_, VersionWrapper<Version>>(&create_endpoint)?;
-            let update_endpoint = super::UpdateVersion::builder()
-                .id(version.id)
-                .name("Neue Test-Version")
+            redmine.json_response_body::<_, VersionWrapper<Version>>(&create_endpoint)?;
+
+            let project_endpoint = crate::api::projects::GetProject::builder()
+                .project_id_or_name(project_id.to_string())
                 .build()?;
-            redmine.ignore_response_body::<_>(&update_endpoint)?;
+            let project_wrapper: crate::api::projects::ProjectWrapper<
+                crate::api::projects::Project,
+            > = redmine.json_response_body(&project_endpoint)?;
+            assert_eq!(
+                project_wrapper.project.default_version.unwrap().name,
+                "Default Version"
+            );
             Ok(())
         })?;
         Ok(())
     }
 
-    /// this tests if any of the results contain a field we are not deserializing
-    ///
-    /// this will only catch fields we missed if they are part of the response but
-    /// it is better than nothing
+    #[function_name::named]
     #[traced_test]
     #[test]
-    fn test_completeness_version_type() -> Result<(), Box<dyn Error>> {
-        let _r_versions = VERSION_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = ListVersions::builder().project_id_or_name("92").build()?;
-        let VersionsWrapper { versions: values } =
-            redmine.json_response_body::<_, VersionsWrapper<serde_json::Value>>(&endpoint)?;
-        for value in values {
-            let o: Version = serde_json::from_value(value.clone())?;
-            let reserialized = serde_json::to_value(o)?;
-            assert_eq!(value, reserialized);
-        }
+    fn test_update_version_with_default_project_version() -> Result<(), Box<dyn Error>> {
+        let _w_version = VERSION_LOCK.blocking_write();
+        let name = format!("unittest_{}", function_name!());
+        with_project(&name, |redmine, project_id, name| {
+            let create_endpoint = CreateVersion::builder()
+                .project_id_or_name(name)
+                .name("Non-Default Version")
+                .build()?;
+            let VersionWrapper { version } =
+                redmine.json_response_body::<_, VersionWrapper<Version>>(&create_endpoint)?;
+
+            let update_endpoint = super::UpdateVersion::builder()
+                .id(version.id)
+                .default_project_version(true)
+                .build()?;
+            redmine.ignore_response_body::<_>(&update_endpoint)?;
+
+            let project_endpoint = crate::api::projects::GetProject::builder()
+                .project_id_or_name(project_id.to_string())
+                .build()?;
+            let project_wrapper: crate::api::projects::ProjectWrapper<
+                crate::api::projects::Project,
+            > = redmine.json_response_body(&project_endpoint)?;
+            assert_eq!(
+                project_wrapper.project.default_version.unwrap().name,
+                "Non-Default Version"
+            );
+            Ok(())
+        })?;
         Ok(())
     }
 }

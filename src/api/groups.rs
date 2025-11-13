@@ -14,6 +14,8 @@ use derive_builder::Builder;
 use reqwest::Method;
 use std::borrow::Cow;
 
+use crate::api::custom_fields::CustomField;
+use crate::api::custom_fields::CustomFieldEssentialsWithValue;
 use crate::api::project_memberships::GroupProjectMembership;
 use crate::api::users::UserEssentials;
 use crate::api::{Endpoint, NoPagination, QueryParams, ReturnsJsonResponse};
@@ -62,6 +64,9 @@ pub struct Group {
     /// project memberships (only with include parameter)
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub memberships: Option<Vec<GroupProjectMembership>>,
+    /// custom fields with values
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub custom_fields: Option<Vec<CustomFieldEssentialsWithValue>>,
 }
 
 /// The endpoint for all Redmine groups
@@ -174,6 +179,9 @@ pub struct CreateGroup<'a> {
     /// user ids of users to put in the group initially
     #[builder(default)]
     user_ids: Option<Vec<u64>>,
+    /// custom field values
+    #[builder(default)]
+    custom_fields: Option<Vec<CustomField<'a>>>,
 }
 
 impl ReturnsJsonResponse for CreateGroup<'_> {}
@@ -223,6 +231,9 @@ pub struct UpdateGroup<'a> {
     /// user ids of the group members
     #[builder(default)]
     user_ids: Option<Vec<u64>>,
+    /// custom field values
+    #[builder(default)]
+    custom_fields: Option<Vec<CustomField<'a>>>,
 }
 
 impl<'a> UpdateGroup<'a> {

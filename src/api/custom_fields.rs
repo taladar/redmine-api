@@ -6,11 +6,14 @@
 
 use derive_builder::Builder;
 use reqwest::Method;
+use serde::Serialize;
 use std::borrow::Cow;
 
+use crate::api::issues::RoleFilter;
 use crate::api::projects::ProjectEssentials;
 use crate::api::roles::RoleEssentials;
 use crate::api::trackers::TrackerEssentials;
+use crate::api::versions::VersionStatusFilter;
 use crate::api::{Endpoint, NoPagination, ReturnsJsonResponse};
 
 /// Represents the types of objects that can be customized with customized types
@@ -38,34 +41,78 @@ pub enum CustomizedType {
     DocumentCategory,
 }
 
-/// Describes the format (data type) of a field
+/// The data type or format of a custom field.
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum FieldFormat {
-    /// true or false
-    Bool,
-    /// a calendar date
-    Date,
-    /// an uploaded file
-    File,
-    /// a floating point number
-    Float,
-    /// a whole number
-    Integer,
-    /// a list of key/value pairs
-    KeyValueList,
-    /// a hyperlink
-    Link,
-    /// a list of strings
-    List,
-    /// a long text (multi-line)
-    Text,
-    /// a short text
-    String,
     /// a Redmine user
     User,
     /// a Target version
     Version,
+    /// a string
+    String,
+    /// a text block
+    Text,
+    /// a link
+    Link,
+    /// an integer
+    Int,
+    /// a floating point number
+    Float,
+    /// a date
+    Date,
+    /// a list of values
+    List,
+    /// a boolean
+    Bool,
+    /// an enumeration
+    Enumeration,
+    /// an attachment
+    Attachment,
+    /// a progress bar
+    Progressbar,
+}
+
+/// The style of the edit tag for a custom field.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum EditTagStyle {
+    /// Dropdown list style.
+    DropDown,
+    /// Checkbox style.
+    CheckBox,
+    /// Radio button style.
+    Radio,
+}
+
+impl serde::Serialize for EditTagStyle {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match *self {
+            EditTagStyle::DropDown => serializer.serialize_str(""),
+            EditTagStyle::CheckBox => serializer.serialize_str("check_box"),
+            EditTagStyle::Radio => serializer.serialize_str("radio"),
+        }
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for EditTagStyle {
+    fn deserialize<D>(deserializer: D) -> Result<EditTagStyle, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        match s.as_str() {
+            "" => Ok(EditTagStyle::DropDown),
+            "check_box" => Ok(EditTagStyle::CheckBox),
+            "radio" => Ok(EditTagStyle::Radio),
+            _ => Err(serde::de::Error::unknown_variant(
+                &s,
+                &["", "check_box", "radio"],
+            )),
+        }
+    }
 }
 
 /// Possible values contain a value and a label
@@ -81,8 +128,8 @@ pub struct PossibleValue {
 /// a type for custom fields to use as an API return type
 ///
 /// alternatively you can use your own type limited to the fields you need
-#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
-pub struct CustomField {
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct CustomFieldDefinition {
     /// numeric id
     pub id: u64,
     /// display name
@@ -114,15 +161,50 @@ pub struct CustomField {
     /// visibility of the custom field
     pub visible: bool,
     /// which roles can see the custom field
-    pub roles: Vec<RoleEssentials>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub roles: Option<Vec<RoleEssentials>>,
     /// limit possible values to an explicit list of values
     #[serde(skip_serializing_if = "Option::is_none")]
     pub possible_values: Option<Vec<PossibleValue>>,
     /// this field is useable in these trackers
-    pub trackers: Vec<TrackerEssentials>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub trackers: Option<Vec<TrackerEssentials>>,
     /// this field is useable in these projects (None means all projects)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub projects: Option<Vec<ProjectEssentials>>,
+    /// is the custom field for all projects
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub is_for_all: Option<bool>,
+    /// position of the custom field in the list
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub position: Option<u64>,
+    /// url pattern for the custom field
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub url_pattern: Option<String>,
+    /// text formatting for the custom field
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub text_formatting: Option<String>,
+    /// edit tag style for the custom field
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub edit_tag_style: Option<EditTagStyle>,
+    /// user role for the custom field
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub user_role: Option<RoleFilter>,
+    /// version status for the custom field
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version_status: Option<VersionStatusFilter>,
+    /// extensions allowed for the custom field
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub extensions_allowed: Option<String>,
+    /// full width layout for the custom field
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub full_width_layout: Option<bool>,
+    /// thousands delimiter for the custom field
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub thousands_delimiter: Option<bool>,
+    /// ratio interval for the custom field
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ratio_interval: Option<f32>,
 }
 
 /// a type for custom field essentials with values used in other Redmine
@@ -332,6 +414,17 @@ impl Endpoint for ListCustomFields {
     }
 }
 
+/// a custom field
+#[derive(Debug, Clone, Serialize, serde::Deserialize)]
+pub struct CustomField<'a> {
+    /// the custom field's id
+    pub id: u64,
+    /// is usually present in contexts where it is returned by Redmine but can be omitted when it is sent by the client
+    pub name: Option<Cow<'a, str>>,
+    /// the custom field's value
+    pub value: Cow<'a, str>,
+}
+
 /// helper struct for outer layers with a custom_fields field holding the inner data
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct CustomFieldsWrapper<T> {
@@ -356,7 +449,7 @@ mod test {
                 .build()?,
         )?;
         let endpoint = ListCustomFields::builder().build()?;
-        redmine.json_response_body::<_, CustomFieldsWrapper<CustomField>>(&endpoint)?;
+        redmine.json_response_body::<_, CustomFieldsWrapper<CustomFieldDefinition>>(&endpoint)?;
         Ok(())
     }
 
@@ -378,7 +471,7 @@ mod test {
             custom_fields: values,
         } = redmine.json_response_body::<_, CustomFieldsWrapper<serde_json::Value>>(&endpoint)?;
         for value in values {
-            let o: CustomField = serde_json::from_value(value.clone())?;
+            let o: CustomFieldDefinition = serde_json::from_value(value.clone())?;
             let reserialized = serde_json::to_value(o)?;
             assert_eq!(value, reserialized);
         }

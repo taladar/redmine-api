@@ -10,6 +10,7 @@ use reqwest::Method;
 use std::borrow::Cow;
 
 use crate::api::{Endpoint, NoPagination, ReturnsJsonResponse};
+use serde_repr::{Deserialize_repr, Serialize_repr};
 
 /// a minimal type for Redmine roles used in lists of roles included in
 /// other Redmine objects (e.g. custom fields) and also in the global ListRoles
@@ -61,6 +62,20 @@ pub enum UsersVisibility {
     MembersOfVisibleProjects,
 }
 
+/// The type of a built-in role
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize_repr, Deserialize_repr,
+)]
+#[repr(u8)]
+pub enum BuiltinRole {
+    /// custom role
+    Custom = 0,
+    /// non-member role
+    NonMember = 1,
+    /// anonymous role
+    Anonymous = 2,
+}
+
 /// a type for roles to use as an API return type
 ///
 /// alternatively you can use your own type limited to the fields you need
@@ -81,6 +96,18 @@ pub struct Role {
     /// list of permissions, this can contain core Redmine permissions
     /// and those provided by plugins
     pub permissions: Vec<String>,
+    /// the position of the role in the list
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub position: Option<u64>,
+    /// the type of built-in role
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub builtin: Option<BuiltinRole>,
+    /// settings for the role
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub settings: Option<serde_json::Value>,
+    /// the default time entry activity for this role
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub default_time_entry_activity_id: Option<u64>,
 }
 
 /// The endpoint for all roles
@@ -89,7 +116,11 @@ pub struct Role {
 /// minimal object
 #[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
-pub struct ListRoles {}
+pub struct ListRoles {
+    /// filter for givable roles
+    #[builder(default)]
+    givable: Option<bool>,
+}
 
 impl ReturnsJsonResponse for ListRoles {}
 impl NoPagination for ListRoles {}
@@ -109,6 +140,12 @@ impl Endpoint for ListRoles {
 
     fn endpoint(&self) -> Cow<'static, str> {
         "roles.json".into()
+    }
+
+    fn parameters(&self) -> crate::api::QueryParams<'_> {
+        let mut params = crate::api::QueryParams::default();
+        params.push_opt("givable", self.givable);
+        params
     }
 }
 
@@ -173,6 +210,20 @@ mod test {
                 .build()?,
         )?;
         let endpoint = ListRoles::builder().build()?;
+        redmine.json_response_body::<_, RolesWrapper<RoleEssentials>>(&endpoint)?;
+        Ok(())
+    }
+
+    #[traced_test]
+    #[test]
+    fn test_list_roles_givable_filter() -> Result<(), Box<dyn Error>> {
+        dotenvy::dotenv()?;
+        let redmine = crate::api::Redmine::from_env(
+            reqwest::blocking::Client::builder()
+                .use_rustls_tls()
+                .build()?,
+        )?;
+        let endpoint = ListRoles::builder().givable(true).build()?;
         redmine.json_response_body::<_, RolesWrapper<RoleEssentials>>(&endpoint)?;
         Ok(())
     }

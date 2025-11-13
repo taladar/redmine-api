@@ -93,7 +93,7 @@ use reqwest::Method;
 use std::borrow::Cow;
 
 use crate::api::attachments::Attachment;
-use crate::api::custom_fields::CustomFieldEssentialsWithValue;
+use crate::api::custom_fields::{CustomField, CustomFieldEssentialsWithValue};
 use crate::api::enumerations::IssuePriorityEssentials;
 use crate::api::groups::{Group, GroupEssentials};
 use crate::api::issue_categories::IssueCategoryEssentials;
@@ -521,7 +521,7 @@ impl std::fmt::Display for UserFilter {
 }
 
 /// ways to filter for roles
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum RoleFilter {
     /// match any role
     AnyRole,
@@ -1090,17 +1090,6 @@ impl Endpoint for GetIssue {
         params.push_opt("include", self.include.as_ref());
         params
     }
-}
-
-/// a custom field
-#[derive(Debug, Clone, Serialize, serde::Deserialize)]
-pub struct CustomField<'a> {
-    /// the custom field's id
-    pub id: u64,
-    /// is usually present in contexts where it is returned by Redmine but can be omitted when it is sent by the client
-    pub name: Option<Cow<'a, str>>,
-    /// the custom field's value
-    pub value: Cow<'a, str>,
 }
 
 /// the information the uploader needs to supply for an attachment
