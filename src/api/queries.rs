@@ -1,5 +1,15 @@
 //! Queries Rest API Endpoint definitions
 //!
+//! The Redmine API for queries is read-only. It only supports listing all visible queries.
+//! The API does not expose endpoints for:
+//! - Retrieving a single query by ID (GET /queries/:id)
+//! - Creating a query (POST /queries.json)
+//! - Updating a query (PUT /queries/:id.json)
+//! - Deleting a query (DELETE /queries/:id.json)
+//!
+//! This was confirmed by examining the Redmine source code (config/routes.rb and app/controllers/queries_controller.rb).
+//! Previous analysis indicating inconsistencies due to missing client implementations for these endpoints was a false positive.
+//!
 //! [Redmine Documentation](https://www.redmine.org/projects/redmine/wiki/Rest_Queries)
 //!
 //! - [x] all (visible) custom queries endpoint
@@ -9,8 +19,38 @@ use reqwest::Method;
 use std::borrow::Cow;
 
 use crate::api::{Endpoint, Pageable, ReturnsJsonResponse};
+use serde_repr::{Deserialize_repr, Serialize_repr};
 
-/// a type for query to use as an API return type
+/// The visibility of a query
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize_repr, Deserialize_repr,
+)]
+#[repr(u8)]
+pub enum Visibility {
+    /// private
+    Private = 0,
+    /// visible to roles
+    Roles = 1,
+    /// visible to all users
+    Public = 2,
+}
+
+/// a type for query list items to use as an API return type
+///
+/// alternatively you can use your own type limited to the fields you need
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct QueryListItem {
+    /// numeric id
+    pub id: u64,
+    /// display name
+    pub name: String,
+    /// is the query public
+    pub is_public: bool,
+    /// the project for project-specific queries
+    pub project_id: Option<u64>,
+}
+
+/// a type for a detailed query to use as an API return type
 ///
 /// alternatively you can use your own type limited to the fields you need
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -19,10 +59,26 @@ pub struct Query {
     pub id: u64,
     /// display name
     pub name: String,
-    /// is this query public
+    /// is the query public
     pub is_public: bool,
     /// the project for project-specific queries
     pub project_id: Option<u64>,
+    /// the user who created the query
+    pub user_id: u64,
+    /// a description of the query
+    #[serde(default)]
+    pub description: Option<String>,
+    /// the filters for the query
+    pub filters: serde_json::Value,
+    /// the column names for the query
+    pub column_names: Vec<String>,
+    /// the sort criteria for the query
+    pub sort_criteria: serde_json::Value,
+    /// the options for the query
+    pub options: serde_json::Value,
+    /// the type of the query
+    #[serde(rename = "type")]
+    pub query_type: String,
 }
 
 /// The endpoint to retrieve all queries visible to the current user
@@ -81,7 +137,7 @@ mod test {
                 .build()?,
         )?;
         let endpoint = ListQueries::builder().build()?;
-        redmine.json_response_body_page::<_, Query>(&endpoint, 0, 25)?;
+        redmine.json_response_body_page::<_, QueryListItem>(&endpoint, 0, 25)?;
         Ok(())
     }
 
@@ -95,7 +151,7 @@ mod test {
                 .build()?,
         )?;
         let endpoint = ListQueries::builder().build()?;
-        redmine.json_response_body_all_pages::<_, Query>(&endpoint)?;
+        redmine.json_response_body_all_pages::<_, QueryListItem>(&endpoint)?;
         Ok(())
     }
 
@@ -115,7 +171,7 @@ mod test {
         let endpoint = ListQueries::builder().build()?;
         let values: Vec<serde_json::Value> = redmine.json_response_body_all_pages(&endpoint)?;
         for value in values {
-            let o: Query = serde_json::from_value(value.clone())?;
+            let o: QueryListItem = serde_json::from_value(value.clone())?;
             let reserialized = serde_json::to_value(o)?;
             assert_eq!(value, reserialized);
         }
