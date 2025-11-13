@@ -51,6 +51,8 @@ pub struct IssuePriority {
     pub name: String,
     /// whether this value is the default value
     pub is_default: bool,
+    /// whether this value is active
+    pub active: bool,
 }
 
 /// The endpoint for all issue priorities
@@ -125,6 +127,8 @@ pub struct TimeEntryActivity {
     pub name: String,
     /// whether this value is the default value
     pub is_default: bool,
+    /// whether this value is active
+    pub active: bool,
 }
 
 /// The endpoint for all time entry activities
@@ -199,6 +203,8 @@ pub struct DocumentCategory {
     pub name: String,
     /// whether this value is the default value
     pub is_default: bool,
+    /// whether this value is active
+    pub active: bool,
 }
 
 /// The endpoint for all document categories
