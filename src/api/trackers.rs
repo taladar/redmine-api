@@ -134,4 +134,22 @@ mod test {
         }
         Ok(())
     }
+
+    #[test]
+    fn test_tracker_essentials_from_tracker() {
+        let tracker = Tracker {
+            id: 1,
+            name: "Bug".to_string(),
+            default_status: IssueStatusEssentials {
+                id: 1,
+                name: "New".to_string(),
+                is_closed: Some(false),
+            },
+            description: Some("A bug".to_string()),
+            enabled_standard_fields: vec![],
+        };
+        let tracker_essentials: TrackerEssentials = tracker.into();
+        assert_eq!(tracker_essentials.id, 1);
+        assert_eq!(tracker_essentials.name, "Bug");
+    }
 }
