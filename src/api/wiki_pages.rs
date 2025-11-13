@@ -8,6 +8,13 @@
 //! - [X] create or update wiki page endpoint
 //! - [X] delete wiki page endpoint
 //! - [ ] attachments
+//!
+//! The following endpoints always return 403 and are apparently not exposed in a usable way:
+//! - GetProjectWikiPageHistory
+//! - GetProjectWikiPageDiff
+//! - RenameProjectWikiPage
+//! - ProtectProjectWikiPage
+//! - AddAttachmentToProjectWikiPage
 
 use derive_builder::Builder;
 use reqwest::Method;
@@ -69,6 +76,9 @@ pub struct WikiPageEssentials {
     /// wiki page attachments (only when include parameter is used)
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub attachments: Option<Vec<Attachment>>,
+    /// is the wiki page protected
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub protected: Option<bool>,
 }
 
 /// a type for wiki pages to use as an API return type
@@ -105,6 +115,9 @@ pub struct WikiPage {
     /// wiki page attachments (only when include parameter is used)
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub attachments: Option<Vec<Attachment>>,
+    /// is the wiki page protected
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub protected: Option<bool>,
 }
 
 /// The endpoint for all wiki pages in a project
@@ -262,6 +275,14 @@ pub struct CreateOrUpdateProjectWikiPage<'a> {
     /// the comment for the update history
     #[builder(setter(into))]
     comments: Cow<'a, str>,
+    /// used when renaming or moving a page
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
+    redirect_existing_links: Option<bool>,
+    /// is the wiki page the start page for the project
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
+    is_start_page: Option<bool>,
 }
 
 impl<'a> CreateOrUpdateProjectWikiPage<'a> {
@@ -305,6 +326,12 @@ pub struct DeleteProjectWikiPage<'a> {
     /// the title as it appears in the URL
     #[builder(setter(into))]
     title: Cow<'a, str>,
+    /// what to do with descendant pages: `null` (default) or `destroy`
+    #[builder(default)]
+    todo: Option<Cow<'a, str>>,
+    /// the id of the wiki page to reassign descendant pages to
+    #[builder(default)]
+    reassign_to_id: Option<u64>,
 }
 
 impl<'a> DeleteProjectWikiPage<'a> {
@@ -326,6 +353,138 @@ impl<'a> Endpoint for DeleteProjectWikiPage<'a> {
             &self.project_id_or_name, &self.title
         )
         .into()
+    }
+
+    fn parameters(&self) -> QueryParams<'_> {
+        let mut params = QueryParams::default();
+        params.push_opt("todo", self.todo.as_ref());
+        params.push_opt("reassign_to_id", self.reassign_to_id);
+        params
+    }
+}
+
+/// The endpoint to delete a specific version of a Redmine project wiki page
+#[derive(Debug, Clone, Builder)]
+#[builder(setter(strip_option))]
+pub struct DeleteProjectWikiPageVersion<'a> {
+    /// the project id or name as it appears in the URL
+    #[builder(setter(into))]
+    project_id_or_name: Cow<'a, str>,
+    /// the title as it appears in the URL
+    #[builder(setter(into))]
+    title: Cow<'a, str>,
+    /// the version to delete
+    version: u64,
+}
+
+impl<'a> DeleteProjectWikiPageVersion<'a> {
+    /// Create a builder for the endpoint.
+    #[must_use]
+    pub fn builder() -> DeleteProjectWikiPageVersionBuilder<'a> {
+        DeleteProjectWikiPageVersionBuilder::default()
+    }
+}
+
+impl<'a> Endpoint for DeleteProjectWikiPageVersion<'a> {
+    fn method(&self) -> Method {
+        Method::DELETE
+    }
+
+    fn endpoint(&self) -> Cow<'static, str> {
+        format!(
+            "projects/{}/wiki/{}/{}/destroy_version.json",
+            &self.project_id_or_name, &self.title, &self.version
+        )
+        .into()
+    }
+}
+
+/// The endpoint to get the annotated view of a Redmine project wiki page
+#[derive(Debug, Clone, Builder)]
+#[builder(setter(strip_option))]
+pub struct GetProjectWikiPageAnnotate<'a> {
+    /// the project id or name as it appears in the URL
+    #[builder(setter(into))]
+    project_id_or_name: Cow<'a, str>,
+    /// the title as it appears in the URL
+    #[builder(setter(into))]
+    title: Cow<'a, str>,
+    /// the version to annotate
+    version: u64,
+}
+
+impl<'a> GetProjectWikiPageAnnotate<'a> {
+    /// Create a builder for the endpoint.
+    #[must_use]
+    pub fn builder() -> GetProjectWikiPageAnnotateBuilder<'a> {
+        GetProjectWikiPageAnnotateBuilder::default()
+    }
+}
+
+impl NoPagination for GetProjectWikiPageAnnotate<'_> {}
+
+impl Endpoint for GetProjectWikiPageAnnotate<'_> {
+    fn method(&self) -> Method {
+        Method::GET
+    }
+
+    fn endpoint(&self) -> Cow<'static, str> {
+        format!(
+            "projects/{}/wiki/{}/annotate.json",
+            &self.project_id_or_name, &self.title
+        )
+        .into()
+    }
+
+    fn parameters(&self) -> QueryParams<'_> {
+        let mut params = QueryParams::default();
+        params.push("v", self.version);
+        params
+    }
+}
+
+/// The endpoint to export a Redmine project wiki page
+#[derive(Debug, Clone, Builder)]
+#[builder(setter(strip_option))]
+pub struct ExportProjectWikiPage<'a> {
+    /// the project id or name as it appears in the URL
+    #[builder(setter(into))]
+    project_id_or_name: Cow<'a, str>,
+    /// the title as it appears in the URL
+    #[builder(setter(into))]
+    title: Cow<'a, str>,
+    /// the version to export
+    #[builder(default)]
+    version: Option<u64>,
+}
+
+impl<'a> ExportProjectWikiPage<'a> {
+    /// Create a builder for the endpoint.
+    #[must_use]
+    pub fn builder() -> ExportProjectWikiPageBuilder<'a> {
+        ExportProjectWikiPageBuilder::default()
+    }
+}
+
+impl NoPagination for ExportProjectWikiPage<'_> {}
+
+impl Endpoint for ExportProjectWikiPage<'_> {
+    fn method(&self) -> Method {
+        Method::GET
+    }
+
+    fn endpoint(&self) -> Cow<'static, str> {
+        format!(
+            "projects/{}/wiki/{}/export.json",
+            &self.project_id_or_name, &self.title
+        )
+        .into()
+    }
+
+    fn parameters(&self) -> QueryParams<'_> {
+        let mut params = QueryParams::default();
+        params.push_opt("v", self.version);
+        params
     }
 }
 
@@ -577,5 +736,73 @@ pub(crate) mod test {
             .build()?;
         redmine.ignore_response_body(&endpoint)?;
         Ok(())
+    }
+
+    #[traced_test]
+    #[test]
+    fn test_wiki_page_lifecycle() -> Result<(), Box<dyn Error>> {
+        use crate::api::test_helpers::with_project;
+
+        with_project("test_wiki_page_lifecycle", |redmine, project_id, _| {
+            tracing::debug!("Creating wiki page TestWikiPage");
+            let endpoint = CreateOrUpdateProjectWikiPage::builder()
+                .project_id_or_name(project_id.to_string())
+                .title("TestWikiPage")
+                .text("Test Content")
+                .comments("Create Page Test")
+                .build()?;
+            redmine.ignore_response_body(&endpoint)?;
+
+            tracing::debug!("Verifying existence, content and version of wiki page TestWikiPage");
+            let get_endpoint = GetProjectWikiPage::builder()
+                .project_id_or_name(project_id.to_string())
+                .title("TestWikiPage")
+                .build()?;
+            let WikiPageWrapper { wiki_page } =
+                redmine.json_response_body::<_, WikiPageWrapper<WikiPage>>(&get_endpoint)?;
+            assert_eq!(wiki_page.text, "Test Content");
+            assert_eq!(wiki_page.version, 1);
+
+            tracing::debug!("Updating wiki page TestWikiPage");
+            let update_endpoint = CreateOrUpdateProjectWikiPage::builder()
+                .project_id_or_name(project_id.to_string())
+                .title("TestWikiPage")
+                .text("Test Content Updates")
+                .version(1)
+                .comments("Update Page Test")
+                .build()?;
+            redmine.ignore_response_body(&update_endpoint)?;
+
+            tracing::debug!(
+                "Verifying existence, content and version of updated wiki page TestWikiPage"
+            );
+            let get_endpoint = GetProjectWikiPage::builder()
+                .project_id_or_name(project_id.to_string())
+                .title("TestWikiPage")
+                .build()?;
+            let WikiPageWrapper { wiki_page } =
+                redmine.json_response_body::<_, WikiPageWrapper<WikiPage>>(&get_endpoint)?;
+            assert_eq!(wiki_page.text, "Test Content Updates");
+            assert_eq!(wiki_page.version, 2);
+
+            tracing::debug!("Verifying existence and content of wiki page TestWikiPage version 1");
+            let version_endpoint = GetProjectWikiPageVersion::builder()
+                .project_id_or_name(project_id.to_string())
+                .title("TestWikiPage")
+                .version(1)
+                .build()?;
+            let WikiPageWrapper { wiki_page } =
+                redmine.json_response_body::<_, WikiPageWrapper<WikiPage>>(&version_endpoint)?;
+            assert_eq!(wiki_page.text, "Test Content");
+
+            tracing::debug!("Deleting wiki page TestWikiPage");
+            let delete_endpoint = DeleteProjectWikiPage::builder()
+                .project_id_or_name(project_id.to_string())
+                .title("TestWikiPage")
+                .build()?;
+            redmine.ignore_response_body(&delete_endpoint)?;
+
+            Ok(())
+        })
     }
 }
