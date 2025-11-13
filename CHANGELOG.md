@@ -1,5 +1,50 @@
 # Changelog
 
+## 0.11.0 - 2025-11-13 13:49:28Z
+
+### 🚀 Features
+
+- *(projects)* Add projects status filter
+- *(issues)* Add child_id filter to issues endpoint
+- *(issues)* Add filter for spent_time
+- *(issues)* Add other missing issues filters and fix inconsistencies
+- *(users)* Add missing filters
+- *(time_entries)* Add missing filters
+- *(api)* Add getters for redmine_url to Redmine and RedmineAsync
+- *(error)* Log error bodies on 4xx or 5xx response codes
+- *(tests)* Add modules and a role to with_project test helper
+- *(issue_categories)* Add missing reassignment on deletion parameters
+- *(news)* Implement endpoints for get, create, update, delete
+- *(trackers)* Handle enabled_standard_fields
+- *(wiki_pages)* Add missing wiki page endpoints and fields
+- *(files)* Add missing attachments, files and uploads functionality
+- *(enumerations)* Add missing is_active field
+- *(queries)* Add missing query fields
+- *(my_account)* Add missing functionality for my_account
+- *(groups)* Add missing fields in groups endpoints
+- *(custom_fields)* Add custom fields support to more endpoints
+
+### 🐛 Bug Fixes
+
+- *(users)* Turn user status into an enum and fix user status filter
+- *(issue_relations)* Rename issue_id to issue_from_id for clarify
+- *(project_memberships)* Allow specifying multiple user ids on create
+
+### 📚 Documentation
+
+- *(issues)* Fix doc for Cf change
+- *(wiki_pages)* Add some comments about strange projects without wiki
+- *(inconsistencies)* Document inconsistencies between Redmine and this crate
+
+### 🧪 Testing
+
+- *(issue_statuses)* Test for IssueStatusEssentials from IssueStatus
+- *(trackers)* Test for TrackerEssentials from Tracker
+
+### ⚙️ Miscellaneous Tasks
+
+- *(dependencies)* Add dependencies and remove INCONSISTENCIES.md
+
 ## 0.10.0 - 2025-11-10 14:13:22Z
 
 ### 🐛 Bug Fixes
