@@ -1,4 +1,4 @@
-//! Redmine API
+//!Redmine API
 //!
 //! [`Redmine Documentation`](https://www.redmine.org/projects/redmine/wiki/rest_api)
 //!
@@ -37,7 +37,12 @@ pub mod queries;
 pub mod roles;
 pub mod search;
 #[cfg(test)]
+/// Helper utilities for API tests.
 pub mod test_helpers;
+#[cfg(test)]
+pub mod test_locking;
+#[cfg(test)]
+pub mod testcontainers_helpers;
 pub mod time_entries;
 pub mod trackers;
 pub mod uploads;
@@ -664,7 +669,7 @@ impl RedmineAsync {
         limit: u64,
     ) -> Result<ResponsePage<R>, crate::Error>
     where
-        E: Endpoint + ReturnsJsonResponse + Pageable,
+        E: Endpoint + ReturnsJsonResponse + Pageable + Send + Sync + 'static,
         R: DeserializeOwned + std::fmt::Debug,
     {
         let endpoint: std::sync::Arc<E> = endpoint.into_arc();
@@ -739,7 +744,7 @@ impl RedmineAsync {
         endpoint: impl EndpointParameter<E>,
     ) -> Result<Vec<R>, crate::Error>
     where
-        E: Endpoint + ReturnsJsonResponse + Pageable,
+        E: Endpoint + ReturnsJsonResponse + Pageable + Send + Sync + 'static,
         R: DeserializeOwned + std::fmt::Debug,
     {
         let endpoint: std::sync::Arc<E> = endpoint.into_arc();
@@ -812,8 +817,8 @@ impl RedmineAsync {
         endpoint: impl EndpointParameter<E>,
     ) -> AllPagesAsync<E, R>
     where
-        E: Endpoint + ReturnsJsonResponse + Pageable,
-        R: DeserializeOwned + std::fmt::Debug,
+        E: Endpoint + ReturnsJsonResponse + Pageable + Send + Sync + 'static,
+        R: DeserializeOwned + std::fmt::Debug + Send + Sync + 'static,
     {
         let endpoint: std::sync::Arc<E> = endpoint.into_arc();
         AllPagesAsync::new(self, endpoint)
@@ -1691,12 +1696,22 @@ where
 
 /// represents an async Stream over all result pages
 #[pin_project::pin_project]
-pub struct AllPagesAsync<E, R> {
+pub struct AllPagesAsync<E, R>
+where
+    E: Send + Sync + 'static,
+    R: Send + Sync + 'static,
+{
     /// the inner future while we are fetching new data
     #[allow(clippy::type_complexity)]
     #[pin]
     inner: Option<
-        std::pin::Pin<Box<dyn futures::Future<Output = Result<ResponsePage<R>, crate::Error>>>>,
+        std::pin::Pin<
+            Box<
+                dyn futures::Future<Output = Result<ResponsePage<R>, crate::Error>>
+                    + Send
+                    + 'static,
+            >,
+        >,
     >,
     /// the redmine object to fetch data from
     redmine: std::sync::Arc<RedmineAsync>,
@@ -1717,7 +1732,8 @@ pub struct AllPagesAsync<E, R> {
 
 impl<E, R> std::fmt::Debug for AllPagesAsync<E, R>
 where
-    R: std::fmt::Debug,
+    E: Send + Sync + 'static,
+    R: std::fmt::Debug + Send + Sync + 'static,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("AllPagesAsync")
@@ -1731,7 +1747,11 @@ where
     }
 }
 
-impl<E, R> AllPagesAsync<E, R> {
+impl<E, R> AllPagesAsync<E, R>
+where
+    E: Send + Sync + 'static,
+    R: Send + Sync + 'static,
+{
     /// create a new AllPagesAsync Stream
     pub fn new(redmine: std::sync::Arc<RedmineAsync>, endpoint: std::sync::Arc<E>) -> Self {
         Self {
@@ -1749,8 +1769,8 @@ impl<E, R> AllPagesAsync<E, R> {
 
 impl<E, R> futures::stream::Stream for AllPagesAsync<E, R>
 where
-    E: Endpoint + ReturnsJsonResponse + Pageable + 'static,
-    R: DeserializeOwned + std::fmt::Debug + 'static,
+    E: Endpoint + ReturnsJsonResponse + Pageable + Send + Sync + 'static,
+    R: DeserializeOwned + std::fmt::Debug + Send + Sync + 'static,
 {
     type Item = Result<R, crate::Error>;
 
@@ -1796,7 +1816,7 @@ where
                 self.redmine
                     .clone()
                     .json_response_body_page(self.endpoint.clone(), self.offset, self.limit)
-                    .boxed_local(),
+                    .boxed(),
             );
             self.poll_next(ctx)
         }

@@ -614,7 +614,7 @@ pub struct ProjectWrapper<T> {
 #[cfg(test)]
 pub(crate) mod test {
     use super::*;
-    use crate::api::test_helpers::with_project;
+    use crate::api::test_helpers::{with_project, with_redmine, with_redmine_async};
     use pretty_assertions::assert_eq;
     use std::error::Error;
     use tokio::sync::RwLock;
@@ -627,78 +627,70 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_projects_first_page() -> Result<(), Box<dyn Error>> {
-        let _r_project = PROJECT_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = ListProjects::builder().build()?;
-        redmine.json_response_body_page::<_, Project>(&endpoint, 0, 25)?;
-        Ok(())
+        with_redmine(|redmine| {
+            let _r_project = PROJECT_LOCK.blocking_read();
+            let endpoint = ListProjects::builder().build()?;
+            redmine.json_response_body_page::<_, Project>(&endpoint, 0, 25)?;
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_projects_all_pages() -> Result<(), Box<dyn Error>> {
-        let _r_project = PROJECT_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = ListProjects::builder().build()?;
-        redmine.json_response_body_all_pages::<_, Project>(&endpoint)?;
-        Ok(())
+        with_redmine(|redmine| {
+            let _r_project = PROJECT_LOCK.blocking_read();
+            let endpoint = ListProjects::builder().build()?;
+            redmine.json_response_body_all_pages::<_, Project>(&endpoint)?;
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[tokio::test]
     async fn test_list_projects_async_first_page() -> Result<(), Box<dyn Error>> {
-        let _r_project = PROJECT_LOCK.read().await;
-        dotenvy::dotenv()?;
-        let redmine = crate::api::RedmineAsync::from_env(
-            reqwest::Client::builder().use_rustls_tls().build()?,
-        )?;
-        let endpoint = ListProjects::builder().build()?;
-        redmine
-            .json_response_body_page::<_, Project>(&endpoint, 0, 25)
-            .await?;
-        Ok(())
+        with_redmine_async(|redmine| {
+            let redmine = redmine.clone();
+            Box::pin(async move {
+                let _r_project = PROJECT_LOCK.read().await;
+                let endpoint = ListProjects::builder().build()?;
+                redmine
+                    .json_response_body_page::<_, Project>(&endpoint, 0, 25)
+                    .await?;
+                Ok(())
+            })
+        })
+        .await
     }
 
     #[traced_test]
     #[tokio::test]
     async fn test_list_projects_async_all_pages() -> Result<(), Box<dyn Error>> {
-        let _r_project = PROJECT_LOCK.read().await;
-        dotenvy::dotenv()?;
-        let redmine = crate::api::RedmineAsync::from_env(
-            reqwest::Client::builder().use_rustls_tls().build()?,
-        )?;
-        let endpoint = ListProjects::builder().build()?;
-        redmine
-            .json_response_body_all_pages::<_, Project>(&endpoint)
-            .await?;
-        Ok(())
+        with_redmine_async(|redmine| {
+            let redmine = redmine.clone();
+            Box::pin(async move {
+                let _r_project = PROJECT_LOCK.read().await;
+                let endpoint = ListProjects::builder().build()?;
+                redmine
+                    .json_response_body_all_pages::<_, Project>(&endpoint)
+                    .await?;
+                Ok(())
+            })
+        })
+        .await
     }
 
     #[traced_test]
     #[test]
     fn test_get_project() -> Result<(), Box<dyn Error>> {
-        let _r_project = PROJECT_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = GetProject::builder()
-            .project_id_or_name("sandbox")
-            .build()?;
-        redmine.json_response_body::<_, ProjectWrapper<Project>>(&endpoint)?;
-        Ok(())
+        with_redmine(|redmine| {
+            let _r_project = PROJECT_LOCK.blocking_read();
+            let endpoint = GetProject::builder()
+                .project_id_or_name("sandbox")
+                .build()?;
+            redmine.json_response_body::<_, ProjectWrapper<Project>>(&endpoint)?;
+            Ok(())
+        })
     }
 
     #[function_name::named]
@@ -733,21 +725,17 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_completeness_project_type() -> Result<(), Box<dyn Error>> {
-        let _r_project = PROJECT_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = ListProjects::builder().build()?;
-        let values: Vec<serde_json::Value> = redmine.json_response_body_all_pages(&endpoint)?;
-        for value in values {
-            let o: Project = serde_json::from_value(value.clone())?;
-            let reserialized = serde_json::to_value(o)?;
-            assert_eq!(value, reserialized);
-        }
-        Ok(())
+        with_redmine(|redmine| {
+            let _r_project = PROJECT_LOCK.blocking_read();
+            let endpoint = ListProjects::builder().build()?;
+            let values: Vec<serde_json::Value> = redmine.json_response_body_all_pages(&endpoint)?;
+            for value in values {
+                let o: Project = serde_json::from_value(value.clone())?;
+                let reserialized = serde_json::to_value(o)?;
+                assert_eq!(value, reserialized);
+            }
+            Ok(())
+        })
     }
 
     /// this tests if any of the results contain a field we are not deserializing
@@ -763,45 +751,41 @@ pub(crate) mod test {
     #[test]
     fn test_completeness_project_type_all_pages_all_project_details() -> Result<(), Box<dyn Error>>
     {
-        let _r_project = PROJECT_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = ListProjects::builder()
-            .include(vec![
-                ProjectsInclude::Trackers,
-                ProjectsInclude::IssueCategories,
-                ProjectsInclude::EnabledModules,
-                ProjectsInclude::TimeEntryActivities,
-                ProjectsInclude::IssueCustomFields,
-            ])
-            .build()?;
-        let projects = redmine.json_response_body_all_pages::<_, Project>(&endpoint)?;
-        for project in projects {
-            tracing::debug!(
-                "Now calling individual GetProject for project id {} name {}",
-                project.id,
-                project.name
-            );
-            let get_endpoint = GetProject::builder()
-                .project_id_or_name(project.id.to_string())
+        with_redmine(|redmine| {
+            let _r_project = PROJECT_LOCK.blocking_read();
+            let endpoint = ListProjects::builder()
                 .include(vec![
-                    ProjectInclude::Trackers,
-                    ProjectInclude::IssueCategories,
-                    ProjectInclude::EnabledModules,
-                    ProjectInclude::TimeEntryActivities,
-                    ProjectInclude::IssueCustomFields,
+                    ProjectsInclude::Trackers,
+                    ProjectsInclude::IssueCategories,
+                    ProjectsInclude::EnabledModules,
+                    ProjectsInclude::TimeEntryActivities,
+                    ProjectsInclude::IssueCustomFields,
                 ])
                 .build()?;
-            let ProjectWrapper { project: value } = redmine
-                .json_response_body::<_, ProjectWrapper<serde_json::Value>>(&get_endpoint)?;
-            let o: Project = serde_json::from_value(value.clone())?;
-            let reserialized = serde_json::to_value(o)?;
-            assert_eq!(value, reserialized);
-        }
-        Ok(())
+            let projects = redmine.json_response_body_all_pages::<_, Project>(&endpoint)?;
+            for project in projects {
+                tracing::debug!(
+                    "Now calling individual GetProject for project id {} name {}",
+                    project.id,
+                    project.name
+                );
+                let get_endpoint = GetProject::builder()
+                    .project_id_or_name(project.id.to_string())
+                    .include(vec![
+                        ProjectInclude::Trackers,
+                        ProjectInclude::IssueCategories,
+                        ProjectInclude::EnabledModules,
+                        ProjectInclude::TimeEntryActivities,
+                        ProjectInclude::IssueCustomFields,
+                    ])
+                    .build()?;
+                let ProjectWrapper { project: value } = redmine
+                    .json_response_body::<_, ProjectWrapper<serde_json::Value>>(&get_endpoint)?;
+                let o: Project = serde_json::from_value(value.clone())?;
+                let reserialized = serde_json::to_value(o)?;
+                assert_eq!(value, reserialized);
+            }
+            Ok(())
+        })
     }
 }

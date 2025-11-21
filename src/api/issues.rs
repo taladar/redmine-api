@@ -1382,7 +1382,8 @@ pub struct IssueWrapper<T> {
 pub(crate) mod test {
     use super::*;
     use crate::api::ResponsePage;
-    use crate::api::test_helpers::with_project;
+    use crate::api::test_helpers::{with_project, with_redmine, with_redmine_async};
+    use crate::api::test_locking;
     use pretty_assertions::assert_eq;
     use std::error::Error;
     use tokio::sync::RwLock;
@@ -1395,16 +1396,12 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_first_page() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = ListIssues::builder().build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-        Ok(())
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder().build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
+            Ok(())
+        })
     }
 
     /// this version of the test will load all pages of issues which means it
@@ -1414,16 +1411,12 @@ pub(crate) mod test {
     #[test]
     #[ignore]
     fn test_list_issues_all_pages() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = ListIssues::builder().build()?;
-        redmine.json_response_body_all_pages::<_, Issue>(&endpoint)?;
-        Ok(())
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder().build()?;
+            redmine.json_response_body_all_pages::<_, Issue>(&endpoint)?;
+            Ok(())
+        })
     }
 
     /// this version of the test will load all pages of issues which means it
@@ -1433,68 +1426,61 @@ pub(crate) mod test {
     #[test]
     #[ignore]
     fn test_list_issues_all_pages_iter() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = ListIssues::builder().build()?;
-        let mut i = 0;
-        for issue in redmine.json_response_body_all_pages_iter::<_, Issue>(&endpoint) {
-            let _issue = issue?;
-            i += 1;
-        }
-        assert!(i > 0);
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder().build()?;
+            let mut i = 0;
+            for issue in redmine.json_response_body_all_pages_iter::<_, Issue>(&endpoint) {
+                let _issue = issue?;
+                i += 1;
+            }
+            assert!(i > 0);
 
-        Ok(())
+            Ok(())
+        })
     }
 
     /// this version of the test will load all pages of issues which means it
     /// can take a while (a minute or more) so you need to use --include-ignored
     /// or --ignored to run it
     #[traced_test]
-    #[tokio::test]
+    #[tokio::test(flavor = "current_thread")]
     #[ignore]
     async fn test_list_issues_all_pages_stream() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.read().await;
-        dotenvy::dotenv()?;
-        let redmine = crate::api::RedmineAsync::from_env(
-            reqwest::Client::builder().use_rustls_tls().build()?,
-        )?;
-        let endpoint = ListIssues::builder().build()?;
-        let mut i = 0;
-        let mut stream = redmine.json_response_body_all_pages_stream::<_, Issue>(&endpoint);
-        while let Some(issue) = <_ as futures::stream::StreamExt>::next(&mut stream).await {
-            let _issue = issue?;
-            i += 1;
-        }
-        assert!(i > 0);
-
-        Ok(())
+        with_redmine_async(|redmine| {
+            let redmine = redmine.clone();
+            Box::pin(async move {
+                let _r_issues = test_locking::read_lock_async(&ISSUES_LOCK).await;
+                let endpoint = ListIssues::builder().build()?;
+                let mut i = 0;
+                let mut stream = redmine.json_response_body_all_pages_stream::<_, Issue>(&endpoint);
+                while let Some(issue) = <_ as futures::stream::StreamExt>::next(&mut stream).await {
+                    let _issue = issue?;
+                    i += 1;
+                }
+                assert!(i > 25);
+                Ok(())
+            })
+        })
+        .await
     }
 
     #[traced_test]
     #[test]
     fn test_get_issue() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = GetIssue::builder().id(40000).build()?;
-        redmine.json_response_body::<_, IssueWrapper<Issue>>(&endpoint)?;
-        Ok(())
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = GetIssue::builder().id(40000).build()?;
+            redmine.json_response_body::<_, IssueWrapper<Issue>>(&endpoint)?;
+            Ok(())
+        })
     }
 
     #[function_name::named]
     #[traced_test]
     #[test]
     fn test_create_issue() -> Result<(), Box<dyn Error>> {
-        let _w_issues = ISSUES_LOCK.blocking_write();
+        let _w_issues = test_locking::write_lock(&ISSUES_LOCK);
         let name = format!("unittest_{}", function_name!());
         with_project(&name, |redmine, project_id, _| {
             let create_endpoint = super::CreateIssue::builder()
@@ -1511,7 +1497,7 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_update_issue() -> Result<(), Box<dyn Error>> {
-        let _w_issues = ISSUES_LOCK.blocking_write();
+        let _w_issues = test_locking::write_lock(&ISSUES_LOCK);
         let name = format!("unittest_{}", function_name!());
         with_project(&name, |redmine, project_id, _name| {
             let create_endpoint = super::CreateIssue::builder()
@@ -1534,7 +1520,7 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_delete_issue() -> Result<(), Box<dyn Error>> {
-        let _w_issues = ISSUES_LOCK.blocking_write();
+        let _w_issues = test_locking::write_lock(&ISSUES_LOCK);
         let name = format!("unittest_{}", function_name!());
         with_project(&name, |redmine, project_id, _name| {
             let create_endpoint = super::CreateIssue::builder()
@@ -1557,43 +1543,39 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_completeness_issue_type_first_page() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = ListIssues::builder()
-            .include(vec![
-                IssueListInclude::TimeEntries,
-                IssueListInclude::Relations,
-            ])
-            .build()?;
-        let ResponsePage {
-            values,
-            total_count: _,
-            offset: _,
-            limit: _,
-        } = redmine.json_response_body_page::<_, serde_json::Value>(&endpoint, 0, 100)?;
-        for value in values {
-            let o: Issue = serde_json::from_value(value.clone())?;
-            let reserialized = serde_json::to_value(o)?;
-            let expected_value = if let serde_json::Value::Object(obj) = value {
-                let mut expected_obj = obj.clone();
-                if obj
-                    .get("total_estimated_hours")
-                    .is_some_and(|v| *v == serde_json::Value::Null)
-                {
-                    expected_obj.remove("total_estimated_hours");
-                }
-                serde_json::Value::Object(expected_obj)
-            } else {
-                value
-            };
-            assert_eq!(expected_value, reserialized);
-        }
-        Ok(())
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .include(vec![
+                    IssueListInclude::TimeEntries,
+                    IssueListInclude::Relations,
+                ])
+                .build()?;
+            let ResponsePage {
+                values,
+                total_count: _,
+                offset: _,
+                limit: _,
+            } = redmine.json_response_body_page::<_, serde_json::Value>(&endpoint, 0, 100)?;
+            for value in values {
+                let o: Issue = serde_json::from_value(value.clone())?;
+                let reserialized = serde_json::to_value(o)?;
+                let expected_value = if let serde_json::Value::Object(obj) = value {
+                    let mut expected_obj = obj.clone();
+                    if obj
+                        .get("total_estimated_hours")
+                        .is_some_and(|v| *v == serde_json::Value::Null)
+                    {
+                        expected_obj.remove("total_estimated_hours");
+                    }
+                    serde_json::Value::Object(expected_obj)
+                } else {
+                    value
+                };
+                assert_eq!(expected_value, reserialized);
+            }
+            Ok(())
+        })
     }
 
     /// this tests if any of the results contain a field we are not deserializing
@@ -1608,38 +1590,34 @@ pub(crate) mod test {
     #[test]
     #[ignore]
     fn test_completeness_issue_type_all_pages() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = ListIssues::builder()
-            .include(vec![
-                IssueListInclude::TimeEntries,
-                IssueListInclude::Relations,
-            ])
-            .build()?;
-        let values = redmine.json_response_body_all_pages::<_, serde_json::Value>(&endpoint)?;
-        for value in values {
-            let o: Issue = serde_json::from_value(value.clone())?;
-            let reserialized = serde_json::to_value(o)?;
-            let expected_value = if let serde_json::Value::Object(obj) = value {
-                let mut expected_obj = obj.clone();
-                if obj
-                    .get("total_estimated_hours")
-                    .is_some_and(|v| *v == serde_json::Value::Null)
-                {
-                    expected_obj.remove("total_estimated_hours");
-                }
-                serde_json::Value::Object(expected_obj)
-            } else {
-                value
-            };
-            assert_eq!(expected_value, reserialized);
-        }
-        Ok(())
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .include(vec![
+                    IssueListInclude::TimeEntries,
+                    IssueListInclude::Relations,
+                ])
+                .build()?;
+            let values = redmine.json_response_body_all_pages::<_, serde_json::Value>(&endpoint)?;
+            for value in values {
+                let o: Issue = serde_json::from_value(value.clone())?;
+                let reserialized = serde_json::to_value(o)?;
+                let expected_value = if let serde_json::Value::Object(obj) = value {
+                    let mut expected_obj = obj.clone();
+                    if obj
+                        .get("total_estimated_hours")
+                        .is_some_and(|v| *v == serde_json::Value::Null)
+                    {
+                        expected_obj.remove("total_estimated_hours");
+                    }
+                    serde_json::Value::Object(expected_obj)
+                } else {
+                    value
+                };
+                assert_eq!(expected_value, reserialized);
+            }
+            Ok(())
+        })
     }
 
     /// this tests if any of the results contain a field we are not deserializing
@@ -1655,1710 +1633,1271 @@ pub(crate) mod test {
     #[test]
     #[ignore]
     fn test_completeness_issue_type_all_pages_all_issue_details() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = ListIssues::builder()
-            .include(vec![
-                IssueListInclude::TimeEntries,
-                IssueListInclude::Relations,
-            ])
-            .build()?;
-        let issues = redmine.json_response_body_all_pages::<_, Issue>(&endpoint)?;
-        for issue in issues {
-            let get_endpoint = GetIssue::builder()
-                .id(issue.id)
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
                 .include(vec![
-                    IssueInclude::Attachments,
-                    IssueInclude::Children,
-                    IssueInclude::Changesets,
-                    IssueInclude::Relations,
-                    IssueInclude::Journals,
-                    IssueInclude::Watchers,
+                    IssueListInclude::TimeEntries,
+                    IssueListInclude::Relations,
                 ])
                 .build()?;
-            let IssueWrapper { issue: mut value } =
-                redmine.json_response_body::<_, IssueWrapper<serde_json::Value>>(&get_endpoint)?;
-            let o: Issue = serde_json::from_value(value.clone())?;
-            // workaround for the fact that the field total_estimated_hours is put into the result
-            // when its null in the GetIssue endpoint but not in the ListIssues one
-            // we can only do one or the other in our JSON serialization unless we want to add
-            // extra fields just to keep track of the missing field vs. field with null value
-            // difference
-            let value_object = value.as_object_mut().unwrap();
-            if value_object.get("total_estimated_hours") == Some(&serde_json::Value::Null) {
-                value_object.remove("total_estimated_hours");
+            let issues = redmine.json_response_body_all_pages::<_, Issue>(&endpoint)?;
+            for issue in issues {
+                let get_endpoint = GetIssue::builder()
+                    .id(issue.id)
+                    .include(vec![
+                        IssueInclude::Attachments,
+                        IssueInclude::Children,
+                        IssueInclude::Changesets,
+                        IssueInclude::Relations,
+                        IssueInclude::Journals,
+                        IssueInclude::Watchers,
+                    ])
+                    .build()?;
+                let IssueWrapper { issue: mut value } = redmine
+                    .json_response_body::<_, IssueWrapper<serde_json::Value>>(&get_endpoint)?;
+                let o: Issue = serde_json::from_value(value.clone())?;
+                // workaround for the fact that the field total_estimated_hours is put into the result
+                // when its null in the GetIssue endpoint but not in the ListIssues one
+                // we can only do one or the other in our JSON serialization unless we want to add
+                // extra fields just to keep track of the missing field vs. field with null value
+                // difference
+                let value_object = value.as_object_mut().unwrap();
+                if value_object.get("total_estimated_hours") == Some(&serde_json::Value::Null) {
+                    value_object.remove("total_estimated_hours");
+                }
+                let reserialized = serde_json::to_value(o)?;
+                assert_eq!(value, reserialized);
             }
-            let reserialized = serde_json::to_value(o)?;
-            assert_eq!(value, reserialized);
-        }
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_created_on_filter_exact_match() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let dt = time::macros::datetime!(2023-01-15 10:30:00 UTC);
+            let endpoint = ListIssues::builder()
+                .created_on(DateTimeFilterPast::ExactMatch(dt))
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let dt = time::macros::datetime!(2023-01-15 10:30:00 UTC);
-        let endpoint = ListIssues::builder()
-            .created_on(DateTimeFilterPast::ExactMatch(dt))
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_created_on_filter_range() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let dt_start = time::macros::datetime!(2023-01-01 00:00:00 UTC);
+            let dt_end = time::macros::datetime!(2023-01-31 23:59:59 UTC);
+            let endpoint = ListIssues::builder()
+                .created_on(DateTimeFilterPast::Range(dt_start, dt_end))
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let dt_start = time::macros::datetime!(2023-01-01 00:00:00 UTC);
-        let dt_end = time::macros::datetime!(2023-01-31 23:59:59 UTC);
-        let endpoint = ListIssues::builder()
-            .created_on(DateTimeFilterPast::Range(dt_start, dt_end))
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_created_on_filter_less_than_or_equal() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let dt = time::macros::datetime!(2023-01-15 10:30:00 UTC);
+            let endpoint = ListIssues::builder()
+                .created_on(DateTimeFilterPast::LessThanOrEqual(dt))
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let dt = time::macros::datetime!(2023-01-15 10:30:00 UTC);
-        let endpoint = ListIssues::builder()
-            .created_on(DateTimeFilterPast::LessThanOrEqual(dt))
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_created_on_filter_greater_than_or_equal() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let dt = time::macros::datetime!(2023-01-15 10:30:00 UTC);
+            let endpoint = ListIssues::builder()
+                .created_on(DateTimeFilterPast::GreaterThanOrEqual(dt))
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let dt = time::macros::datetime!(2023-01-15 10:30:00 UTC);
-        let endpoint = ListIssues::builder()
-            .created_on(DateTimeFilterPast::GreaterThanOrEqual(dt))
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_created_on_filter_less_than_days_ago() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .created_on(DateTimeFilterPast::LessThanDaysAgo(5))
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .created_on(DateTimeFilterPast::LessThanDaysAgo(5))
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_created_on_filter_more_than_days_ago() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .created_on(DateTimeFilterPast::MoreThanDaysAgo(10))
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .created_on(DateTimeFilterPast::MoreThanDaysAgo(10))
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_created_on_filter_within_past_days() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .created_on(DateTimeFilterPast::WithinPastDays(7))
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .created_on(DateTimeFilterPast::WithinPastDays(7))
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_created_on_filter_exact_days_ago() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .created_on(DateTimeFilterPast::ExactDaysAgo(3))
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .created_on(DateTimeFilterPast::ExactDaysAgo(3))
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_created_on_filter_today() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .created_on(DateTimeFilterPast::Today)
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .created_on(DateTimeFilterPast::Today)
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_created_on_filter_yesterday() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .created_on(DateTimeFilterPast::Yesterday)
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .created_on(DateTimeFilterPast::Yesterday)
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_created_on_filter_this_week() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .created_on(DateTimeFilterPast::ThisWeek)
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .created_on(DateTimeFilterPast::ThisWeek)
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_created_on_filter_last_week() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .created_on(DateTimeFilterPast::LastWeek)
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .created_on(DateTimeFilterPast::LastWeek)
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_created_on_filter_last_two_weeks() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .created_on(DateTimeFilterPast::LastTwoWeeks)
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .created_on(DateTimeFilterPast::LastTwoWeeks)
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_created_on_filter_this_month() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .created_on(DateTimeFilterPast::ThisMonth)
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .created_on(DateTimeFilterPast::ThisMonth)
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_created_on_filter_last_month() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .created_on(DateTimeFilterPast::LastMonth)
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .created_on(DateTimeFilterPast::LastMonth)
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_created_on_filter_this_year() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .created_on(DateTimeFilterPast::ThisYear)
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .created_on(DateTimeFilterPast::ThisYear)
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_created_on_filter_unset() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .created_on(DateTimeFilterPast::Unset)
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .created_on(DateTimeFilterPast::Unset)
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_created_on_filter_any() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .created_on(DateTimeFilterPast::Any)
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .created_on(DateTimeFilterPast::Any)
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_updated_on_filter_exact_match() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let dt = time::macros::datetime!(2023-01-15 10:30:00 UTC);
+            let endpoint = ListIssues::builder()
+                .updated_on(DateTimeFilterPast::ExactMatch(dt))
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let dt = time::macros::datetime!(2023-01-15 10:30:00 UTC);
-        let endpoint = ListIssues::builder()
-            .updated_on(DateTimeFilterPast::ExactMatch(dt))
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_updated_on_filter_range() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let dt_start = time::macros::datetime!(2023-01-01 00:00:00 UTC);
+            let dt_end = time::macros::datetime!(2023-01-31 23:59:59 UTC);
+            let endpoint = ListIssues::builder()
+                .updated_on(DateTimeFilterPast::Range(dt_start, dt_end))
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let dt_start = time::macros::datetime!(2023-01-01 00:00:00 UTC);
-        let dt_end = time::macros::datetime!(2023-01-31 23:59:59 UTC);
-        let endpoint = ListIssues::builder()
-            .updated_on(DateTimeFilterPast::Range(dt_start, dt_end))
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_updated_on_filter_less_than_or_equal() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let dt = time::macros::datetime!(2023-01-15 10:30:00 UTC);
+            let endpoint = ListIssues::builder()
+                .updated_on(DateTimeFilterPast::LessThanOrEqual(dt))
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let dt = time::macros::datetime!(2023-01-15 10:30:00 UTC);
-        let endpoint = ListIssues::builder()
-            .updated_on(DateTimeFilterPast::LessThanOrEqual(dt))
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_updated_on_filter_greater_than_or_equal() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let dt = time::macros::datetime!(2023-01-15 10:30:00 UTC);
+            let endpoint = ListIssues::builder()
+                .updated_on(DateTimeFilterPast::GreaterThanOrEqual(dt))
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let dt = time::macros::datetime!(2023-01-15 10:30:00 UTC);
-        let endpoint = ListIssues::builder()
-            .updated_on(DateTimeFilterPast::GreaterThanOrEqual(dt))
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_updated_on_filter_less_than_days_ago() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .updated_on(DateTimeFilterPast::LessThanDaysAgo(5))
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .updated_on(DateTimeFilterPast::LessThanDaysAgo(5))
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_updated_on_filter_more_than_days_ago() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .updated_on(DateTimeFilterPast::MoreThanDaysAgo(10))
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .updated_on(DateTimeFilterPast::MoreThanDaysAgo(10))
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_updated_on_filter_within_past_days() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .updated_on(DateTimeFilterPast::WithinPastDays(7))
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .updated_on(DateTimeFilterPast::WithinPastDays(7))
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_updated_on_filter_exact_days_ago() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .updated_on(DateTimeFilterPast::ExactDaysAgo(3))
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .updated_on(DateTimeFilterPast::ExactDaysAgo(3))
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_updated_on_filter_today() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .updated_on(DateTimeFilterPast::Today)
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .updated_on(DateTimeFilterPast::Today)
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_updated_on_filter_yesterday() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .updated_on(DateTimeFilterPast::Yesterday)
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .updated_on(DateTimeFilterPast::Yesterday)
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_updated_on_filter_this_week() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .updated_on(DateTimeFilterPast::ThisWeek)
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .updated_on(DateTimeFilterPast::ThisWeek)
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_updated_on_filter_last_week() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .updated_on(DateTimeFilterPast::LastWeek)
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .updated_on(DateTimeFilterPast::LastWeek)
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_updated_on_filter_last_two_weeks() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .updated_on(DateTimeFilterPast::LastTwoWeeks)
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .updated_on(DateTimeFilterPast::LastTwoWeeks)
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_updated_on_filter_this_month() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .updated_on(DateTimeFilterPast::ThisMonth)
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .updated_on(DateTimeFilterPast::ThisMonth)
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_updated_on_filter_last_month() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .updated_on(DateTimeFilterPast::LastMonth)
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .updated_on(DateTimeFilterPast::LastMonth)
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_updated_on_filter_this_year() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .updated_on(DateTimeFilterPast::ThisYear)
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .updated_on(DateTimeFilterPast::ThisYear)
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_updated_on_filter_unset() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .updated_on(DateTimeFilterPast::Unset)
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .updated_on(DateTimeFilterPast::Unset)
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_updated_on_filter_any() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .updated_on(DateTimeFilterPast::Any)
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .updated_on(DateTimeFilterPast::Any)
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_start_date_filter_exact_match() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let dt = time::macros::date!(2023 - 01 - 15);
+            let endpoint = ListIssues::builder()
+                .start_date(DateFilter::ExactMatch(dt))
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let dt = time::macros::date!(2023 - 01 - 15);
-        let endpoint = ListIssues::builder()
-            .start_date(DateFilter::ExactMatch(dt))
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_start_date_filter_range() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let dt_start = time::macros::date!(2023 - 01 - 01);
+            let dt_end = time::macros::date!(2023 - 01 - 31);
+            let endpoint = ListIssues::builder()
+                .start_date(DateFilter::Range(dt_start, dt_end))
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let dt_start = time::macros::date!(2023 - 01 - 01);
-        let dt_end = time::macros::date!(2023 - 01 - 31);
-        let endpoint = ListIssues::builder()
-            .start_date(DateFilter::Range(dt_start, dt_end))
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_start_date_filter_less_than_or_equal() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let dt = time::macros::date!(2023 - 01 - 15);
+            let endpoint = ListIssues::builder()
+                .start_date(DateFilter::LessThanOrEqual(dt))
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let dt = time::macros::date!(2023 - 01 - 15);
-        let endpoint = ListIssues::builder()
-            .start_date(DateFilter::LessThanOrEqual(dt))
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_start_date_filter_greater_than_or_equal() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let dt = time::macros::date!(2023 - 01 - 15);
+            let endpoint = ListIssues::builder()
+                .start_date(DateFilter::GreaterThanOrEqual(dt))
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let dt = time::macros::date!(2023 - 01 - 15);
-        let endpoint = ListIssues::builder()
-            .start_date(DateFilter::GreaterThanOrEqual(dt))
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_start_date_filter_less_than_days_ago() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .start_date(DateFilter::LessThanDaysAgo(5))
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .start_date(DateFilter::LessThanDaysAgo(5))
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_start_date_filter_more_than_days_ago() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .start_date(DateFilter::MoreThanDaysAgo(10))
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .start_date(DateFilter::MoreThanDaysAgo(10))
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_start_date_filter_within_past_days() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .start_date(DateFilter::WithinPastDays(7))
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .start_date(DateFilter::WithinPastDays(7))
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_start_date_filter_exact_days_ago() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .start_date(DateFilter::ExactDaysAgo(3))
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .start_date(DateFilter::ExactDaysAgo(3))
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_start_date_filter_in_less_than_days() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .start_date(DateFilter::InLessThanDays(5))
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .start_date(DateFilter::InLessThanDays(5))
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_start_date_filter_in_more_than_days() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .start_date(DateFilter::InMoreThanDays(10))
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .start_date(DateFilter::InMoreThanDays(10))
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_start_date_filter_within_future_days() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .start_date(DateFilter::WithinFutureDays(7))
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .start_date(DateFilter::WithinFutureDays(7))
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_start_date_filter_in_exact_days() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .start_date(DateFilter::InExactDays(3))
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .start_date(DateFilter::InExactDays(3))
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_start_date_filter_today() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .start_date(DateFilter::Today)
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .start_date(DateFilter::Today)
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_start_date_filter_yesterday() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .start_date(DateFilter::Yesterday)
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .start_date(DateFilter::Yesterday)
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_start_date_filter_tomorrow() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .start_date(DateFilter::Tomorrow)
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .start_date(DateFilter::Tomorrow)
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_start_date_filter_this_week() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .start_date(DateFilter::ThisWeek)
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .start_date(DateFilter::ThisWeek)
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_start_date_filter_last_week() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .start_date(DateFilter::LastWeek)
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .start_date(DateFilter::LastWeek)
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_start_date_filter_last_two_weeks() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .start_date(DateFilter::LastTwoWeeks)
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .start_date(DateFilter::LastTwoWeeks)
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_start_date_filter_next_week() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .start_date(DateFilter::NextWeek)
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .start_date(DateFilter::NextWeek)
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_start_date_filter_this_month() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .start_date(DateFilter::ThisMonth)
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .start_date(DateFilter::ThisMonth)
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_start_date_filter_last_month() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .start_date(DateFilter::LastMonth)
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .start_date(DateFilter::LastMonth)
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_start_date_filter_next_month() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .start_date(DateFilter::NextMonth)
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .start_date(DateFilter::NextMonth)
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_start_date_filter_this_year() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .start_date(DateFilter::ThisYear)
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .start_date(DateFilter::ThisYear)
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_start_date_filter_unset() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .start_date(DateFilter::Unset)
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .start_date(DateFilter::Unset)
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_start_date_filter_any() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder().start_date(DateFilter::Any).build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder().start_date(DateFilter::Any).build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_due_date_filter_exact_match() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let dt = time::macros::date!(2023 - 01 - 15);
+            let endpoint = ListIssues::builder()
+                .due_date(DateFilter::ExactMatch(dt))
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let dt = time::macros::date!(2023 - 01 - 15);
-        let endpoint = ListIssues::builder()
-            .due_date(DateFilter::ExactMatch(dt))
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_due_date_filter_range() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let dt_start = time::macros::date!(2023 - 01 - 01);
+            let dt_end = time::macros::date!(2023 - 01 - 31);
+            let endpoint = ListIssues::builder()
+                .due_date(DateFilter::Range(dt_start, dt_end))
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let dt_start = time::macros::date!(2023 - 01 - 01);
-        let dt_end = time::macros::date!(2023 - 01 - 31);
-        let endpoint = ListIssues::builder()
-            .due_date(DateFilter::Range(dt_start, dt_end))
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_due_date_filter_less_than_or_equal() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let dt = time::macros::date!(2023 - 01 - 15);
+            let endpoint = ListIssues::builder()
+                .due_date(DateFilter::LessThanOrEqual(dt))
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let dt = time::macros::date!(2023 - 01 - 15);
-        let endpoint = ListIssues::builder()
-            .due_date(DateFilter::LessThanOrEqual(dt))
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_due_date_filter_greater_than_or_equal() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let dt = time::macros::date!(2023 - 01 - 15);
+            let endpoint = ListIssues::builder()
+                .due_date(DateFilter::GreaterThanOrEqual(dt))
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let dt = time::macros::date!(2023 - 01 - 15);
-        let endpoint = ListIssues::builder()
-            .due_date(DateFilter::GreaterThanOrEqual(dt))
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_due_date_filter_less_than_days_ago() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .due_date(DateFilter::LessThanDaysAgo(5))
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .due_date(DateFilter::LessThanDaysAgo(5))
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_due_date_filter_more_than_days_ago() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .due_date(DateFilter::MoreThanDaysAgo(10))
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .due_date(DateFilter::MoreThanDaysAgo(10))
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_due_date_filter_within_past_days() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .due_date(DateFilter::WithinPastDays(7))
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .due_date(DateFilter::WithinPastDays(7))
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_due_date_filter_exact_days_ago() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .due_date(DateFilter::ExactDaysAgo(3))
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .due_date(DateFilter::ExactDaysAgo(3))
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_due_date_filter_in_less_than_days() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .due_date(DateFilter::InLessThanDays(5))
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .due_date(DateFilter::InLessThanDays(5))
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_due_date_filter_in_more_than_days() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .due_date(DateFilter::InMoreThanDays(10))
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .due_date(DateFilter::InMoreThanDays(10))
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_due_date_filter_within_future_days() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .due_date(DateFilter::WithinFutureDays(7))
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .due_date(DateFilter::WithinFutureDays(7))
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_due_date_filter_in_exact_days() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .due_date(DateFilter::InExactDays(3))
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .due_date(DateFilter::InExactDays(3))
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_due_date_filter_today() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder().due_date(DateFilter::Today).build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder().due_date(DateFilter::Today).build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_due_date_filter_yesterday() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .due_date(DateFilter::Yesterday)
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .due_date(DateFilter::Yesterday)
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_due_date_filter_tomorrow() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .due_date(DateFilter::Tomorrow)
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .due_date(DateFilter::Tomorrow)
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_due_date_filter_this_week() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .due_date(DateFilter::ThisWeek)
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .due_date(DateFilter::ThisWeek)
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_due_date_filter_last_week() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .due_date(DateFilter::LastWeek)
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .due_date(DateFilter::LastWeek)
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_due_date_filter_last_two_weeks() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .due_date(DateFilter::LastTwoWeeks)
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .due_date(DateFilter::LastTwoWeeks)
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_due_date_filter_next_week() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .due_date(DateFilter::NextWeek)
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .due_date(DateFilter::NextWeek)
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_due_date_filter_this_month() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .due_date(DateFilter::ThisMonth)
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .due_date(DateFilter::ThisMonth)
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_due_date_filter_last_month() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .due_date(DateFilter::LastMonth)
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .due_date(DateFilter::LastMonth)
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_due_date_filter_next_month() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .due_date(DateFilter::NextMonth)
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .due_date(DateFilter::NextMonth)
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_due_date_filter_this_year() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder()
+                .due_date(DateFilter::ThisYear)
+                .build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder()
-            .due_date(DateFilter::ThisYear)
-            .build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_due_date_filter_unset() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder().due_date(DateFilter::Unset).build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder().due_date(DateFilter::Unset).build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_due_date_filter_any() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder().due_date(DateFilter::Any).build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder().due_date(DateFilter::Any).build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_issues_child_id_filter() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
+        with_redmine(|redmine| {
+            let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
+            let endpoint = ListIssues::builder().child_id(vec![123, 456]).build()?;
+            redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
 
-        let endpoint = ListIssues::builder().child_id(vec![123, 456]).build()?;
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
-
-        Ok(())
+            Ok(())
+        })
     }
 }

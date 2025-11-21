@@ -123,6 +123,7 @@ pub struct QueriesWrapper<T> {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::api::test_helpers::with_redmine;
     use pretty_assertions::assert_eq;
     use std::error::Error;
     use tracing_test::traced_test;
@@ -130,29 +131,21 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_queries_first_page() -> Result<(), Box<dyn Error>> {
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = ListQueries::builder().build()?;
-        redmine.json_response_body_page::<_, QueryListItem>(&endpoint, 0, 25)?;
-        Ok(())
+        with_redmine(|redmine| {
+            let endpoint = ListQueries::builder().build()?;
+            redmine.json_response_body_page::<_, QueryListItem>(&endpoint, 0, 25)?;
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_queries_all_pages() -> Result<(), Box<dyn Error>> {
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = ListQueries::builder().build()?;
-        redmine.json_response_body_all_pages::<_, QueryListItem>(&endpoint)?;
-        Ok(())
+        with_redmine(|redmine| {
+            let endpoint = ListQueries::builder().build()?;
+            redmine.json_response_body_all_pages::<_, QueryListItem>(&endpoint)?;
+            Ok(())
+        })
     }
 
     /// this tests if any of the results contain a field we are not deserializing
@@ -162,19 +155,15 @@ mod test {
     #[traced_test]
     #[test]
     fn test_completeness_query_type() -> Result<(), Box<dyn Error>> {
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = ListQueries::builder().build()?;
-        let values: Vec<serde_json::Value> = redmine.json_response_body_all_pages(&endpoint)?;
-        for value in values {
-            let o: QueryListItem = serde_json::from_value(value.clone())?;
-            let reserialized = serde_json::to_value(o)?;
-            assert_eq!(value, reserialized);
-        }
-        Ok(())
+        with_redmine(|redmine| {
+            let endpoint = ListQueries::builder().build()?;
+            let values: Vec<serde_json::Value> = redmine.json_response_body_all_pages(&endpoint)?;
+            for value in values {
+                let o: QueryListItem = serde_json::from_value(value.clone())?;
+                let reserialized = serde_json::to_value(o)?;
+                assert_eq!(value, reserialized);
+            }
+            Ok(())
+        })
     }
 }

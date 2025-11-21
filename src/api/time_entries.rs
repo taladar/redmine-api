@@ -387,6 +387,8 @@ pub struct TimeEntryWrapper<T> {
 #[cfg(test)]
 mod test {
     use crate::api::ResponsePage;
+    use crate::api::test_helpers::with_redmine;
+    use crate::api::test_locking;
 
     use super::*;
     use pretty_assertions::assert_eq;
@@ -396,21 +398,17 @@ mod test {
 
     /// needed so we do not get 404s when listing while
     /// creating/deleting or creating/updating/deleting
-    static TIME_ENTRY_LOCK: RwLock<()> = RwLock::const_new(());
+    pub static TIME_ENTRY_LOCK: RwLock<()> = RwLock::const_new(());
 
     #[traced_test]
     #[test]
     fn test_list_time_entries_first_page() -> Result<(), Box<dyn Error>> {
-        let _r_time_entries = TIME_ENTRY_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = ListTimeEntries::builder().build()?;
-        redmine.json_response_body_page::<_, TimeEntry>(&endpoint, 0, 25)?;
-        Ok(())
+        with_redmine(|redmine| {
+            let _r_time_entries = test_locking::read_lock(&TIME_ENTRY_LOCK);
+            let endpoint = ListTimeEntries::builder().build()?;
+            redmine.json_response_body_page::<_, TimeEntry>(&endpoint, 0, 25)?;
+            Ok(())
+        })
     }
 
     /// this takes a long time and is not very useful given the relative uniformity of time entries
@@ -429,60 +427,48 @@ mod test {
     #[traced_test]
     #[test]
     fn test_get_time_entry() -> Result<(), Box<dyn Error>> {
-        let _r_time_entries = TIME_ENTRY_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = GetTimeEntry::builder().id(832).build()?;
-        redmine.json_response_body::<_, TimeEntryWrapper<TimeEntry>>(&endpoint)?;
-        Ok(())
+        with_redmine(|redmine| {
+            let _r_time_entries = test_locking::read_lock(&TIME_ENTRY_LOCK);
+            let endpoint = GetTimeEntry::builder().id(832).build()?;
+            redmine.json_response_body::<_, TimeEntryWrapper<TimeEntry>>(&endpoint)?;
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_create_time_entry() -> Result<(), Box<dyn Error>> {
-        let _w_time_entries = TIME_ENTRY_LOCK.blocking_write();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let create_endpoint = super::CreateTimeEntry::builder()
-            .issue_id(25095)
-            .hours(1.0)
-            .activity_id(8)
-            .build()?;
-        redmine.json_response_body::<_, TimeEntryWrapper<TimeEntry>>(&create_endpoint)?;
-        Ok(())
+        with_redmine(|redmine| {
+            let _w_time_entries = test_locking::write_lock(&TIME_ENTRY_LOCK);
+            let create_endpoint = super::CreateTimeEntry::builder()
+                .issue_id(25095)
+                .hours(1.0)
+                .activity_id(8)
+                .build()?;
+            redmine.json_response_body::<_, TimeEntryWrapper<TimeEntry>>(&create_endpoint)?;
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_update_time_entry() -> Result<(), Box<dyn Error>> {
-        let _w_time_entries = TIME_ENTRY_LOCK.blocking_write();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let create_endpoint = super::CreateTimeEntry::builder()
-            .issue_id(25095)
-            .hours(1.0)
-            .activity_id(8)
-            .build()?;
-        let TimeEntryWrapper { time_entry } =
-            redmine.json_response_body::<_, TimeEntryWrapper<TimeEntry>>(&create_endpoint)?;
-        let update_endpoint = super::UpdateTimeEntry::builder()
-            .id(time_entry.id)
-            .hours(2.0)
-            .build()?;
-        redmine.ignore_response_body::<_>(&update_endpoint)?;
-        Ok(())
+        with_redmine(|redmine| {
+            let _w_time_entries = test_locking::write_lock(&TIME_ENTRY_LOCK);
+            let create_endpoint = super::CreateTimeEntry::builder()
+                .issue_id(25095)
+                .hours(1.0)
+                .activity_id(8)
+                .build()?;
+            let TimeEntryWrapper { time_entry } =
+                redmine.json_response_body::<_, TimeEntryWrapper<TimeEntry>>(&create_endpoint)?;
+            let update_endpoint = super::UpdateTimeEntry::builder()
+                .id(time_entry.id)
+                .hours(2.0)
+                .build()?;
+            redmine.ignore_response_body::<_>(&update_endpoint)?;
+            Ok(())
+        })
     }
 
     /// this tests if any of the results contain a field we are not deserializing
@@ -492,25 +478,21 @@ mod test {
     #[traced_test]
     #[test]
     fn test_completeness_time_entry_type_first_page() -> Result<(), Box<dyn Error>> {
-        let _r_time_entries = TIME_ENTRY_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = ListTimeEntries::builder().build()?;
-        let ResponsePage {
-            values,
-            total_count: _,
-            offset: _,
-            limit: _,
-        } = redmine.json_response_body_page::<_, serde_json::Value>(&endpoint, 0, 100)?;
-        for value in values {
-            let o: TimeEntry = serde_json::from_value(value.clone())?;
-            let reserialized = serde_json::to_value(o)?;
-            assert_eq!(value, reserialized);
-        }
-        Ok(())
+        with_redmine(|redmine| {
+            let _r_time_entries = test_locking::read_lock(&TIME_ENTRY_LOCK);
+            let endpoint = ListTimeEntries::builder().build()?;
+            let ResponsePage {
+                values,
+                total_count: _,
+                offset: _,
+                limit: _,
+            } = redmine.json_response_body_page::<_, serde_json::Value>(&endpoint, 0, 100)?;
+            for value in values {
+                let o: TimeEntry = serde_json::from_value(value.clone())?;
+                let reserialized = serde_json::to_value(o)?;
+                assert_eq!(value, reserialized);
+            }
+            Ok(())
+        })
     }
 }

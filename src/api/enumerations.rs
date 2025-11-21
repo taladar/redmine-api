@@ -243,49 +243,40 @@ pub struct DocumentCategoriesWrapper<T> {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::api::test_helpers::with_redmine;
     use std::error::Error;
     use tracing_test::traced_test;
 
     #[traced_test]
     #[test]
     fn test_list_issue_priorities_no_pagination() -> Result<(), Box<dyn Error>> {
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = ListIssuePriorities::builder().build()?;
-        redmine.json_response_body::<_, IssuePrioritiesWrapper<IssuePriority>>(&endpoint)?;
-        Ok(())
+        with_redmine(|redmine| {
+            let endpoint = ListIssuePriorities::builder().build()?;
+            redmine.json_response_body::<_, IssuePrioritiesWrapper<IssuePriority>>(&endpoint)?;
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_time_entry_activities_no_pagination() -> Result<(), Box<dyn Error>> {
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = ListTimeEntryActivities::builder().build()?;
-        redmine
-            .json_response_body::<_, TimeEntryActivitiesWrapper<TimeEntryActivity>>(&endpoint)?;
-        Ok(())
+        with_redmine(|redmine| {
+            let endpoint = ListTimeEntryActivities::builder().build()?;
+            redmine.json_response_body::<_, TimeEntryActivitiesWrapper<TimeEntryActivity>>(
+                &endpoint,
+            )?;
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_document_categories_no_pagination() -> Result<(), Box<dyn Error>> {
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = ListDocumentCategories::builder().build()?;
-        redmine.json_response_body::<_, DocumentCategoriesWrapper<DocumentCategory>>(&endpoint)?;
-        Ok(())
+        with_redmine(|redmine| {
+            let endpoint = ListDocumentCategories::builder().build()?;
+            redmine
+                .json_response_body::<_, DocumentCategoriesWrapper<DocumentCategory>>(&endpoint)?;
+            Ok(())
+        })
     }
 }

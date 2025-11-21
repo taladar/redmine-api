@@ -196,6 +196,7 @@ pub struct RoleWrapper<T> {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::api::test_helpers::with_redmine;
     use pretty_assertions::assert_eq;
     use std::error::Error;
     use tracing_test::traced_test;
@@ -203,42 +204,30 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_roles_no_pagination() -> Result<(), Box<dyn Error>> {
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = ListRoles::builder().build()?;
-        redmine.json_response_body::<_, RolesWrapper<RoleEssentials>>(&endpoint)?;
-        Ok(())
+        with_redmine(|redmine| {
+            let endpoint = ListRoles::builder().build()?;
+            redmine.json_response_body::<_, RolesWrapper<RoleEssentials>>(&endpoint)?;
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_roles_givable_filter() -> Result<(), Box<dyn Error>> {
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = ListRoles::builder().givable(true).build()?;
-        redmine.json_response_body::<_, RolesWrapper<RoleEssentials>>(&endpoint)?;
-        Ok(())
+        with_redmine(|redmine| {
+            let endpoint = ListRoles::builder().givable(true).build()?;
+            redmine.json_response_body::<_, RolesWrapper<RoleEssentials>>(&endpoint)?;
+            Ok(())
+        })
     }
 
     #[test]
     fn test_get_role() -> Result<(), Box<dyn Error>> {
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = GetRole::builder().id(8).build()?;
-        redmine.json_response_body::<_, RoleWrapper<Role>>(&endpoint)?;
-        Ok(())
+        with_redmine(|redmine| {
+            let endpoint = GetRole::builder().id(8).build()?;
+            redmine.json_response_body::<_, RoleWrapper<Role>>(&endpoint)?;
+            Ok(())
+        })
     }
 
     /// this tests if any of the results contain a field we are not deserializing
@@ -248,23 +237,19 @@ mod test {
     #[traced_test]
     #[test]
     fn test_completeness_role_type() -> Result<(), Box<dyn Error>> {
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let list_endpoint = ListRoles::builder().build()?;
-        let RolesWrapper { roles } =
-            redmine.json_response_body::<_, RolesWrapper<RoleEssentials>>(&list_endpoint)?;
-        for role in roles {
-            let endpoint = GetRole::builder().id(role.id).build()?;
-            let RoleWrapper { role: value } =
-                redmine.json_response_body::<_, RoleWrapper<serde_json::Value>>(&endpoint)?;
-            let o: Role = serde_json::from_value(value.clone())?;
-            let reserialized = serde_json::to_value(o)?;
-            assert_eq!(value, reserialized);
-        }
-        Ok(())
+        with_redmine(|redmine| {
+            let list_endpoint = ListRoles::builder().build()?;
+            let RolesWrapper { roles } =
+                redmine.json_response_body::<_, RolesWrapper<RoleEssentials>>(&list_endpoint)?;
+            for role in roles {
+                let endpoint = GetRole::builder().id(role.id).build()?;
+                let RoleWrapper { role: value } =
+                    redmine.json_response_body::<_, RoleWrapper<serde_json::Value>>(&endpoint)?;
+                let o: Role = serde_json::from_value(value.clone())?;
+                let reserialized = serde_json::to_value(o)?;
+                assert_eq!(value, reserialized);
+            }
+            Ok(())
+        })
     }
 }

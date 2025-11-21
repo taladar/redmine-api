@@ -505,7 +505,11 @@ pub struct WikiPageWrapper<T> {
 
 #[cfg(test)]
 pub(crate) mod test {
-    use crate::api::projects::{ListProjects, Project, ProjectsInclude, test::PROJECT_LOCK};
+    use crate::api::{
+        projects::{ListProjects, Project, ProjectsInclude, test::PROJECT_LOCK},
+        test_helpers::with_redmine,
+        test_locking,
+    };
 
     use super::*;
     use std::error::Error;
@@ -519,19 +523,15 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_project_wiki_pages() -> Result<(), Box<dyn Error>> {
-        let _r_project = PROJECT_LOCK.blocking_read();
-        let _r_project_wiki_pages = PROJECT_WIKI_PAGE_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = ListProjectWikiPages::builder()
-            .project_id_or_name("25")
-            .build()?;
-        redmine.json_response_body::<_, WikiPagesWrapper<WikiPageEssentials>>(&endpoint)?;
-        Ok(())
+        with_redmine(|redmine| {
+            let _r_project = test_locking::read_lock(&PROJECT_LOCK);
+            let _r_project_wiki_pages = test_locking::read_lock(&PROJECT_WIKI_PAGE_LOCK);
+            let endpoint = ListProjectWikiPages::builder()
+                .project_id_or_name("25")
+                .build()?;
+            redmine.json_response_body::<_, WikiPagesWrapper<WikiPageEssentials>>(&endpoint)?;
+            Ok(())
+        })
     }
 
     /// this tests if any of the results contain a field we are not deserializing
@@ -541,72 +541,64 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_completeness_wiki_page_essentials() -> Result<(), Box<dyn Error>> {
-        let _r_project = PROJECT_LOCK.blocking_read();
-        let _r_issues = PROJECT_WIKI_PAGE_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = ListProjects::builder()
-            .include(vec![ProjectsInclude::EnabledModules])
-            .build()?;
-        let projects = redmine.json_response_body_all_pages_iter::<_, Project>(&endpoint);
-        let mut checked_projects = 0;
-        for project in projects {
-            let project = project?;
-            if !project
-                .enabled_modules
-                .is_some_and(|em| em.iter().any(|m| m.name == "wiki"))
-            {
-                // skip projects where wiki is disabled
-                continue;
-            }
-            let endpoint = ListProjectWikiPages::builder()
-                .project_id_or_name(project.id.to_string())
-                .include(vec![WikiPageInclude::Attachments])
+        with_redmine(|redmine| {
+            let _r_project = test_locking::read_lock(&PROJECT_LOCK);
+            let _r_issues = test_locking::read_lock(&PROJECT_WIKI_PAGE_LOCK);
+            let endpoint = ListProjects::builder()
+                .include(vec![ProjectsInclude::EnabledModules])
                 .build()?;
-            let Ok(WikiPagesWrapper { wiki_pages: values }) =
-                redmine.json_response_body::<_, WikiPagesWrapper<serde_json::Value>>(&endpoint)
-            else {
-                // TODO: some projects return a 404 for their wiki for unknown reasons even with an
-                //       enabled wiki module. They also do not have a wiki tab so I assume
-                //       it is intentional, they are not closed or archived either
-                //
-                //       Further analysis seems to indicate that this should not happen and is most
-                //       likely an issue resulting from a database state from a buggy old version of
-                //       Redmine
-                continue;
-            };
-            checked_projects += 1;
-            for value in values {
-                let o: WikiPageEssentials = serde_json::from_value(value.clone())?;
-                let reserialized = serde_json::to_value(o)?;
-                assert_eq!(value, reserialized);
+            let projects = redmine.json_response_body_all_pages_iter::<_, Project>(&endpoint);
+            let mut checked_projects = 0;
+            for project in projects {
+                let project = project?;
+                if !project
+                    .enabled_modules
+                    .is_some_and(|em| em.iter().any(|m| m.name == "wiki"))
+                {
+                    // skip projects where wiki is disabled
+                    continue;
+                }
+                let endpoint = ListProjectWikiPages::builder()
+                    .project_id_or_name(project.id.to_string())
+                    .include(vec![WikiPageInclude::Attachments])
+                    .build()?;
+                let Ok(WikiPagesWrapper { wiki_pages: values }) =
+                    redmine.json_response_body::<_, WikiPagesWrapper<serde_json::Value>>(&endpoint)
+                else {
+                    // TODO: some projects return a 404 for their wiki for unknown reasons even with an
+                    //       enabled wiki module. They also do not have a wiki tab so I assume
+                    //       it is intentional, they are not closed or archived either
+                    //
+                    //       Further analysis seems to indicate that this should not happen and is most
+                    //       likely an issue resulting from a database state from a buggy old version of
+                    //       Redmine
+                    continue;
+                };
+                checked_projects += 1;
+                for value in values {
+                    let o: WikiPageEssentials = serde_json::from_value(value.clone())?;
+                    let reserialized = serde_json::to_value(o)?;
+                    assert_eq!(value, reserialized);
+                }
             }
-        }
-        assert!(checked_projects > 0);
-        Ok(())
+            assert!(checked_projects > 0);
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_get_project_wiki_page() -> Result<(), Box<dyn Error>> {
-        let _r_project = PROJECT_LOCK.blocking_read();
-        let _r_project_wiki_pages = PROJECT_WIKI_PAGE_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = GetProjectWikiPage::builder()
-            .project_id_or_name("25")
-            .title("Administration")
-            .build()?;
-        redmine.json_response_body::<_, WikiPageWrapper<WikiPage>>(&endpoint)?;
-        Ok(())
+        with_redmine(|redmine| {
+            let _r_project = test_locking::read_lock(&PROJECT_LOCK);
+            let _r_project_wiki_pages = test_locking::read_lock(&PROJECT_WIKI_PAGE_LOCK);
+            let endpoint = GetProjectWikiPage::builder()
+                .project_id_or_name("25")
+                .title("Administration")
+                .build()?;
+            redmine.json_response_body::<_, WikiPageWrapper<WikiPage>>(&endpoint)?;
+            Ok(())
+        })
     }
 
     /// this tests if any of the results contain a field we are not deserializing
@@ -616,126 +608,114 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_completeness_wiki_page() -> Result<(), Box<dyn Error>> {
-        let _r_project = PROJECT_LOCK.blocking_read();
-        let _r_issues = PROJECT_WIKI_PAGE_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = ListProjects::builder()
-            .include(vec![ProjectsInclude::EnabledModules])
-            .build()?;
-        let projects = redmine.json_response_body_all_pages_iter::<_, Project>(&endpoint);
-        let mut checked_pages = 0;
-        for project in projects {
-            let project = project?;
-            if !project
-                .enabled_modules
-                .is_some_and(|em| em.iter().any(|m| m.name == "wiki"))
-            {
-                // skip projects where wiki is disabled
-                continue;
-            }
-            let endpoint = ListProjectWikiPages::builder()
-                .project_id_or_name(project.id.to_string())
-                .include(vec![WikiPageInclude::Attachments])
+        with_redmine(|redmine| {
+            let _r_project = test_locking::read_lock(&PROJECT_LOCK);
+            let _r_issues = test_locking::read_lock(&PROJECT_WIKI_PAGE_LOCK);
+            let endpoint = ListProjects::builder()
+                .include(vec![ProjectsInclude::EnabledModules])
                 .build()?;
-            let Ok(WikiPagesWrapper { wiki_pages }) =
-                redmine.json_response_body::<_, WikiPagesWrapper<WikiPageEssentials>>(&endpoint)
-            else {
-                // TODO: some projects return a 404 for their wiki for unknown reasons even with an
-                //       enabled wiki module. They also do not have a wiki tab so I assume
-                //       it is intentional, they are not closed or archived either
-                //
-                //       Further analysis seems to indicate that this should not happen and is most
-                //       likely an issue resulting from a database state from a buggy old version of
-                //       Redmine
-                continue;
-            };
-            checked_pages += 1;
-            for wiki_page in wiki_pages {
-                let endpoint = GetProjectWikiPage::builder()
+            let projects = redmine.json_response_body_all_pages_iter::<_, Project>(&endpoint);
+            let mut checked_pages = 0;
+            for project in projects {
+                let project = project?;
+                if !project
+                    .enabled_modules
+                    .is_some_and(|em| em.iter().any(|m| m.name == "wiki"))
+                {
+                    // skip projects where wiki is disabled
+                    continue;
+                }
+                let endpoint = ListProjectWikiPages::builder()
                     .project_id_or_name(project.id.to_string())
-                    .title(wiki_page.title)
                     .include(vec![WikiPageInclude::Attachments])
                     .build()?;
-                let WikiPageWrapper { wiki_page: value } = redmine
-                    .json_response_body::<_, WikiPageWrapper<serde_json::Value>>(&endpoint)?;
-                let o: WikiPage = serde_json::from_value(value.clone())?;
-                let reserialized = serde_json::to_value(o)?;
-                assert_eq!(value, reserialized);
+                let Ok(WikiPagesWrapper { wiki_pages }) = redmine
+                    .json_response_body::<_, WikiPagesWrapper<WikiPageEssentials>>(&endpoint)
+                else {
+                    // TODO: some projects return a 404 for their wiki for unknown reasons even with an
+                    //       enabled wiki module. They also do not have a wiki tab so I assume
+                    //       it is intentional, they are not closed or archived either
+                    //
+                    //       Further analysis seems to indicate that this should not happen and is most
+                    //       likely an issue resulting from a database state from a buggy old version of
+                    //       Redmine
+                    continue;
+                };
+                checked_pages += 1;
+                for wiki_page in wiki_pages {
+                    let endpoint = GetProjectWikiPage::builder()
+                        .project_id_or_name(project.id.to_string())
+                        .title(wiki_page.title)
+                        .include(vec![WikiPageInclude::Attachments])
+                        .build()?;
+                    let WikiPageWrapper { wiki_page: value } = redmine
+                        .json_response_body::<_, WikiPageWrapper<serde_json::Value>>(&endpoint)?;
+                    let o: WikiPage = serde_json::from_value(value.clone())?;
+                    let reserialized = serde_json::to_value(o)?;
+                    assert_eq!(value, reserialized);
+                }
             }
-        }
-        assert!(checked_pages > 0);
-        Ok(())
+            assert!(checked_pages > 0);
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_get_project_wiki_page_version() -> Result<(), Box<dyn Error>> {
-        let _r_project = PROJECT_LOCK.blocking_read();
-        let _r_project_wiki_pages = PROJECT_WIKI_PAGE_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = GetProjectWikiPageVersion::builder()
-            .project_id_or_name("25")
-            .title("Administration")
-            .version(18)
-            .build()?;
-        redmine.json_response_body::<_, WikiPageWrapper<WikiPage>>(&endpoint)?;
-        Ok(())
+        with_redmine(|redmine| {
+            let _r_project = test_locking::read_lock(&PROJECT_LOCK);
+            let _r_project_wiki_pages = test_locking::read_lock(&PROJECT_WIKI_PAGE_LOCK);
+            let endpoint = GetProjectWikiPageVersion::builder()
+                .project_id_or_name("25")
+                .title("Administration")
+                .version(18)
+                .build()?;
+            redmine.json_response_body::<_, WikiPageWrapper<WikiPage>>(&endpoint)?;
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_create_update_and_delete_project_wiki_page() -> Result<(), Box<dyn Error>> {
-        let _r_project = PROJECT_LOCK.blocking_read();
-        let _w_project_wiki_pages = PROJECT_WIKI_PAGE_LOCK.blocking_write();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = GetProjectWikiPage::builder()
-            .project_id_or_name("25")
-            .title("CreateWikiPageTest")
-            .build()?;
-        if redmine.ignore_response_body(&endpoint).is_ok() {
-            // left-over from past test that failed to complete
+        with_redmine(|redmine| {
+            let _r_project = test_locking::read_lock(&PROJECT_LOCK);
+            let _w_project_wiki_pages = test_locking::write_lock(&PROJECT_WIKI_PAGE_LOCK);
+            let endpoint = GetProjectWikiPage::builder()
+                .project_id_or_name("25")
+                .title("CreateWikiPageTest")
+                .build()?;
+            if redmine.ignore_response_body(&endpoint).is_ok() {
+                // left-over from past test that failed to complete
+                let endpoint = DeleteProjectWikiPage::builder()
+                    .project_id_or_name("25")
+                    .title("CreateWikiPageTest")
+                    .build()?;
+                redmine.ignore_response_body(&endpoint)?;
+            }
+            let endpoint = CreateOrUpdateProjectWikiPage::builder()
+                .project_id_or_name("25")
+                .title("CreateWikiPageTest")
+                .text("Test Content")
+                .comments("Create Page Test")
+                .build()?;
+            redmine.ignore_response_body(&endpoint)?;
+            let endpoint = CreateOrUpdateProjectWikiPage::builder()
+                .project_id_or_name("25")
+                .title("CreateWikiPageTest")
+                .text("Test Content Updates")
+                .version(1)
+                .comments("Update Page Test")
+                .build()?;
+            redmine.ignore_response_body(&endpoint)?;
             let endpoint = DeleteProjectWikiPage::builder()
                 .project_id_or_name("25")
                 .title("CreateWikiPageTest")
                 .build()?;
             redmine.ignore_response_body(&endpoint)?;
-        }
-        let endpoint = CreateOrUpdateProjectWikiPage::builder()
-            .project_id_or_name("25")
-            .title("CreateWikiPageTest")
-            .text("Test Content")
-            .comments("Create Page Test")
-            .build()?;
-        redmine.ignore_response_body(&endpoint)?;
-        let endpoint = CreateOrUpdateProjectWikiPage::builder()
-            .project_id_or_name("25")
-            .title("CreateWikiPageTest")
-            .text("Test Content Updates")
-            .version(1)
-            .comments("Update Page Test")
-            .build()?;
-        redmine.ignore_response_body(&endpoint)?;
-        let endpoint = DeleteProjectWikiPage::builder()
-            .project_id_or_name("25")
-            .title("CreateWikiPageTest")
-            .build()?;
-        redmine.ignore_response_body(&endpoint)?;
-        Ok(())
+            Ok(())
+        })
     }
 
     #[traced_test]

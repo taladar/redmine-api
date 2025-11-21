@@ -435,6 +435,7 @@ pub struct CustomFieldsWrapper<T> {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::api::test_helpers::with_redmine;
     use pretty_assertions::assert_eq;
     use std::error::Error;
     use tracing_test::traced_test;
@@ -442,15 +443,12 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_custom_fields_no_pagination() -> Result<(), Box<dyn Error>> {
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = ListCustomFields::builder().build()?;
-        redmine.json_response_body::<_, CustomFieldsWrapper<CustomFieldDefinition>>(&endpoint)?;
-        Ok(())
+        with_redmine(|redmine| {
+            let endpoint = ListCustomFields::builder().build()?;
+            redmine
+                .json_response_body::<_, CustomFieldsWrapper<CustomFieldDefinition>>(&endpoint)?;
+            Ok(())
+        })
     }
 
     /// this tests if any of the results contain a field we are not deserializing
@@ -460,21 +458,18 @@ mod test {
     #[traced_test]
     #[test]
     fn test_completeness_custom_fields_type() -> Result<(), Box<dyn Error>> {
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = ListCustomFields::builder().build()?;
-        let CustomFieldsWrapper {
-            custom_fields: values,
-        } = redmine.json_response_body::<_, CustomFieldsWrapper<serde_json::Value>>(&endpoint)?;
-        for value in values {
-            let o: CustomFieldDefinition = serde_json::from_value(value.clone())?;
-            let reserialized = serde_json::to_value(o)?;
-            assert_eq!(value, reserialized);
-        }
-        Ok(())
+        with_redmine(|redmine| {
+            let endpoint = ListCustomFields::builder().build()?;
+            let CustomFieldsWrapper {
+                custom_fields: values,
+            } = redmine
+                .json_response_body::<_, CustomFieldsWrapper<serde_json::Value>>(&endpoint)?;
+            for value in values {
+                let o: CustomFieldDefinition = serde_json::from_value(value.clone())?;
+                let reserialized = serde_json::to_value(o)?;
+                assert_eq!(value, reserialized);
+            }
+            Ok(())
+        })
     }
 }

@@ -92,6 +92,7 @@ pub struct TrackersWrapper<T> {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::api::test_helpers::with_redmine;
     use pretty_assertions::assert_eq;
     use std::error::Error;
     use tracing_test::traced_test;
@@ -99,15 +100,11 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_trackers_no_pagination() -> Result<(), Box<dyn Error>> {
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = ListTrackers::builder().build()?;
-        redmine.json_response_body::<_, TrackersWrapper<Tracker>>(&endpoint)?;
-        Ok(())
+        with_redmine(|redmine| {
+            let endpoint = ListTrackers::builder().build()?;
+            redmine.json_response_body::<_, TrackersWrapper<Tracker>>(&endpoint)?;
+            Ok(())
+        })
     }
 
     /// this tests if any of the results contain a field we are not deserializing
@@ -117,21 +114,17 @@ mod test {
     #[traced_test]
     #[test]
     fn test_completeness_tracker_type() -> Result<(), Box<dyn Error>> {
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = ListTrackers::builder().build()?;
-        let TrackersWrapper { trackers: values } =
-            redmine.json_response_body::<_, TrackersWrapper<serde_json::Value>>(&endpoint)?;
-        for value in values {
-            let o: Tracker = serde_json::from_value(value.clone())?;
-            let reserialized = serde_json::to_value(o)?;
-            assert_eq!(value, reserialized);
-        }
-        Ok(())
+        with_redmine(|redmine| {
+            let endpoint = ListTrackers::builder().build()?;
+            let TrackersWrapper { trackers: values } =
+                redmine.json_response_body::<_, TrackersWrapper<serde_json::Value>>(&endpoint)?;
+            for value in values {
+                let o: Tracker = serde_json::from_value(value.clone())?;
+                let reserialized = serde_json::to_value(o)?;
+                assert_eq!(value, reserialized);
+            }
+            Ok(())
+        })
     }
 
     #[test]

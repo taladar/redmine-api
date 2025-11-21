@@ -218,19 +218,15 @@ mod test {
     #[traced_test]
     #[test]
     fn test_completeness_attachment_type() -> Result<(), Box<dyn Error>> {
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = GetAttachment::builder().id(38468).build()?;
-        let AttachmentWrapper { attachment: value } =
-            redmine.json_response_body::<_, AttachmentWrapper<serde_json::Value>>(&endpoint)?;
-        let o: Attachment = serde_json::from_value(value.clone())?;
-        let reserialized = serde_json::to_value(o)?;
-        assert_eq!(value, reserialized);
-        Ok(())
+        crate::api::test_helpers::with_redmine(|redmine| {
+            let endpoint = GetAttachment::builder().id(38468).build()?;
+            let AttachmentWrapper { attachment: value } =
+                redmine.json_response_body::<_, AttachmentWrapper<serde_json::Value>>(&endpoint)?;
+            let o: Attachment = serde_json::from_value(value.clone())?;
+            let reserialized = serde_json::to_value(o)?;
+            assert_eq!(value, reserialized);
+            Ok(())
+        })
     }
 
     #[traced_test]

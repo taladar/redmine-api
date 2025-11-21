@@ -369,7 +369,7 @@ pub struct GroupWrapper<T> {
 pub(crate) mod test {
     use super::*;
     use crate::api::project_memberships::test::PROJECT_MEMBERSHIP_LOCK;
-    use crate::api::test_helpers::with_group;
+    use crate::api::test_helpers::{with_group, with_redmine};
     use crate::api::users::test::USER_LOCK;
     use pretty_assertions::assert_eq;
     use std::error::Error;
@@ -383,31 +383,23 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_groups_no_pagination() -> Result<(), Box<dyn Error>> {
-        let _r_groups = GROUP_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = ListGroups::builder().build()?;
-        redmine.json_response_body::<_, GroupsWrapper<Group>>(&endpoint)?;
-        Ok(())
+        with_redmine(|redmine| {
+            let _r_groups = GROUP_LOCK.blocking_read();
+            let endpoint = ListGroups::builder().build()?;
+            redmine.json_response_body::<_, GroupsWrapper<Group>>(&endpoint)?;
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_get_group() -> Result<(), Box<dyn Error>> {
-        let _r_groups = GROUP_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = GetGroup::builder().id(338).build()?;
-        redmine.json_response_body::<_, GroupWrapper<Group>>(&endpoint)?;
-        Ok(())
+        with_redmine(|redmine| {
+            let _r_groups = GROUP_LOCK.blocking_read();
+            let endpoint = GetGroup::builder().id(338).build()?;
+            redmine.json_response_body::<_, GroupWrapper<Group>>(&endpoint)?;
+            Ok(())
+        })
     }
 
     #[function_name::named]
@@ -442,22 +434,18 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_completeness_group_type() -> Result<(), Box<dyn Error>> {
-        let _r_groups = GROUP_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = ListGroups::builder().build()?;
-        let GroupsWrapper { groups: values } =
-            redmine.json_response_body::<_, GroupsWrapper<serde_json::Value>>(&endpoint)?;
-        for value in values {
-            let o: Group = serde_json::from_value(value.clone())?;
-            let reserialized = serde_json::to_value(o)?;
-            assert_eq!(value, reserialized);
-        }
-        Ok(())
+        with_redmine(|redmine| {
+            let _r_groups = GROUP_LOCK.blocking_read();
+            let endpoint = ListGroups::builder().build()?;
+            let GroupsWrapper { groups: values } =
+                redmine.json_response_body::<_, GroupsWrapper<serde_json::Value>>(&endpoint)?;
+            for value in values {
+                let o: Group = serde_json::from_value(value.clone())?;
+                let reserialized = serde_json::to_value(o)?;
+                assert_eq!(value, reserialized);
+            }
+            Ok(())
+        })
     }
 
     /// this tests if any of the results contain a field we are not deserializing
@@ -470,29 +458,25 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_completeness_group_type_all_group_details() -> Result<(), Box<dyn Error>> {
-        let _r_user = USER_LOCK.blocking_read();
-        let _r_groups = GROUP_LOCK.blocking_read();
-        let _r_project_memberships = PROJECT_MEMBERSHIP_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = ListGroups::builder().build()?;
-        let GroupsWrapper { groups } =
-            redmine.json_response_body::<_, GroupsWrapper<Group>>(&endpoint)?;
-        for group in groups {
-            let get_endpoint = GetGroup::builder()
-                .id(group.id)
-                .include(vec![GroupInclude::Users, GroupInclude::Memberships])
-                .build()?;
-            let GroupWrapper { group: value } =
-                redmine.json_response_body::<_, GroupWrapper<serde_json::Value>>(&get_endpoint)?;
-            let o: Group = serde_json::from_value(value.clone())?;
-            let reserialized = serde_json::to_value(o)?;
-            assert_eq!(value, reserialized);
-        }
-        Ok(())
+        with_redmine(|redmine| {
+            let _r_user = USER_LOCK.blocking_read();
+            let _r_groups = GROUP_LOCK.blocking_read();
+            let _r_project_memberships = PROJECT_MEMBERSHIP_LOCK.blocking_read();
+            let endpoint = ListGroups::builder().build()?;
+            let GroupsWrapper { groups } =
+                redmine.json_response_body::<_, GroupsWrapper<Group>>(&endpoint)?;
+            for group in groups {
+                let get_endpoint = GetGroup::builder()
+                    .id(group.id)
+                    .include(vec![GroupInclude::Users, GroupInclude::Memberships])
+                    .build()?;
+                let GroupWrapper { group: value } = redmine
+                    .json_response_body::<_, GroupWrapper<serde_json::Value>>(&get_endpoint)?;
+                let o: Group = serde_json::from_value(value.clone())?;
+                let reserialized = serde_json::to_value(o)?;
+                assert_eq!(value, reserialized);
+            }
+            Ok(())
+        })
     }
 }

@@ -253,7 +253,8 @@ pub struct MembershipWrapper<T> {
 #[cfg(test)]
 pub(crate) mod test {
     use super::*;
-    use crate::api::test_helpers::with_project;
+    use crate::api::test_helpers::{with_project, with_redmine};
+    use crate::api::test_locking;
     use pretty_assertions::assert_eq;
     use std::error::Error;
     use tokio::sync::RwLock;
@@ -266,57 +267,45 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_project_memberships_first_page() -> Result<(), Box<dyn Error>> {
-        let _r_project_memberships = PROJECT_MEMBERSHIP_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = ListProjectMemberships::builder()
-            .project_id_or_name("sandbox")
-            .build()?;
-        redmine.json_response_body_page::<_, ProjectMembership>(&endpoint, 0, 25)?;
-        Ok(())
+        with_redmine(|redmine| {
+            let _r_project_memberships = test_locking::read_lock(&PROJECT_MEMBERSHIP_LOCK);
+            let endpoint = ListProjectMemberships::builder()
+                .project_id_or_name("sandbox")
+                .build()?;
+            redmine.json_response_body_page::<_, ProjectMembership>(&endpoint, 0, 25)?;
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_project_memberships_all_pages() -> Result<(), Box<dyn Error>> {
-        let _r_project_memberships = PROJECT_MEMBERSHIP_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = ListProjectMemberships::builder()
-            .project_id_or_name("sandbox")
-            .build()?;
-        redmine.json_response_body_all_pages::<_, ProjectMembership>(&endpoint)?;
-        Ok(())
+        with_redmine(|redmine| {
+            let _r_project_memberships = test_locking::read_lock(&PROJECT_MEMBERSHIP_LOCK);
+            let endpoint = ListProjectMemberships::builder()
+                .project_id_or_name("sandbox")
+                .build()?;
+            redmine.json_response_body_all_pages::<_, ProjectMembership>(&endpoint)?;
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_get_project_membership() -> Result<(), Box<dyn Error>> {
-        let _r_project_memberships = PROJECT_MEMBERSHIP_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = GetProjectMembership::builder().id(238).build()?;
-        redmine.json_response_body::<_, MembershipWrapper<ProjectMembership>>(&endpoint)?;
-        Ok(())
+        with_redmine(|redmine| {
+            let _r_project_memberships = test_locking::read_lock(&PROJECT_MEMBERSHIP_LOCK);
+            let endpoint = GetProjectMembership::builder().id(238).build()?;
+            redmine.json_response_body::<_, MembershipWrapper<ProjectMembership>>(&endpoint)?;
+            Ok(())
+        })
     }
 
     #[function_name::named]
     #[traced_test]
     #[test]
     fn test_create_project_membership() -> Result<(), Box<dyn Error>> {
-        let _w_project_memberships = PROJECT_MEMBERSHIP_LOCK.blocking_write();
+        let _w_project_memberships = test_locking::write_lock(&PROJECT_MEMBERSHIP_LOCK);
         let name = format!("unittest_{}", function_name!());
         with_project(&name, |redmine, project_id, _| {
             let create_endpoint = super::CreateProjectMembership::builder()
@@ -335,7 +324,7 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_update_project_membership() -> Result<(), Box<dyn Error>> {
-        let _w_project_memberships = PROJECT_MEMBERSHIP_LOCK.blocking_write();
+        let _w_project_memberships = test_locking::write_lock(&PROJECT_MEMBERSHIP_LOCK);
         let name = format!("unittest_{}", function_name!());
         with_project(&name, |redmine, project_id, _name| {
             let create_endpoint = super::CreateProjectMembership::builder()
@@ -362,22 +351,18 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_completeness_project_membership_type() -> Result<(), Box<dyn Error>> {
-        let _r_project_memberships = PROJECT_MEMBERSHIP_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = ListProjectMemberships::builder()
-            .project_id_or_name("sandbox")
-            .build()?;
-        let values: Vec<serde_json::Value> = redmine.json_response_body_all_pages(&endpoint)?;
-        for value in values {
-            let o: ProjectMembership = serde_json::from_value(value.clone())?;
-            let reserialized = serde_json::to_value(o)?;
-            assert_eq!(value, reserialized);
-        }
-        Ok(())
+        with_redmine(|redmine| {
+            let _r_project_memberships = test_locking::read_lock(&PROJECT_MEMBERSHIP_LOCK);
+            let endpoint = ListProjectMemberships::builder()
+                .project_id_or_name("sandbox")
+                .build()?;
+            let values: Vec<serde_json::Value> = redmine.json_response_body_all_pages(&endpoint)?;
+            for value in values {
+                let o: ProjectMembership = serde_json::from_value(value.clone())?;
+                let reserialized = serde_json::to_value(o)?;
+                assert_eq!(value, reserialized);
+            }
+            Ok(())
+        })
     }
 }

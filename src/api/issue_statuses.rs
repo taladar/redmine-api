@@ -102,6 +102,7 @@ pub struct IssueStatusWrapper<T> {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::api::test_helpers::with_redmine;
     use pretty_assertions::assert_eq;
     use std::error::Error;
     use tracing_test::traced_test;
@@ -109,15 +110,11 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_issue_statuses_no_pagination() -> Result<(), Box<dyn Error>> {
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = ListIssueStatuses::builder().build()?;
-        redmine.json_response_body::<_, IssueStatusesWrapper<IssueStatus>>(&endpoint)?;
-        Ok(())
+        with_redmine(|redmine| {
+            let endpoint = ListIssueStatuses::builder().build()?;
+            redmine.json_response_body::<_, IssueStatusesWrapper<IssueStatus>>(&endpoint)?;
+            Ok(())
+        })
     }
 
     /// this tests if any of the results contain a field we are not deserializing
@@ -127,22 +124,19 @@ mod test {
     #[traced_test]
     #[test]
     fn test_completeness_issue_status_type() -> Result<(), Box<dyn Error>> {
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = ListIssueStatuses::builder().build()?;
-        let IssueStatusesWrapper {
-            issue_statuses: values,
-        } = redmine.json_response_body::<_, IssueStatusesWrapper<serde_json::Value>>(&endpoint)?;
-        for value in values {
-            let o: IssueStatus = serde_json::from_value(value.clone())?;
-            let reserialized = serde_json::to_value(o)?;
-            assert_eq!(value, reserialized);
-        }
-        Ok(())
+        with_redmine(|redmine| {
+            let endpoint = ListIssueStatuses::builder().build()?;
+            let IssueStatusesWrapper {
+                issue_statuses: values,
+            } = redmine
+                .json_response_body::<_, IssueStatusesWrapper<serde_json::Value>>(&endpoint)?;
+            for value in values {
+                let o: IssueStatus = serde_json::from_value(value.clone())?;
+                let reserialized = serde_json::to_value(o)?;
+                assert_eq!(value, reserialized);
+            }
+            Ok(())
+        })
     }
 
     #[test]

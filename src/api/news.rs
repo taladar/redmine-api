@@ -270,6 +270,7 @@ pub struct SingleNewsWrapper<T> {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::api::test_helpers::with_redmine;
     use pretty_assertions::assert_eq;
     use std::error::Error;
     use tracing_test::traced_test;
@@ -277,29 +278,21 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_news_first_page() -> Result<(), Box<dyn Error>> {
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = ListNews::builder().build()?;
-        redmine.json_response_body_page::<_, News>(&endpoint, 0, 25)?;
-        Ok(())
+        with_redmine(|redmine| {
+            let endpoint = ListNews::builder().build()?;
+            redmine.json_response_body_page::<_, News>(&endpoint, 0, 25)?;
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_news_all_pages() -> Result<(), Box<dyn Error>> {
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = ListNews::builder().build()?;
-        redmine.json_response_body_all_pages::<_, News>(&endpoint)?;
-        Ok(())
+        with_redmine(|redmine| {
+            let endpoint = ListNews::builder().build()?;
+            redmine.json_response_body_all_pages::<_, News>(&endpoint)?;
+            Ok(())
+        })
     }
 
     #[traced_test]
@@ -343,19 +336,15 @@ mod test {
     #[traced_test]
     #[test]
     fn test_completeness_news_type() -> Result<(), Box<dyn Error>> {
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = ListNews::builder().build()?;
-        let values: Vec<serde_json::Value> = redmine.json_response_body_all_pages(&endpoint)?;
-        for value in values {
-            let o: News = serde_json::from_value(value.clone())?;
-            let reserialized = serde_json::to_value(o)?;
-            assert_eq!(value, reserialized);
-        }
-        Ok(())
+        with_redmine(|redmine| {
+            let endpoint = ListNews::builder().build()?;
+            let values: Vec<serde_json::Value> = redmine.json_response_body_all_pages(&endpoint)?;
+            for value in values {
+                let o: News = serde_json::from_value(value.clone())?;
+                let reserialized = serde_json::to_value(o)?;
+                assert_eq!(value, reserialized);
+            }
+            Ok(())
+        })
     }
 }

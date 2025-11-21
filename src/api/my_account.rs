@@ -437,6 +437,7 @@ impl Endpoint for UpdateMyAccount<'_> {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::api::test_helpers::with_redmine;
     use crate::api::users::UserWrapper;
     use pretty_assertions::assert_eq;
     use std::error::Error;
@@ -445,44 +446,39 @@ mod test {
     #[traced_test]
     #[test]
     fn test_get_my_account() -> Result<(), Box<dyn Error>> {
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = GetMyAccount::builder().build()?;
-        redmine.json_response_body::<_, UserWrapper<MyAccount>>(&endpoint)?;
-        Ok(())
+        with_redmine(|redmine| {
+            let endpoint = GetMyAccount::builder().build()?;
+            redmine.json_response_body::<_, UserWrapper<MyAccount>>(&endpoint)?;
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_update_my_account() -> Result<(), Box<dyn Error>> {
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let get_endpoint = GetMyAccount::builder().build()?;
-        let original_account: UserWrapper<MyAccount> = redmine.json_response_body(&get_endpoint)?;
-        let update_endpoint = UpdateMyAccount::builder()
-            .firstname("NewFirstName")
-            .build()?;
-        redmine.ignore_response_body(&update_endpoint)?;
-        let updated_account: UserWrapper<MyAccount> = redmine.json_response_body(&get_endpoint)?;
-        assert_eq!(updated_account.user.firstname, "NewFirstName");
-        let restore_endpoint = UpdateMyAccount::builder()
-            .firstname(original_account.user.firstname.as_str())
-            .build()?;
-        redmine.ignore_response_body(&restore_endpoint)?;
-        let restored_account: UserWrapper<MyAccount> = redmine.json_response_body(&get_endpoint)?;
-        assert_eq!(
-            restored_account.user.firstname,
-            original_account.user.firstname
-        );
-        Ok(())
+        with_redmine(|redmine| {
+            let get_endpoint = GetMyAccount::builder().build()?;
+            let original_account: UserWrapper<MyAccount> =
+                redmine.json_response_body(&get_endpoint)?;
+            let update_endpoint = UpdateMyAccount::builder()
+                .firstname("NewFirstName")
+                .build()?;
+            redmine.ignore_response_body(&update_endpoint)?;
+            let updated_account: UserWrapper<MyAccount> =
+                redmine.json_response_body(&get_endpoint)?;
+            assert_eq!(updated_account.user.firstname, "NewFirstName");
+            let restore_endpoint = UpdateMyAccount::builder()
+                .firstname(original_account.user.firstname.as_str())
+                .build()?;
+            redmine.ignore_response_body(&restore_endpoint)?;
+            let restored_account: UserWrapper<MyAccount> =
+                redmine.json_response_body(&get_endpoint)?;
+            assert_eq!(
+                restored_account.user.firstname,
+                original_account.user.firstname
+            );
+            Ok(())
+        })
     }
 
     /// this tests if any of the results contain a field we are not deserializing
@@ -492,18 +488,14 @@ mod test {
     #[traced_test]
     #[test]
     fn test_completeness_my_account_type() -> Result<(), Box<dyn Error>> {
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = GetMyAccount::builder().build()?;
-        let UserWrapper { user: value } =
-            redmine.json_response_body::<_, UserWrapper<serde_json::Value>>(&endpoint)?;
-        let o: MyAccount = serde_json::from_value(value.clone())?;
-        let reserialized = serde_json::to_value(o)?;
-        assert_eq!(value, reserialized);
-        Ok(())
+        with_redmine(|redmine| {
+            let endpoint = GetMyAccount::builder().build()?;
+            let UserWrapper { user: value } =
+                redmine.json_response_body::<_, UserWrapper<serde_json::Value>>(&endpoint)?;
+            let o: MyAccount = serde_json::from_value(value.clone())?;
+            let reserialized = serde_json::to_value(o)?;
+            assert_eq!(value, reserialized);
+            Ok(())
+        })
     }
 }

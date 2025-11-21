@@ -403,7 +403,8 @@ mod test {
     use crate::api::custom_fields::{
         CustomFieldDefinition, CustomFieldsWrapper, CustomizedType, ListCustomFields,
     };
-    use crate::api::test_helpers::with_project;
+    use crate::api::test_helpers::{with_project, with_redmine};
+    use crate::api::test_locking;
     use pretty_assertions::assert_eq;
     use std::error::Error;
     use tokio::sync::RwLock;
@@ -411,43 +412,35 @@ mod test {
 
     /// needed so we do not get 404s when listing while
     /// creating/deleting or creating/updating/deleting
-    static VERSION_LOCK: RwLock<()> = RwLock::const_new(());
+    pub static VERSION_LOCK: RwLock<()> = RwLock::const_new(());
 
     #[traced_test]
     #[test]
     fn test_list_versions_no_pagination() -> Result<(), Box<dyn Error>> {
-        let _r_version = VERSION_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = ListVersions::builder().project_id_or_name("92").build()?;
-        redmine.json_response_body::<_, VersionsWrapper<Version>>(&endpoint)?;
-        Ok(())
+        with_redmine(|redmine| {
+            let _r_version = test_locking::read_lock(&VERSION_LOCK);
+            let endpoint = ListVersions::builder().project_id_or_name("92").build()?;
+            redmine.json_response_body::<_, VersionsWrapper<Version>>(&endpoint)?;
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_get_version() -> Result<(), Box<dyn Error>> {
-        let _r_version = VERSION_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = GetVersion::builder().id(1182).build()?;
-        redmine.json_response_body::<_, VersionWrapper<Version>>(&endpoint)?;
-        Ok(())
+        with_redmine(|redmine| {
+            let _r_version = test_locking::read_lock(&VERSION_LOCK);
+            let endpoint = GetVersion::builder().id(1182).build()?;
+            redmine.json_response_body::<_, VersionWrapper<Version>>(&endpoint)?;
+            Ok(())
+        })
     }
 
     #[function_name::named]
     #[traced_test]
     #[test]
     fn test_create_update_version_with_custom_fields() -> Result<(), Box<dyn Error>> {
-        let _w_version = VERSION_LOCK.blocking_write();
+        let _w_version = test_locking::write_lock(&VERSION_LOCK);
         let name = format!("unittest_{}", function_name!());
         with_project(&name, |redmine, project_id, _name| {
             // Find a custom field for versions
@@ -523,7 +516,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_create_version_with_default_project_version() -> Result<(), Box<dyn Error>> {
-        let _w_version = VERSION_LOCK.blocking_write();
+        let _w_version = test_locking::write_lock(&VERSION_LOCK);
         let name = format!("unittest_{}", function_name!());
         with_project(&name, |redmine, project_id, name| {
             let create_endpoint = CreateVersion::builder()
@@ -552,7 +545,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_update_version_with_default_project_version() -> Result<(), Box<dyn Error>> {
-        let _w_version = VERSION_LOCK.blocking_write();
+        let _w_version = test_locking::write_lock(&VERSION_LOCK);
         let name = format!("unittest_{}", function_name!());
         with_project(&name, |redmine, project_id, name| {
             let create_endpoint = CreateVersion::builder()

@@ -576,6 +576,7 @@ pub struct UserWrapperWithSendInformation<T> {
 pub(crate) mod test {
     use crate::api::{
         ResponsePage, groups::test::GROUP_LOCK, project_memberships::test::PROJECT_MEMBERSHIP_LOCK,
+        test_helpers::with_redmine, test_locking,
     };
 
     use super::*;
@@ -591,77 +592,61 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_users_first_page() -> Result<(), Box<dyn Error>> {
-        let _r_user = USER_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = ListUsers::builder().build()?;
-        redmine.json_response_body_page::<_, User>(&endpoint, 0, 25)?;
-        Ok(())
+        with_redmine(|redmine| {
+            let _r_user = test_locking::read_lock(&USER_LOCK);
+            let endpoint = ListUsers::builder().build()?;
+            redmine.json_response_body_page::<_, User>(&endpoint, 0, 25)?;
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_list_users_all_pages() -> Result<(), Box<dyn Error>> {
-        let _r_user = USER_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = ListUsers::builder().build()?;
-        redmine.json_response_body_all_pages::<_, User>(&endpoint)?;
-        Ok(())
+        with_redmine(|redmine| {
+            let _r_user = test_locking::read_lock(&USER_LOCK);
+            let endpoint = ListUsers::builder().build()?;
+            redmine.json_response_body_all_pages::<_, User>(&endpoint)?;
+            Ok(())
+        })
     }
 
     #[traced_test]
     #[test]
     fn test_get_user() -> Result<(), Box<dyn Error>> {
-        let _r_user = USER_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = GetUser::builder().id(1).build()?;
-        redmine.json_response_body::<_, UserWrapper<User>>(&endpoint)?;
-        Ok(())
+        with_redmine(|redmine| {
+            let _r_user = test_locking::read_lock(&USER_LOCK);
+            let endpoint = GetUser::builder().id(1).build()?;
+            redmine.json_response_body::<_, UserWrapper<User>>(&endpoint)?;
+            Ok(())
+        })
     }
 
     #[function_name::named]
     #[traced_test]
     #[test]
     fn test_create_user() -> Result<(), Box<dyn Error>> {
-        let _w_user = USER_LOCK.blocking_write();
-        let name = format!("unittest_{}", function_name!());
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let list_endpoint = ListUsers::builder().name(name.clone()).build()?;
-        let users: Vec<User> = redmine.json_response_body_all_pages(&list_endpoint)?;
-        for user in users {
+        with_redmine(|redmine| {
+            let _w_user = test_locking::write_lock(&USER_LOCK);
+            let name = format!("unittest_{}", function_name!());
+            let list_endpoint = ListUsers::builder().name(name.clone()).build()?;
+            let users: Vec<User> = redmine.json_response_body_all_pages(&list_endpoint)?;
+            for user in users {
+                let delete_endpoint = DeleteUser::builder().id(user.id).build()?;
+                redmine.ignore_response_body::<_>(&delete_endpoint)?;
+            }
+            let create_endpoint = CreateUser::builder()
+                .login(name.clone())
+                .firstname("Unit")
+                .lastname("Test")
+                .mail(format!("unit-test_{name}@example.org"))
+                .build()?;
+            let UserWrapper { user } =
+                redmine.json_response_body::<_, UserWrapper<User>>(&create_endpoint)?;
             let delete_endpoint = DeleteUser::builder().id(user.id).build()?;
             redmine.ignore_response_body::<_>(&delete_endpoint)?;
-        }
-        let create_endpoint = CreateUser::builder()
-            .login(name.clone())
-            .firstname("Unit")
-            .lastname("Test")
-            .mail(format!("unit-test_{name}@example.org"))
-            .build()?;
-        let UserWrapper { user } =
-            redmine.json_response_body::<_, UserWrapper<User>>(&create_endpoint)?;
-        let delete_endpoint = DeleteUser::builder().id(user.id).build()?;
-        redmine.ignore_response_body::<_>(&delete_endpoint)?;
-        Ok(())
+            Ok(())
+        })
     }
 
     // this test causes emails to be sent so we comment it out, mainly it was
@@ -672,7 +657,7 @@ pub(crate) mod test {
     // #[traced_test]
     // #[test]
     // fn test_create_user_send_account_info() -> Result<(), Box<dyn Error>> {
-    //     let _w_user = USER_LOCK.blocking_write();
+    //     let _w_user = test_locking::write_lock(&USER_LOCK);
     //     let name = format!("unittest_{}", function_name!());
     //     dotenvy::dotenv()?;
     //     let redmine = crate::api::Redmine::from_env()?;
@@ -705,7 +690,7 @@ pub(crate) mod test {
     // #[traced_test]
     // #[test]
     // fn test_create_admin_user() -> Result<(), Box<dyn Error>> {
-    //     let _w_user = USER_LOCK.blocking_write();
+    //     let _w_user = test_locking::write_lock(&USER_LOCK);
     //     let name = format!("unittest_{}", function_name!());
     //     dotenvy::dotenv()?;
     //     let redmine = crate::api::Redmine::from_env()?;
@@ -734,36 +719,32 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_update_user() -> Result<(), Box<dyn Error>> {
-        let _w_user = USER_LOCK.blocking_write();
-        let name = format!("unittest_{}", function_name!());
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let list_endpoint = ListUsers::builder().name(name.clone()).build()?;
-        let users: Vec<User> = redmine.json_response_body_all_pages(&list_endpoint)?;
-        for user in users {
+        with_redmine(|redmine| {
+            let _w_user = test_locking::write_lock(&USER_LOCK);
+            let name = format!("unittest_{}", function_name!());
+            let list_endpoint = ListUsers::builder().name(name.clone()).build()?;
+            let users: Vec<User> = redmine.json_response_body_all_pages(&list_endpoint)?;
+            for user in users {
+                let delete_endpoint = DeleteUser::builder().id(user.id).build()?;
+                redmine.ignore_response_body::<_>(&delete_endpoint)?;
+            }
+            let create_endpoint = CreateUser::builder()
+                .login(name.clone())
+                .firstname("Unit")
+                .lastname("Test")
+                .mail(format!("unit-test_{name}@example.org"))
+                .build()?;
+            let UserWrapper { user } =
+                redmine.json_response_body::<_, UserWrapper<User>>(&create_endpoint)?;
+            let update_endpoint = super::UpdateUser::builder()
+                .id(user.id)
+                .login(format!("new_{name}"))
+                .build()?;
+            redmine.ignore_response_body::<_>(&update_endpoint)?;
             let delete_endpoint = DeleteUser::builder().id(user.id).build()?;
             redmine.ignore_response_body::<_>(&delete_endpoint)?;
-        }
-        let create_endpoint = CreateUser::builder()
-            .login(name.clone())
-            .firstname("Unit")
-            .lastname("Test")
-            .mail(format!("unit-test_{name}@example.org"))
-            .build()?;
-        let UserWrapper { user } =
-            redmine.json_response_body::<_, UserWrapper<User>>(&create_endpoint)?;
-        let update_endpoint = super::UpdateUser::builder()
-            .id(user.id)
-            .login(format!("new_{name}"))
-            .build()?;
-        redmine.ignore_response_body::<_>(&update_endpoint)?;
-        let delete_endpoint = DeleteUser::builder().id(user.id).build()?;
-        redmine.ignore_response_body::<_>(&delete_endpoint)?;
-        Ok(())
+            Ok(())
+        })
     }
 
     /// this tests if any of the results contain a field we are not deserializing
@@ -773,26 +754,22 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_completeness_user_type_first_page() -> Result<(), Box<dyn Error>> {
-        let _r_user = USER_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = ListUsers::builder().build()?;
-        let ResponsePage {
-            values,
-            total_count: _,
-            offset: _,
-            limit: _,
-        } = redmine.json_response_body_page::<_, serde_json::Value>(&endpoint, 0, 100)?;
-        for value in values {
-            let o: User = serde_json::from_value(value.clone())?;
-            let reserialized = serde_json::to_value(o)?;
-            assert_eq!(value, reserialized);
-        }
-        Ok(())
+        with_redmine(|redmine| {
+            let _r_user = test_locking::read_lock(&USER_LOCK);
+            let endpoint = ListUsers::builder().build()?;
+            let ResponsePage {
+                values,
+                total_count: _,
+                offset: _,
+                limit: _,
+            } = redmine.json_response_body_page::<_, serde_json::Value>(&endpoint, 0, 100)?;
+            for value in values {
+                let o: User = serde_json::from_value(value.clone())?;
+                let reserialized = serde_json::to_value(o)?;
+                assert_eq!(value, reserialized);
+            }
+            Ok(())
+        })
     }
 
     /// this tests if any of the results contain a field we are not deserializing
@@ -805,28 +782,24 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_completeness_user_type_all_pages_all_user_details() -> Result<(), Box<dyn Error>> {
-        let _r_user = USER_LOCK.blocking_read();
-        let _r_groups = GROUP_LOCK.blocking_read();
-        let _r_project_memberships = PROJECT_MEMBERSHIP_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .build()?,
-        )?;
-        let endpoint = ListUsers::builder().build()?;
-        let users = redmine.json_response_body_all_pages::<_, User>(&endpoint)?;
-        for user in users {
-            let get_endpoint = GetUser::builder()
-                .id(user.id)
-                .include(vec![UserInclude::Memberships, UserInclude::Groups])
-                .build()?;
-            let UserWrapper { user: value } =
-                redmine.json_response_body::<_, UserWrapper<serde_json::Value>>(&get_endpoint)?;
-            let o: User = serde_json::from_value(value.clone())?;
-            let reserialized = serde_json::to_value(o)?;
-            assert_eq!(value, reserialized);
-        }
-        Ok(())
+        with_redmine(|redmine| {
+            let _r_user = test_locking::read_lock(&USER_LOCK);
+            let _r_groups = test_locking::read_lock(&GROUP_LOCK);
+            let _r_project_memberships = test_locking::read_lock(&PROJECT_MEMBERSHIP_LOCK);
+            let endpoint = ListUsers::builder().build()?;
+            let users = redmine.json_response_body_all_pages::<_, User>(&endpoint)?;
+            for user in users {
+                let get_endpoint = GetUser::builder()
+                    .id(user.id)
+                    .include(vec![UserInclude::Memberships, UserInclude::Groups])
+                    .build()?;
+                let UserWrapper { user: value } = redmine
+                    .json_response_body::<_, UserWrapper<serde_json::Value>>(&get_endpoint)?;
+                let o: User = serde_json::from_value(value.clone())?;
+                let reserialized = serde_json::to_value(o)?;
+                assert_eq!(value, reserialized);
+            }
+            Ok(())
+        })
     }
 }
