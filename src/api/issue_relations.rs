@@ -222,7 +222,8 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_issue_relations_no_pagination() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issue_relation = test_locking::read_lock(&ISSUE_RELATION_LOCK);
             let endpoint = ListIssueRelations::builder().issue_id(50017).build()?;
             redmine.json_response_body::<_, RelationsWrapper<IssueRelation>>(&endpoint)?;
@@ -233,7 +234,8 @@ mod test {
     #[traced_test]
     #[test]
     fn test_get_issue_relation() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issue_relation = test_locking::read_lock(&ISSUE_RELATION_LOCK);
             let endpoint = GetIssueRelation::builder().id(10).build()?;
             redmine.json_response_body::<_, RelationWrapper<IssueRelation>>(&endpoint)?;
@@ -314,7 +316,8 @@ mod test {
     #[traced_test]
     #[test]
     fn test_completeness_issue_relation_type() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issue_relation = test_locking::read_lock(&ISSUE_RELATION_LOCK);
             let endpoint = ListIssueRelations::builder().issue_id(50017).build()?;
             let RelationsWrapper { relations: values } =

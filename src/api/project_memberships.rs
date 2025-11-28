@@ -267,7 +267,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_project_memberships_first_page() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_project_memberships = test_locking::read_lock(&PROJECT_MEMBERSHIP_LOCK);
             let endpoint = ListProjectMemberships::builder()
                 .project_id_or_name("sandbox")
@@ -280,7 +281,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_project_memberships_all_pages() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_project_memberships = test_locking::read_lock(&PROJECT_MEMBERSHIP_LOCK);
             let endpoint = ListProjectMemberships::builder()
                 .project_id_or_name("sandbox")
@@ -293,7 +295,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_get_project_membership() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_project_memberships = test_locking::read_lock(&PROJECT_MEMBERSHIP_LOCK);
             let endpoint = GetProjectMembership::builder().id(238).build()?;
             redmine.json_response_body::<_, MembershipWrapper<ProjectMembership>>(&endpoint)?;
@@ -351,7 +354,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_completeness_project_membership_type() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_project_memberships = test_locking::read_lock(&PROJECT_MEMBERSHIP_LOCK);
             let endpoint = ListProjectMemberships::builder()
                 .project_id_or_name("sandbox")

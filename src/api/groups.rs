@@ -383,7 +383,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_groups_no_pagination() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_groups = GROUP_LOCK.blocking_read();
             let endpoint = ListGroups::builder().build()?;
             redmine.json_response_body::<_, GroupsWrapper<Group>>(&endpoint)?;
@@ -394,7 +395,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_get_group() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_groups = GROUP_LOCK.blocking_read();
             let endpoint = GetGroup::builder().id(338).build()?;
             redmine.json_response_body::<_, GroupWrapper<Group>>(&endpoint)?;
@@ -434,7 +436,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_completeness_group_type() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_groups = GROUP_LOCK.blocking_read();
             let endpoint = ListGroups::builder().build()?;
             let GroupsWrapper { groups: values } =
@@ -458,7 +461,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_completeness_group_type_all_group_details() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_user = USER_LOCK.blocking_read();
             let _r_groups = GROUP_LOCK.blocking_read();
             let _r_project_memberships = PROJECT_MEMBERSHIP_LOCK.blocking_read();

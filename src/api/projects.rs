@@ -627,7 +627,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_projects_first_page() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_project = PROJECT_LOCK.blocking_read();
             let endpoint = ListProjects::builder().build()?;
             redmine.json_response_body_page::<_, Project>(&endpoint, 0, 25)?;
@@ -638,7 +639,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_projects_all_pages() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_project = PROJECT_LOCK.blocking_read();
             let endpoint = ListProjects::builder().build()?;
             redmine.json_response_body_all_pages::<_, Project>(&endpoint)?;
@@ -649,7 +651,8 @@ pub(crate) mod test {
     #[traced_test]
     #[tokio::test]
     async fn test_list_projects_async_first_page() -> Result<(), Box<dyn Error>> {
-        with_redmine_async(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine_async(current_span, |redmine| {
             let redmine = redmine.clone();
             Box::pin(async move {
                 let _r_project = PROJECT_LOCK.read().await;
@@ -666,7 +669,8 @@ pub(crate) mod test {
     #[traced_test]
     #[tokio::test]
     async fn test_list_projects_async_all_pages() -> Result<(), Box<dyn Error>> {
-        with_redmine_async(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine_async(current_span, |redmine| {
             let redmine = redmine.clone();
             Box::pin(async move {
                 let _r_project = PROJECT_LOCK.read().await;
@@ -683,7 +687,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_get_project() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_project = PROJECT_LOCK.blocking_read();
             let endpoint = GetProject::builder()
                 .project_id_or_name("sandbox")
@@ -725,7 +730,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_completeness_project_type() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_project = PROJECT_LOCK.blocking_read();
             let endpoint = ListProjects::builder().build()?;
             let values: Vec<serde_json::Value> = redmine.json_response_body_all_pages(&endpoint)?;
@@ -751,7 +757,8 @@ pub(crate) mod test {
     #[test]
     fn test_completeness_project_type_all_pages_all_project_details() -> Result<(), Box<dyn Error>>
     {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_project = PROJECT_LOCK.blocking_read();
             let endpoint = ListProjects::builder()
                 .include(vec![

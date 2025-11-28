@@ -218,7 +218,8 @@ mod test {
     #[traced_test]
     #[test]
     fn test_completeness_attachment_type() -> Result<(), Box<dyn Error>> {
-        crate::api::test_helpers::with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        crate::api::test_helpers::with_redmine(current_span, |redmine| {
             let endpoint = GetAttachment::builder().id(38468).build()?;
             let AttachmentWrapper { attachment: value } =
                 redmine.json_response_body::<_, AttachmentWrapper<serde_json::Value>>(&endpoint)?;

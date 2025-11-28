@@ -281,7 +281,8 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_issue_categories_no_pagination() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issue_category = test_locking::read_lock(&ISSUE_CATEGORY_LOCK);
             let endpoint = ListIssueCategories::builder()
                 .project_id_or_name("336")
@@ -294,7 +295,8 @@ mod test {
     #[traced_test]
     #[test]
     fn test_get_issue_category() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issue_category = test_locking::read_lock(&ISSUE_CATEGORY_LOCK);
             let endpoint = GetIssueCategory::builder().id(10).build()?;
             redmine.json_response_body::<_, IssueCategoryWrapper<IssueCategory>>(&endpoint)?;
@@ -371,7 +373,8 @@ mod test {
     #[traced_test]
     #[test]
     fn test_completeness_issue_category_type() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issue_category = test_locking::read_lock(&ISSUE_CATEGORY_LOCK);
             let endpoint = ListIssueCategories::builder()
                 .project_id_or_name("336")

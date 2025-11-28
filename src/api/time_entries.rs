@@ -403,7 +403,8 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_time_entries_first_page() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_time_entries = test_locking::read_lock(&TIME_ENTRY_LOCK);
             let endpoint = ListTimeEntries::builder().build()?;
             redmine.json_response_body_page::<_, TimeEntry>(&endpoint, 0, 25)?;
@@ -427,7 +428,8 @@ mod test {
     #[traced_test]
     #[test]
     fn test_get_time_entry() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_time_entries = test_locking::read_lock(&TIME_ENTRY_LOCK);
             let endpoint = GetTimeEntry::builder().id(832).build()?;
             redmine.json_response_body::<_, TimeEntryWrapper<TimeEntry>>(&endpoint)?;
@@ -438,7 +440,8 @@ mod test {
     #[traced_test]
     #[test]
     fn test_create_time_entry() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _w_time_entries = test_locking::write_lock(&TIME_ENTRY_LOCK);
             let create_endpoint = super::CreateTimeEntry::builder()
                 .issue_id(25095)
@@ -453,7 +456,8 @@ mod test {
     #[traced_test]
     #[test]
     fn test_update_time_entry() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _w_time_entries = test_locking::write_lock(&TIME_ENTRY_LOCK);
             let create_endpoint = super::CreateTimeEntry::builder()
                 .issue_id(25095)
@@ -478,7 +482,8 @@ mod test {
     #[traced_test]
     #[test]
     fn test_completeness_time_entry_type_first_page() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_time_entries = test_locking::read_lock(&TIME_ENTRY_LOCK);
             let endpoint = ListTimeEntries::builder().build()?;
             let ResponsePage {

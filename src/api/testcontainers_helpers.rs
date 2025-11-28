@@ -9,7 +9,9 @@ use scraper::{Html, Selector};
 use testcontainers::Image;
 use testcontainers::ImageExt;
 use testcontainers::TestcontainersError;
-use testcontainers::core::{Container, ContainerPort, ExecCommand, Mount, WaitFor};
+use testcontainers::core::{
+    Container, ContainerPort, ExecCommand, Mount, WaitFor, logs::consumer::LogConsumer,
+};
 use tokio::sync::Semaphore;
 use tracing::trace;
 
@@ -19,6 +21,64 @@ static CONTAINER_SEMAPHORE: OnceLock<Semaphore> = OnceLock::new();
 
 fn get_container_semaphore() -> &'static Semaphore {
     CONTAINER_SEMAPHORE.get_or_init(|| Semaphore::new(10))
+}
+
+/// a log consumer that logs the log frames using tracing
+#[derive(Debug, Clone)]
+pub struct TracingLogConsumer {
+    /// a tracing span connected to the test root span created by traced_test
+    parent_span: tracing::Span,
+    /// the time when this TracingLogConsumer was created, should be close to the time when the container start is requested
+    start_time: std::time::Instant,
+}
+
+impl TracingLogConsumer {
+    /// create a new `TracingLogConsumer` with a start_time now
+    #[must_use]
+    pub fn new(parent_span: tracing::Span) -> Self {
+        let start_time = std::time::Instant::now();
+        tracing::info!(target: "container_output", parent: &parent_span, "Starting log consumer");
+        Self {
+            parent_span,
+            start_time,
+        }
+    }
+}
+
+impl LogConsumer for TracingLogConsumer {
+    fn accept<'a>(
+        &'a self,
+        record: &'a testcontainers::core::logs::LogFrame,
+    ) -> futures::future::BoxFuture<'a, ()> {
+        Box::pin(async move {
+            match record {
+                testcontainers::core::logs::LogFrame::StdOut(bytes) => {
+                    tracing::info!(
+                        target: "container_stdout",
+                        parent: &self.parent_span,
+                        "{:?} {}",
+                        self.start_time.elapsed(),
+                        String::from_utf8(bytes.to_vec()).unwrap_or_else(|err| format!(
+                            "conversion of stdout line to UTF-8 failed: {}",
+                            err
+                        ))
+                    );
+                }
+                testcontainers::core::logs::LogFrame::StdErr(bytes) => {
+                    tracing::info!(
+                        target: "container_stderr",
+                        parent: &self.parent_span,
+                        "{:?} {}",
+                        self.start_time.elapsed(),
+                        String::from_utf8(bytes.to_vec()).unwrap_or_else(|err| format!(
+                            "conversion of stderr line to UTF-8 failed: {}",
+                            err
+                        ))
+                    );
+                }
+            }
+        })
+    }
 }
 
 const REDMINE_CONTAINER_READY_MESSAGE: &str = "* Listening on http://0.0.0.0:3000";
@@ -102,7 +162,11 @@ impl Image for RedmineImage {
 ///
 /// Returns an error if the Redmine container cannot be started, ports cannot be mapped,
 /// if the API key cannot be retrieved, or if the provided closure `f` returns an error.
-pub fn with_redmine_container<F>(version: &str, f: F) -> Result<(), Box<dyn Error>>
+pub fn with_redmine_container<F>(
+    version: &str,
+    current_span: tracing::Span,
+    f: F,
+) -> Result<(), Box<dyn Error>>
 where
     F: FnOnce(&Redmine, &Container<RedmineImage>) -> Result<(), Box<dyn Error>>,
 {
@@ -122,7 +186,9 @@ where
         <testcontainers::ContainerRequest<RedmineImage> as testcontainers::runners::SyncRunner<
             _,
         >>::start(
-            image.with_startup_timeout(Duration::from_secs(REDMINE_STARTUP_TIMEOUT_SECONDS)),
+            image
+                .with_startup_timeout(Duration::from_secs(REDMINE_STARTUP_TIMEOUT_SECONDS))
+                .with_log_consumer(TracingLogConsumer::new(current_span)),
         )?;
     let port = container.get_host_port_ipv4(3000)?;
     let url = format!("http://127.0.0.1:{port}");
@@ -229,7 +295,11 @@ where
 ///
 /// Returns an error if the Redmine container cannot be started, ports cannot be mapped,
 /// if the API key cannot be retrieved, or if the provided asynchronous closure `f` returns an error.
-pub async fn with_redmine_container_async<F, Fut>(version: &str, f: F) -> Result<(), Box<dyn Error>>
+pub async fn with_redmine_container_async<F, Fut>(
+    version: &str,
+    current_span: tracing::Span,
+    f: F,
+) -> Result<(), Box<dyn Error>>
 where
     F: FnOnce(&std::sync::Arc<RedmineAsync>, &testcontainers::ContainerAsync<RedmineImage>) -> Fut
         + Send
@@ -243,7 +313,9 @@ where
         <testcontainers::ContainerRequest<RedmineImage> as testcontainers::runners::AsyncRunner<
             _,
         >>::start(
-            image.with_startup_timeout(Duration::from_secs(REDMINE_STARTUP_TIMEOUT_SECONDS))
+            image
+                .with_startup_timeout(Duration::from_secs(REDMINE_STARTUP_TIMEOUT_SECONDS))
+                .with_log_consumer(TracingLogConsumer::new(current_span)),
         )
         .await?;
     let port = container.get_host_port_ipv4(3000).await?;

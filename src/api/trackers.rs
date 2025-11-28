@@ -100,7 +100,8 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_trackers_no_pagination() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let endpoint = ListTrackers::builder().build()?;
             redmine.json_response_body::<_, TrackersWrapper<Tracker>>(&endpoint)?;
             Ok(())
@@ -114,7 +115,8 @@ mod test {
     #[traced_test]
     #[test]
     fn test_completeness_tracker_type() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let endpoint = ListTrackers::builder().build()?;
             let TrackersWrapper { trackers: values } =
                 redmine.json_response_body::<_, TrackersWrapper<serde_json::Value>>(&endpoint)?;

@@ -443,7 +443,8 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_custom_fields_no_pagination() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let endpoint = ListCustomFields::builder().build()?;
             redmine
                 .json_response_body::<_, CustomFieldsWrapper<CustomFieldDefinition>>(&endpoint)?;
@@ -458,7 +459,8 @@ mod test {
     #[traced_test]
     #[test]
     fn test_completeness_custom_fields_type() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let endpoint = ListCustomFields::builder().build()?;
             let CustomFieldsWrapper {
                 custom_fields: values,

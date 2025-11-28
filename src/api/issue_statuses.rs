@@ -110,7 +110,8 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_issue_statuses_no_pagination() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let endpoint = ListIssueStatuses::builder().build()?;
             redmine.json_response_body::<_, IssueStatusesWrapper<IssueStatus>>(&endpoint)?;
             Ok(())
@@ -124,7 +125,8 @@ mod test {
     #[traced_test]
     #[test]
     fn test_completeness_issue_status_type() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let endpoint = ListIssueStatuses::builder().build()?;
             let IssueStatusesWrapper {
                 issue_statuses: values,

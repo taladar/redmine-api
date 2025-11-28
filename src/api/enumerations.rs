@@ -250,7 +250,8 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_issue_priorities_no_pagination() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let endpoint = ListIssuePriorities::builder().build()?;
             redmine.json_response_body::<_, IssuePrioritiesWrapper<IssuePriority>>(&endpoint)?;
             Ok(())
@@ -260,7 +261,8 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_time_entry_activities_no_pagination() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let endpoint = ListTimeEntryActivities::builder().build()?;
             redmine.json_response_body::<_, TimeEntryActivitiesWrapper<TimeEntryActivity>>(
                 &endpoint,
@@ -272,7 +274,8 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_document_categories_no_pagination() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let endpoint = ListDocumentCategories::builder().build()?;
             redmine
                 .json_response_body::<_, DocumentCategoriesWrapper<DocumentCategory>>(&endpoint)?;

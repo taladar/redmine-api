@@ -446,7 +446,8 @@ mod test {
     #[traced_test]
     #[test]
     fn test_get_my_account() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let endpoint = GetMyAccount::builder().build()?;
             redmine.json_response_body::<_, UserWrapper<MyAccount>>(&endpoint)?;
             Ok(())
@@ -456,7 +457,8 @@ mod test {
     #[traced_test]
     #[test]
     fn test_update_my_account() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let get_endpoint = GetMyAccount::builder().build()?;
             let original_account: UserWrapper<MyAccount> =
                 redmine.json_response_body(&get_endpoint)?;
@@ -488,7 +490,8 @@ mod test {
     #[traced_test]
     #[test]
     fn test_completeness_my_account_type() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let endpoint = GetMyAccount::builder().build()?;
             let UserWrapper { user: value } =
                 redmine.json_response_body::<_, UserWrapper<serde_json::Value>>(&endpoint)?;

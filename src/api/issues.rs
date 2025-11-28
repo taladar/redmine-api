@@ -1396,7 +1396,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_first_page() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder().build()?;
             redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
@@ -1411,7 +1412,8 @@ pub(crate) mod test {
     #[test]
     #[ignore]
     fn test_list_issues_all_pages() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder().build()?;
             redmine.json_response_body_all_pages::<_, Issue>(&endpoint)?;
@@ -1426,7 +1428,8 @@ pub(crate) mod test {
     #[test]
     #[ignore]
     fn test_list_issues_all_pages_iter() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder().build()?;
             let mut i = 0;
@@ -1447,7 +1450,8 @@ pub(crate) mod test {
     #[tokio::test(flavor = "current_thread")]
     #[ignore]
     async fn test_list_issues_all_pages_stream() -> Result<(), Box<dyn Error>> {
-        with_redmine_async(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine_async(current_span, |redmine| {
             let redmine = redmine.clone();
             Box::pin(async move {
                 let _r_issues = test_locking::read_lock_async(&ISSUES_LOCK).await;
@@ -1468,7 +1472,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_get_issue() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = GetIssue::builder().id(40000).build()?;
             redmine.json_response_body::<_, IssueWrapper<Issue>>(&endpoint)?;
@@ -1543,7 +1548,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_completeness_issue_type_first_page() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .include(vec![
@@ -1590,7 +1596,8 @@ pub(crate) mod test {
     #[test]
     #[ignore]
     fn test_completeness_issue_type_all_pages() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .include(vec![
@@ -1633,7 +1640,8 @@ pub(crate) mod test {
     #[test]
     #[ignore]
     fn test_completeness_issue_type_all_pages_all_issue_details() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .include(vec![
@@ -1676,7 +1684,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_created_on_filter_exact_match() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let dt = time::macros::datetime!(2023-01-15 10:30:00 UTC);
             let endpoint = ListIssues::builder()
@@ -1691,7 +1700,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_created_on_filter_range() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let dt_start = time::macros::datetime!(2023-01-01 00:00:00 UTC);
             let dt_end = time::macros::datetime!(2023-01-31 23:59:59 UTC);
@@ -1707,7 +1717,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_created_on_filter_less_than_or_equal() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let dt = time::macros::datetime!(2023-01-15 10:30:00 UTC);
             let endpoint = ListIssues::builder()
@@ -1722,7 +1733,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_created_on_filter_greater_than_or_equal() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let dt = time::macros::datetime!(2023-01-15 10:30:00 UTC);
             let endpoint = ListIssues::builder()
@@ -1737,7 +1749,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_created_on_filter_less_than_days_ago() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .created_on(DateTimeFilterPast::LessThanDaysAgo(5))
@@ -1751,7 +1764,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_created_on_filter_more_than_days_ago() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .created_on(DateTimeFilterPast::MoreThanDaysAgo(10))
@@ -1765,7 +1779,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_created_on_filter_within_past_days() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .created_on(DateTimeFilterPast::WithinPastDays(7))
@@ -1779,7 +1794,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_created_on_filter_exact_days_ago() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .created_on(DateTimeFilterPast::ExactDaysAgo(3))
@@ -1793,7 +1809,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_created_on_filter_today() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .created_on(DateTimeFilterPast::Today)
@@ -1807,7 +1824,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_created_on_filter_yesterday() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .created_on(DateTimeFilterPast::Yesterday)
@@ -1821,7 +1839,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_created_on_filter_this_week() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .created_on(DateTimeFilterPast::ThisWeek)
@@ -1835,7 +1854,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_created_on_filter_last_week() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .created_on(DateTimeFilterPast::LastWeek)
@@ -1849,7 +1869,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_created_on_filter_last_two_weeks() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .created_on(DateTimeFilterPast::LastTwoWeeks)
@@ -1863,7 +1884,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_created_on_filter_this_month() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .created_on(DateTimeFilterPast::ThisMonth)
@@ -1877,7 +1899,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_created_on_filter_last_month() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .created_on(DateTimeFilterPast::LastMonth)
@@ -1891,7 +1914,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_created_on_filter_this_year() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .created_on(DateTimeFilterPast::ThisYear)
@@ -1905,7 +1929,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_created_on_filter_unset() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .created_on(DateTimeFilterPast::Unset)
@@ -1919,7 +1944,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_created_on_filter_any() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .created_on(DateTimeFilterPast::Any)
@@ -1933,7 +1959,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_updated_on_filter_exact_match() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let dt = time::macros::datetime!(2023-01-15 10:30:00 UTC);
             let endpoint = ListIssues::builder()
@@ -1948,7 +1975,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_updated_on_filter_range() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let dt_start = time::macros::datetime!(2023-01-01 00:00:00 UTC);
             let dt_end = time::macros::datetime!(2023-01-31 23:59:59 UTC);
@@ -1964,7 +1992,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_updated_on_filter_less_than_or_equal() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let dt = time::macros::datetime!(2023-01-15 10:30:00 UTC);
             let endpoint = ListIssues::builder()
@@ -1979,7 +2008,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_updated_on_filter_greater_than_or_equal() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let dt = time::macros::datetime!(2023-01-15 10:30:00 UTC);
             let endpoint = ListIssues::builder()
@@ -1994,7 +2024,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_updated_on_filter_less_than_days_ago() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .updated_on(DateTimeFilterPast::LessThanDaysAgo(5))
@@ -2008,7 +2039,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_updated_on_filter_more_than_days_ago() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .updated_on(DateTimeFilterPast::MoreThanDaysAgo(10))
@@ -2022,7 +2054,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_updated_on_filter_within_past_days() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .updated_on(DateTimeFilterPast::WithinPastDays(7))
@@ -2036,7 +2069,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_updated_on_filter_exact_days_ago() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .updated_on(DateTimeFilterPast::ExactDaysAgo(3))
@@ -2050,7 +2084,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_updated_on_filter_today() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .updated_on(DateTimeFilterPast::Today)
@@ -2064,7 +2099,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_updated_on_filter_yesterday() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .updated_on(DateTimeFilterPast::Yesterday)
@@ -2078,7 +2114,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_updated_on_filter_this_week() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .updated_on(DateTimeFilterPast::ThisWeek)
@@ -2092,7 +2129,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_updated_on_filter_last_week() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .updated_on(DateTimeFilterPast::LastWeek)
@@ -2106,7 +2144,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_updated_on_filter_last_two_weeks() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .updated_on(DateTimeFilterPast::LastTwoWeeks)
@@ -2120,7 +2159,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_updated_on_filter_this_month() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .updated_on(DateTimeFilterPast::ThisMonth)
@@ -2134,7 +2174,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_updated_on_filter_last_month() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .updated_on(DateTimeFilterPast::LastMonth)
@@ -2148,7 +2189,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_updated_on_filter_this_year() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .updated_on(DateTimeFilterPast::ThisYear)
@@ -2162,7 +2204,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_updated_on_filter_unset() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .updated_on(DateTimeFilterPast::Unset)
@@ -2176,7 +2219,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_updated_on_filter_any() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .updated_on(DateTimeFilterPast::Any)
@@ -2190,7 +2234,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_start_date_filter_exact_match() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let dt = time::macros::date!(2023 - 01 - 15);
             let endpoint = ListIssues::builder()
@@ -2205,7 +2250,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_start_date_filter_range() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let dt_start = time::macros::date!(2023 - 01 - 01);
             let dt_end = time::macros::date!(2023 - 01 - 31);
@@ -2221,7 +2267,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_start_date_filter_less_than_or_equal() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let dt = time::macros::date!(2023 - 01 - 15);
             let endpoint = ListIssues::builder()
@@ -2236,7 +2283,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_start_date_filter_greater_than_or_equal() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let dt = time::macros::date!(2023 - 01 - 15);
             let endpoint = ListIssues::builder()
@@ -2251,7 +2299,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_start_date_filter_less_than_days_ago() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .start_date(DateFilter::LessThanDaysAgo(5))
@@ -2265,7 +2314,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_start_date_filter_more_than_days_ago() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .start_date(DateFilter::MoreThanDaysAgo(10))
@@ -2279,7 +2329,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_start_date_filter_within_past_days() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .start_date(DateFilter::WithinPastDays(7))
@@ -2293,7 +2344,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_start_date_filter_exact_days_ago() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .start_date(DateFilter::ExactDaysAgo(3))
@@ -2307,7 +2359,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_start_date_filter_in_less_than_days() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .start_date(DateFilter::InLessThanDays(5))
@@ -2321,7 +2374,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_start_date_filter_in_more_than_days() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .start_date(DateFilter::InMoreThanDays(10))
@@ -2335,7 +2389,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_start_date_filter_within_future_days() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .start_date(DateFilter::WithinFutureDays(7))
@@ -2349,7 +2404,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_start_date_filter_in_exact_days() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .start_date(DateFilter::InExactDays(3))
@@ -2363,7 +2419,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_start_date_filter_today() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .start_date(DateFilter::Today)
@@ -2377,7 +2434,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_start_date_filter_yesterday() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .start_date(DateFilter::Yesterday)
@@ -2391,7 +2449,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_start_date_filter_tomorrow() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .start_date(DateFilter::Tomorrow)
@@ -2405,7 +2464,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_start_date_filter_this_week() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .start_date(DateFilter::ThisWeek)
@@ -2419,7 +2479,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_start_date_filter_last_week() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .start_date(DateFilter::LastWeek)
@@ -2433,7 +2494,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_start_date_filter_last_two_weeks() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .start_date(DateFilter::LastTwoWeeks)
@@ -2447,7 +2509,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_start_date_filter_next_week() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .start_date(DateFilter::NextWeek)
@@ -2461,7 +2524,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_start_date_filter_this_month() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .start_date(DateFilter::ThisMonth)
@@ -2475,7 +2539,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_start_date_filter_last_month() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .start_date(DateFilter::LastMonth)
@@ -2489,7 +2554,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_start_date_filter_next_month() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .start_date(DateFilter::NextMonth)
@@ -2503,7 +2569,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_start_date_filter_this_year() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .start_date(DateFilter::ThisYear)
@@ -2517,7 +2584,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_start_date_filter_unset() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .start_date(DateFilter::Unset)
@@ -2531,7 +2599,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_start_date_filter_any() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder().start_date(DateFilter::Any).build()?;
             redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
@@ -2543,7 +2612,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_due_date_filter_exact_match() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let dt = time::macros::date!(2023 - 01 - 15);
             let endpoint = ListIssues::builder()
@@ -2558,7 +2628,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_due_date_filter_range() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let dt_start = time::macros::date!(2023 - 01 - 01);
             let dt_end = time::macros::date!(2023 - 01 - 31);
@@ -2574,7 +2645,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_due_date_filter_less_than_or_equal() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let dt = time::macros::date!(2023 - 01 - 15);
             let endpoint = ListIssues::builder()
@@ -2589,7 +2661,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_due_date_filter_greater_than_or_equal() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let dt = time::macros::date!(2023 - 01 - 15);
             let endpoint = ListIssues::builder()
@@ -2604,7 +2677,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_due_date_filter_less_than_days_ago() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .due_date(DateFilter::LessThanDaysAgo(5))
@@ -2618,7 +2692,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_due_date_filter_more_than_days_ago() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .due_date(DateFilter::MoreThanDaysAgo(10))
@@ -2632,7 +2707,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_due_date_filter_within_past_days() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .due_date(DateFilter::WithinPastDays(7))
@@ -2646,7 +2722,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_due_date_filter_exact_days_ago() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .due_date(DateFilter::ExactDaysAgo(3))
@@ -2660,7 +2737,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_due_date_filter_in_less_than_days() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .due_date(DateFilter::InLessThanDays(5))
@@ -2674,7 +2752,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_due_date_filter_in_more_than_days() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .due_date(DateFilter::InMoreThanDays(10))
@@ -2688,7 +2767,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_due_date_filter_within_future_days() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .due_date(DateFilter::WithinFutureDays(7))
@@ -2702,7 +2782,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_due_date_filter_in_exact_days() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .due_date(DateFilter::InExactDays(3))
@@ -2716,7 +2797,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_due_date_filter_today() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder().due_date(DateFilter::Today).build()?;
             redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
@@ -2728,7 +2810,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_due_date_filter_yesterday() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .due_date(DateFilter::Yesterday)
@@ -2742,7 +2825,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_due_date_filter_tomorrow() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .due_date(DateFilter::Tomorrow)
@@ -2756,7 +2840,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_due_date_filter_this_week() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .due_date(DateFilter::ThisWeek)
@@ -2770,7 +2855,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_due_date_filter_last_week() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .due_date(DateFilter::LastWeek)
@@ -2784,7 +2870,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_due_date_filter_last_two_weeks() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .due_date(DateFilter::LastTwoWeeks)
@@ -2798,7 +2885,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_due_date_filter_next_week() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .due_date(DateFilter::NextWeek)
@@ -2812,7 +2900,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_due_date_filter_this_month() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .due_date(DateFilter::ThisMonth)
@@ -2826,7 +2915,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_due_date_filter_last_month() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .due_date(DateFilter::LastMonth)
@@ -2840,7 +2930,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_due_date_filter_next_month() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .due_date(DateFilter::NextMonth)
@@ -2854,7 +2945,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_due_date_filter_this_year() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder()
                 .due_date(DateFilter::ThisYear)
@@ -2868,7 +2960,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_due_date_filter_unset() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder().due_date(DateFilter::Unset).build()?;
             redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
@@ -2880,7 +2973,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_due_date_filter_any() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder().due_date(DateFilter::Any).build()?;
             redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;
@@ -2892,7 +2986,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_issues_child_id_filter() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_issues = test_locking::read_lock(&ISSUES_LOCK);
             let endpoint = ListIssues::builder().child_id(vec![123, 456]).build()?;
             redmine.json_response_body_page::<_, Issue>(&endpoint, 0, 25)?;

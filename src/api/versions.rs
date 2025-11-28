@@ -417,7 +417,8 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_versions_no_pagination() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_version = test_locking::read_lock(&VERSION_LOCK);
             let endpoint = ListVersions::builder().project_id_or_name("92").build()?;
             redmine.json_response_body::<_, VersionsWrapper<Version>>(&endpoint)?;
@@ -428,7 +429,8 @@ mod test {
     #[traced_test]
     #[test]
     fn test_get_version() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_version = test_locking::read_lock(&VERSION_LOCK);
             let endpoint = GetVersion::builder().id(1182).build()?;
             redmine.json_response_body::<_, VersionWrapper<Version>>(&endpoint)?;

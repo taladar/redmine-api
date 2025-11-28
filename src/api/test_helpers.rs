@@ -15,14 +15,18 @@ use crate::api::testcontainers_helpers;
 /// # Errors
 ///
 /// Returns an error if the Redmine test environment setup fails or if the provided closure `f` returns an error.
-pub fn with_redmine<F>(f: F) -> Result<(), Box<dyn Error>>
+pub fn with_redmine<F>(current_span: tracing::Span, f: F) -> Result<(), Box<dyn Error>>
 where
     F: Fn(&crate::api::Redmine) -> Result<(), Box<dyn Error>>,
 {
     if std::env::var("REDMINE_TEST_MODE").unwrap_or_default() == "testcontainers" {
         let versions = std::env::var("REDMINE_VERSIONS").unwrap_or_else(|_| "6.1.0".to_string());
         for version in versions.split(',') {
-            testcontainers_helpers::with_redmine_container(version, |redmine, _| f(redmine))?;
+            testcontainers_helpers::with_redmine_container(
+                version,
+                current_span.clone(),
+                |redmine, _| f(redmine),
+            )?;
         }
     } else {
         dotenvy::dotenv()?;
@@ -42,7 +46,7 @@ where
 /// # Errors
 ///
 /// Returns an error if the Redmine test environment setup fails or if the provided asynchronous closure `f` returns an error.
-pub async fn with_redmine_async<F>(f: F) -> Result<(), Box<dyn Error>>
+pub async fn with_redmine_async<F>(current_span: tracing::Span, f: F) -> Result<(), Box<dyn Error>>
 where
     F: Fn(
             &std::sync::Arc<RedmineAsync>,
@@ -58,10 +62,14 @@ where
         let versions = std::env::var("REDMINE_VERSIONS").unwrap_or_else(|_| "6.1.0".to_string());
         for version in versions.split(',') {
             let f_clone = f.clone();
-            testcontainers_helpers::with_redmine_container_async(version, move |redmine, _| {
-                let redmine_cloned = redmine.clone();
-                Box::pin(async move { f_clone(&redmine_cloned).await })
-            })
+            testcontainers_helpers::with_redmine_container_async(
+                version,
+                current_span.clone(),
+                move |redmine, _| {
+                    let redmine_cloned = redmine.clone();
+                    Box::pin(async move { f_clone(&redmine_cloned).await })
+                },
+            )
             .await?;
         }
     } else {
@@ -92,7 +100,8 @@ pub fn with_project<F>(name: &str, f: F) -> Result<(), Box<dyn Error>>
 where
     F: Fn(&crate::api::Redmine, u64, &str) -> Result<(), Box<dyn Error>>,
 {
-    with_redmine(|redmine| {
+    let current_span = tracing::Span::current();
+    with_redmine(current_span, |redmine| {
         if std::env::var("REDMINE_TEST_MODE").unwrap_or_default() != "testcontainers" {
             let _w_projects = PROJECT_LOCK.blocking_write();
         }
@@ -178,7 +187,8 @@ pub fn with_group<F>(name: &str, f: F) -> Result<(), Box<dyn Error>>
 where
     F: Fn(&crate::api::Redmine, u64, &str) -> Result<(), Box<dyn Error>>,
 {
-    with_redmine(|redmine| {
+    let current_span = tracing::Span::current();
+    with_redmine(current_span, |redmine| {
         if std::env::var("REDMINE_TEST_MODE").unwrap_or_default() != "testcontainers" {
             let _w_groups = GROUP_LOCK.blocking_write();
         }

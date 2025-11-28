@@ -278,7 +278,8 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_news_first_page() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let endpoint = ListNews::builder().build()?;
             redmine.json_response_body_page::<_, News>(&endpoint, 0, 25)?;
             Ok(())
@@ -288,7 +289,8 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_news_all_pages() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let endpoint = ListNews::builder().build()?;
             redmine.json_response_body_all_pages::<_, News>(&endpoint)?;
             Ok(())
@@ -336,7 +338,8 @@ mod test {
     #[traced_test]
     #[test]
     fn test_completeness_news_type() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let endpoint = ListNews::builder().build()?;
             let values: Vec<serde_json::Value> = redmine.json_response_body_all_pages(&endpoint)?;
             for value in values {

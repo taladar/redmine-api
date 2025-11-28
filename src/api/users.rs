@@ -592,7 +592,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_users_first_page() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_user = test_locking::read_lock(&USER_LOCK);
             let endpoint = ListUsers::builder().build()?;
             redmine.json_response_body_page::<_, User>(&endpoint, 0, 25)?;
@@ -603,7 +604,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_users_all_pages() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_user = test_locking::read_lock(&USER_LOCK);
             let endpoint = ListUsers::builder().build()?;
             redmine.json_response_body_all_pages::<_, User>(&endpoint)?;
@@ -614,7 +616,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_get_user() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_user = test_locking::read_lock(&USER_LOCK);
             let endpoint = GetUser::builder().id(1).build()?;
             redmine.json_response_body::<_, UserWrapper<User>>(&endpoint)?;
@@ -626,7 +629,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_create_user() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _w_user = test_locking::write_lock(&USER_LOCK);
             let name = format!("unittest_{}", function_name!());
             let list_endpoint = ListUsers::builder().name(name.clone()).build()?;
@@ -719,7 +723,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_update_user() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _w_user = test_locking::write_lock(&USER_LOCK);
             let name = format!("unittest_{}", function_name!());
             let list_endpoint = ListUsers::builder().name(name.clone()).build()?;
@@ -754,7 +759,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_completeness_user_type_first_page() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_user = test_locking::read_lock(&USER_LOCK);
             let endpoint = ListUsers::builder().build()?;
             let ResponsePage {
@@ -782,7 +788,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_completeness_user_type_all_pages_all_user_details() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_user = test_locking::read_lock(&USER_LOCK);
             let _r_groups = test_locking::read_lock(&GROUP_LOCK);
             let _r_project_memberships = test_locking::read_lock(&PROJECT_MEMBERSHIP_LOCK);

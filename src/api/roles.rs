@@ -204,7 +204,8 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_roles_no_pagination() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let endpoint = ListRoles::builder().build()?;
             redmine.json_response_body::<_, RolesWrapper<RoleEssentials>>(&endpoint)?;
             Ok(())
@@ -214,7 +215,8 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_roles_givable_filter() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let endpoint = ListRoles::builder().givable(true).build()?;
             redmine.json_response_body::<_, RolesWrapper<RoleEssentials>>(&endpoint)?;
             Ok(())
@@ -223,7 +225,8 @@ mod test {
 
     #[test]
     fn test_get_role() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let endpoint = GetRole::builder().id(8).build()?;
             redmine.json_response_body::<_, RoleWrapper<Role>>(&endpoint)?;
             Ok(())
@@ -237,7 +240,8 @@ mod test {
     #[traced_test]
     #[test]
     fn test_completeness_role_type() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let list_endpoint = ListRoles::builder().build()?;
             let RolesWrapper { roles } =
                 redmine.json_response_body::<_, RolesWrapper<RoleEssentials>>(&list_endpoint)?;

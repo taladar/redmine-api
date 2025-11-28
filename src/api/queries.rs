@@ -131,7 +131,8 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_queries_first_page() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let endpoint = ListQueries::builder().build()?;
             redmine.json_response_body_page::<_, QueryListItem>(&endpoint, 0, 25)?;
             Ok(())
@@ -141,7 +142,8 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_queries_all_pages() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let endpoint = ListQueries::builder().build()?;
             redmine.json_response_body_all_pages::<_, QueryListItem>(&endpoint)?;
             Ok(())
@@ -155,7 +157,8 @@ mod test {
     #[traced_test]
     #[test]
     fn test_completeness_query_type() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let endpoint = ListQueries::builder().build()?;
             let values: Vec<serde_json::Value> = redmine.json_response_body_all_pages(&endpoint)?;
             for value in values {

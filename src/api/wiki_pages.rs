@@ -523,7 +523,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_list_project_wiki_pages() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_project = test_locking::read_lock(&PROJECT_LOCK);
             let _r_project_wiki_pages = test_locking::read_lock(&PROJECT_WIKI_PAGE_LOCK);
             let endpoint = ListProjectWikiPages::builder()
@@ -541,7 +542,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_completeness_wiki_page_essentials() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_project = test_locking::read_lock(&PROJECT_LOCK);
             let _r_issues = test_locking::read_lock(&PROJECT_WIKI_PAGE_LOCK);
             let endpoint = ListProjects::builder()
@@ -589,7 +591,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_get_project_wiki_page() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_project = test_locking::read_lock(&PROJECT_LOCK);
             let _r_project_wiki_pages = test_locking::read_lock(&PROJECT_WIKI_PAGE_LOCK);
             let endpoint = GetProjectWikiPage::builder()
@@ -608,7 +611,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_completeness_wiki_page() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_project = test_locking::read_lock(&PROJECT_LOCK);
             let _r_issues = test_locking::read_lock(&PROJECT_WIKI_PAGE_LOCK);
             let endpoint = ListProjects::builder()
@@ -663,7 +667,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_get_project_wiki_page_version() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_project = test_locking::read_lock(&PROJECT_LOCK);
             let _r_project_wiki_pages = test_locking::read_lock(&PROJECT_WIKI_PAGE_LOCK);
             let endpoint = GetProjectWikiPageVersion::builder()
@@ -679,7 +684,8 @@ pub(crate) mod test {
     #[traced_test]
     #[test]
     fn test_create_update_and_delete_project_wiki_page() -> Result<(), Box<dyn Error>> {
-        with_redmine(|redmine| {
+        let current_span = tracing::Span::current();
+        with_redmine(current_span, |redmine| {
             let _r_project = test_locking::read_lock(&PROJECT_LOCK);
             let _w_project_wiki_pages = test_locking::write_lock(&PROJECT_WIKI_PAGE_LOCK);
             let endpoint = GetProjectWikiPage::builder()
