@@ -3,7 +3,7 @@ use std::error::Error;
 use std::sync::OnceLock;
 use std::time::Duration;
 
-use rand::distributions::{Alphanumeric, DistString};
+use rand::distr::{Alphanumeric, SampleString};
 use reqwest::blocking::Client;
 use scraper::{Html, Selector};
 use testcontainers::Image;
@@ -12,15 +12,18 @@ use testcontainers::TestcontainersError;
 use testcontainers::core::{
     Container, ContainerPort, ExecCommand, Mount, WaitFor, logs::consumer::LogConsumer,
 };
-use tokio::sync::Semaphore;
 use tracing::trace;
 
 use crate::api::{Redmine, RedmineAsync};
 
-static CONTAINER_SEMAPHORE: OnceLock<Semaphore> = OnceLock::new();
+static CONTAINER_RATE_LIMITER: OnceLock<ratelimit::Ratelimiter> = OnceLock::new();
 
-fn get_container_semaphore() -> &'static Semaphore {
-    CONTAINER_SEMAPHORE.get_or_init(|| Semaphore::new(10))
+fn get_container_rate_limiter() -> &'static ratelimit::Ratelimiter {
+    CONTAINER_RATE_LIMITER.get_or_init(|| {
+        ratelimit::Ratelimiter::builder(1, std::time::Duration::from_secs(6))
+            .build()
+            .expect("Creating container rate limiter failed")
+    })
 }
 
 /// a log consumer that logs the log frames using tracing
@@ -82,7 +85,7 @@ impl LogConsumer for TracingLogConsumer {
 }
 
 const REDMINE_CONTAINER_READY_MESSAGE: &str = "* Listening on http://0.0.0.0:3000";
-const REDMINE_STARTUP_TIMEOUT_SECONDS: u64 = 120;
+const REDMINE_STARTUP_TIMEOUT_SECONDS: u64 = 60;
 
 /// Represents a Redmine Docker image with its name and tag.
 #[derive(Debug, Clone)]
@@ -101,7 +104,7 @@ impl RedmineImage {
     pub fn new(version: String) -> Self {
         Self {
             name: "docker.io/redmine".to_string(),
-            tag: format!("{}", version),
+            tag: format!("{version}"),
         }
     }
 }
@@ -170,16 +173,9 @@ pub fn with_redmine_container<F>(
 where
     F: FnOnce(&Redmine, &Container<RedmineImage>) -> Result<(), Box<dyn Error>>,
 {
-    let runtime = tokio::runtime::Builder::new_current_thread()
-        .enable_all()
-        .build()?;
-
-    let _permit = runtime.block_on(async {
-        get_container_semaphore()
-            .acquire()
-            .await
-            .map_err(|e| Box::new(e) as Box<dyn Error>)
-    })?;
+    while let Err(try_again_after) = get_container_rate_limiter().try_wait() {
+        std::thread::sleep(try_again_after);
+    }
     trace!("Create Redmine {} container", version);
     let image = RedmineImage::new(version.to_string());
     let container =
@@ -223,7 +219,7 @@ where
         .next()
         .and_then(|e| e.value().attr("value"))
         .unwrap();
-    let new_password = Alphanumeric.sample_string(&mut rand::thread_rng(), 16);
+    let new_password = Alphanumeric.sample_string(&mut rand::rng(), 16);
     client
         .post(&password_change_url)
         .form(&[
@@ -306,7 +302,9 @@ where
         + 'static,
     Fut: std::future::Future<Output = Result<(), Box<dyn Error>>> + Send + 'static,
 {
-    let _permit = get_container_semaphore().acquire().await?;
+    while let Err(try_again_after) = get_container_rate_limiter().try_wait() {
+        tokio::time::sleep(try_again_after).await;
+    }
     trace!("Create Redmine {} container", version);
     let image = RedmineImage::new(version.to_string());
     let container =
@@ -356,7 +354,7 @@ where
         .next()
         .and_then(|e| e.value().attr("value"))
         .unwrap();
-    let new_password = Alphanumeric.sample_string(&mut rand::thread_rng(), 16);
+    let new_password = Alphanumeric.sample_string(&mut rand::rng(), 16);
     client
         .post(&password_change_url)
         .form(&[
