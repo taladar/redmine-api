@@ -10,7 +10,6 @@ use std::borrow::Cow;
 
 use crate::api::custom_fields::CustomFieldEssentialsWithValue;
 use crate::api::{Endpoint, NoPagination, ReturnsJsonResponse};
-use serde_json::json;
 
 /// a type for my account to use as an API return type
 ///
@@ -448,7 +447,7 @@ mod test {
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
-                .use_rustls_tls()
+                .tls_backend_rustls()
                 .build()?,
         )?;
         let endpoint = GetMyAccount::builder().build()?;
@@ -462,7 +461,7 @@ mod test {
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
-                .use_rustls_tls()
+                .tls_backend_rustls()
                 .build()?,
         )?;
         let get_endpoint = GetMyAccount::builder().build()?;
@@ -495,7 +494,7 @@ mod test {
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
-                .use_rustls_tls()
+                .tls_backend_rustls()
                 .build()?,
         )?;
         let endpoint = GetMyAccount::builder().build()?;

@@ -270,7 +270,7 @@ pub(crate) mod test {
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
-                .use_rustls_tls()
+                .tls_backend_rustls()
                 .build()?,
         )?;
         let endpoint = ListProjectMemberships::builder()
@@ -287,7 +287,7 @@ pub(crate) mod test {
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
-                .use_rustls_tls()
+                .tls_backend_rustls()
                 .build()?,
         )?;
         let endpoint = ListProjectMemberships::builder()
@@ -304,7 +304,7 @@ pub(crate) mod test {
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
-                .use_rustls_tls()
+                .tls_backend_rustls()
                 .build()?,
         )?;
         let endpoint = GetProjectMembership::builder().id(238).build()?;
@@ -366,7 +366,7 @@ pub(crate) mod test {
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
-                .use_rustls_tls()
+                .tls_backend_rustls()
                 .build()?,
         )?;
         let endpoint = ListProjectMemberships::builder()

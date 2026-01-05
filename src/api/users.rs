@@ -595,7 +595,7 @@ pub(crate) mod test {
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
-                .use_rustls_tls()
+                .tls_backend_rustls()
                 .build()?,
         )?;
         let endpoint = ListUsers::builder().build()?;
@@ -610,7 +610,7 @@ pub(crate) mod test {
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
-                .use_rustls_tls()
+                .tls_backend_rustls()
                 .build()?,
         )?;
         let endpoint = ListUsers::builder().build()?;
@@ -625,7 +625,7 @@ pub(crate) mod test {
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
-                .use_rustls_tls()
+                .tls_backend_rustls()
                 .build()?,
         )?;
         let endpoint = GetUser::builder().id(1).build()?;
@@ -642,7 +642,7 @@ pub(crate) mod test {
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
-                .use_rustls_tls()
+                .tls_backend_rustls()
                 .build()?,
         )?;
         let list_endpoint = ListUsers::builder().name(name.clone()).build()?;
@@ -739,7 +739,7 @@ pub(crate) mod test {
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
-                .use_rustls_tls()
+                .tls_backend_rustls()
                 .build()?,
         )?;
         let list_endpoint = ListUsers::builder().name(name.clone()).build()?;
@@ -777,7 +777,7 @@ pub(crate) mod test {
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
-                .use_rustls_tls()
+                .tls_backend_rustls()
                 .build()?,
         )?;
         let endpoint = ListUsers::builder().build()?;
@@ -811,7 +811,7 @@ pub(crate) mod test {
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
-                .use_rustls_tls()
+                .tls_backend_rustls()
                 .build()?,
         )?;
         let endpoint = ListUsers::builder().build()?;

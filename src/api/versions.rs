@@ -420,7 +420,7 @@ mod test {
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
-                .use_rustls_tls()
+                .tls_backend_rustls()
                 .build()?,
         )?;
         let endpoint = ListVersions::builder().project_id_or_name("92").build()?;
@@ -435,7 +435,7 @@ mod test {
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
-                .use_rustls_tls()
+                .tls_backend_rustls()
                 .build()?,
         )?;
         let endpoint = GetVersion::builder().id(1182).build()?;

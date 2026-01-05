@@ -524,7 +524,7 @@ pub(crate) mod test {
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
-                .use_rustls_tls()
+                .tls_backend_rustls()
                 .build()?,
         )?;
         let endpoint = ListProjectWikiPages::builder()
@@ -546,7 +546,7 @@ pub(crate) mod test {
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
-                .use_rustls_tls()
+                .tls_backend_rustls()
                 .build()?,
         )?;
         let endpoint = ListProjects::builder()
@@ -598,7 +598,7 @@ pub(crate) mod test {
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
-                .use_rustls_tls()
+                .tls_backend_rustls()
                 .build()?,
         )?;
         let endpoint = GetProjectWikiPage::builder()
@@ -621,7 +621,7 @@ pub(crate) mod test {
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
-                .use_rustls_tls()
+                .tls_backend_rustls()
                 .build()?,
         )?;
         let endpoint = ListProjects::builder()
@@ -680,7 +680,7 @@ pub(crate) mod test {
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
-                .use_rustls_tls()
+                .tls_backend_rustls()
                 .build()?,
         )?;
         let endpoint = GetProjectWikiPageVersion::builder()
@@ -700,7 +700,7 @@ pub(crate) mod test {
         dotenvy::dotenv()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
-                .use_rustls_tls()
+                .tls_backend_rustls()
                 .build()?,
         )?;
         let endpoint = GetProjectWikiPage::builder()

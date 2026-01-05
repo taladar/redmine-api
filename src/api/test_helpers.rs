@@ -29,7 +29,7 @@ where
     dotenvy::dotenv()?;
     let redmine = crate::api::Redmine::from_env(
         reqwest::blocking::Client::builder()
-            .use_rustls_tls()
+            .tls_backend_rustls()
             .build()?,
     )?;
     let get_endpoint = GetProject::builder().project_id_or_name(name).build()?;
@@ -117,7 +117,7 @@ where
     dotenvy::dotenv()?;
     let redmine = crate::api::Redmine::from_env(
         reqwest::blocking::Client::builder()
-            .use_rustls_tls()
+            .tls_backend_rustls()
             .build()?,
     )?;
     let create_endpoint = CreateGroup::builder().name(name).build()?;

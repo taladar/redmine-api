@@ -199,7 +199,7 @@ update dependencies
 ## 0.3.0
 
 add async support (not very well tested yet)
-replace parking\_lot lock in tests  with tokio one since the parking\_lot one
+replace parking\_lot lock in tests with tokio one since the parking\_lot one
 does not work with the async tests
 
 ## 0.2.9
