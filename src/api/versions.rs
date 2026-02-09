@@ -189,7 +189,11 @@ pub enum VersionStatusFilter {
     NotTheseStatuses(Vec<VersionStatus>),
 }
 
-// Helper functions for serializing "Any" and "None"
+/// Helper functions for serializing "Any" and "None"
+///
+/// # Errors
+///
+/// returns an error if the serializer does
 fn serialize_any_operator<S>(serializer: S) -> Result<S::Ok, S::Error>
 where
     S: serde::Serializer,
@@ -198,6 +202,10 @@ where
 }
 
 /// Helper function to serialize `None` values as an empty string.
+///
+/// # Errors
+///
+/// returns an error if the serializer does
 fn serialize_none_operator<S>(serializer: S) -> Result<S::Ok, S::Error>
 where
     S: serde::Serializer,
