@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.4 - 2026-04-07 14:46:59Z
+
+### ⚙️ Miscellaneous Tasks
+
+- *(dependencies)* Update dependencies
+
 ## 0.11.3 - 2026-03-11 14:35:38Z
 
 ### ⚙️ Miscellaneous Tasks
