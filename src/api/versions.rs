@@ -30,7 +30,7 @@ pub struct VersionEssentials {
 
 impl From<Version> for VersionEssentials {
     fn from(v: Version) -> Self {
-        VersionEssentials {
+        Self {
             id: v.id,
             name: v.name,
         }
@@ -39,7 +39,7 @@ impl From<Version> for VersionEssentials {
 
 impl From<&Version> for VersionEssentials {
     fn from(v: &Version) -> Self {
-        VersionEssentials {
+        Self {
             id: v.id,
             name: v.name.to_owned(),
         }

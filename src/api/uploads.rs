@@ -14,7 +14,7 @@
 use derive_builder::Builder;
 use reqwest::Method;
 use std::borrow::Cow;
-use std::io::Read;
+use std::io::Read as _;
 use std::path::PathBuf;
 
 use crate::api::{Endpoint, NoPagination, QueryParams, ReturnsJsonResponse};

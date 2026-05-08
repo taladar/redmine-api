@@ -40,6 +40,10 @@ pub struct News {
 /// The endpoint for all news
 #[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
+#[expect(
+    clippy::empty_structs_with_brackets,
+    reason = "derive_builder requires named-field syntax"
+)]
 pub struct ListNews {}
 
 impl ReturnsJsonResponse for ListNews {}

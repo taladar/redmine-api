@@ -122,7 +122,7 @@ pub struct AssigneeEssentials {
 
 impl From<UserEssentials> for AssigneeEssentials {
     fn from(v: UserEssentials) -> Self {
-        AssigneeEssentials {
+        Self {
             id: v.id,
             name: v.name,
         }
@@ -131,7 +131,7 @@ impl From<UserEssentials> for AssigneeEssentials {
 
 impl From<&UserEssentials> for AssigneeEssentials {
     fn from(v: &UserEssentials) -> Self {
-        AssigneeEssentials {
+        Self {
             id: v.id,
             name: v.name.to_owned(),
         }
@@ -140,7 +140,7 @@ impl From<&UserEssentials> for AssigneeEssentials {
 
 impl From<GroupEssentials> for AssigneeEssentials {
     fn from(v: GroupEssentials) -> Self {
-        AssigneeEssentials {
+        Self {
             id: v.id,
             name: v.name,
         }
@@ -149,7 +149,7 @@ impl From<GroupEssentials> for AssigneeEssentials {
 
 impl From<&GroupEssentials> for AssigneeEssentials {
     fn from(v: &GroupEssentials) -> Self {
-        AssigneeEssentials {
+        Self {
             id: v.id,
             name: v.name.to_owned(),
         }
@@ -158,7 +158,7 @@ impl From<&GroupEssentials> for AssigneeEssentials {
 
 impl From<Group> for AssigneeEssentials {
     fn from(v: Group) -> Self {
-        AssigneeEssentials {
+        Self {
             id: v.id,
             name: v.name,
         }
@@ -167,7 +167,7 @@ impl From<Group> for AssigneeEssentials {
 
 impl From<&Group> for AssigneeEssentials {
     fn from(v: &Group) -> Self {
-        AssigneeEssentials {
+        Self {
             id: v.id,
             name: v.name.to_owned(),
         }
@@ -184,13 +184,13 @@ pub struct IssueEssentials {
 
 impl From<Issue> for IssueEssentials {
     fn from(v: Issue) -> Self {
-        IssueEssentials { id: v.id }
+        Self { id: v.id }
     }
 }
 
 impl From<&Issue> for IssueEssentials {
     fn from(v: &Issue) -> Self {
-        IssueEssentials { id: v.id }
+        Self { id: v.id }
     }
 }
 
@@ -292,7 +292,7 @@ pub struct ChildIssue {
     pub tracker: TrackerEssentials,
     /// children
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub children: Option<Vec<ChildIssue>>,
+    pub children: Option<Vec<Self>>,
 }
 
 /// a type for issue to use as an API return type
@@ -403,10 +403,10 @@ pub enum SubProjectFilter {
 impl std::fmt::Display for SubProjectFilter {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            SubProjectFilter::OnlyParentProject => {
+            Self::OnlyParentProject => {
                 write!(f, "!*")
             }
-            SubProjectFilter::TheseSubProjects(ids) => {
+            Self::TheseSubProjects(ids) => {
                 let s: String = ids
                     .iter()
                     .map(|e| e.to_string())
@@ -414,7 +414,7 @@ impl std::fmt::Display for SubProjectFilter {
                     .join(",");
                 write!(f, "{s}")
             }
-            SubProjectFilter::NotTheseSubProjects(ids) => {
+            Self::NotTheseSubProjects(ids) => {
                 let s: String = ids
                     .iter()
                     .map(|e| format!("!{e}"))
@@ -444,16 +444,16 @@ pub enum IssueStatusFilter {
 impl std::fmt::Display for IssueStatusFilter {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            IssueStatusFilter::Open => {
+            Self::Open => {
                 write!(f, "open")
             }
-            IssueStatusFilter::Closed => {
+            Self::Closed => {
                 write!(f, "closed")
             }
-            IssueStatusFilter::All => {
+            Self::All => {
                 write!(f, "*")
             }
-            IssueStatusFilter::TheseStatuses(ids) => {
+            Self::TheseStatuses(ids) => {
                 let s: String = ids
                     .iter()
                     .map(|e| e.to_string())
@@ -461,7 +461,7 @@ impl std::fmt::Display for IssueStatusFilter {
                     .join(",");
                 write!(f, "{s}")
             }
-            IssueStatusFilter::NotTheseStatuses(ids) => {
+            Self::NotTheseStatuses(ids) => {
                 let s: String = ids
                     .iter()
                     .map(|e| format!("!{e}"))
@@ -491,16 +491,16 @@ pub enum UserFilter {
 impl std::fmt::Display for UserFilter {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            UserFilter::AnyUser => {
+            Self::AnyUser => {
                 write!(f, "*")
             }
-            UserFilter::Me => {
+            Self::Me => {
                 write!(f, "me")
             }
-            UserFilter::NotMe => {
+            Self::NotMe => {
                 write!(f, "!me")
             }
-            UserFilter::TheseUsers(ids) => {
+            Self::TheseUsers(ids) => {
                 let s: String = ids
                     .iter()
                     .map(|e| e.to_string())
@@ -508,7 +508,7 @@ impl std::fmt::Display for UserFilter {
                     .join(",");
                 write!(f, "{s}")
             }
-            UserFilter::NotTheseUsers(ids) => {
+            Self::NotTheseUsers(ids) => {
                 let s: String = ids
                     .iter()
                     .map(|e| format!("!{e}"))
@@ -534,10 +534,10 @@ pub enum RoleFilter {
 impl std::fmt::Display for RoleFilter {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            RoleFilter::AnyRole => {
+            Self::AnyRole => {
                 write!(f, "*")
             }
-            RoleFilter::TheseRoles(ids) => {
+            Self::TheseRoles(ids) => {
                 let s: String = ids
                     .iter()
                     .map(|e| e.to_string())
@@ -545,7 +545,7 @@ impl std::fmt::Display for RoleFilter {
                     .join(",");
                 write!(f, "{s}")
             }
-            RoleFilter::NotTheseRoles(ids) => {
+            Self::NotTheseRoles(ids) => {
                 let s: String = ids
                     .iter()
                     .map(|e| format!("!{e}"))
@@ -571,10 +571,10 @@ pub enum MemberOfGroupFilter {
 impl std::fmt::Display for MemberOfGroupFilter {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            MemberOfGroupFilter::AnyGroup => {
+            Self::AnyGroup => {
                 write!(f, "*")
             }
-            MemberOfGroupFilter::TheseGroups(ids) => {
+            Self::TheseGroups(ids) => {
                 let s: String = ids
                     .iter()
                     .map(|e| e.to_string())
@@ -582,7 +582,7 @@ impl std::fmt::Display for MemberOfGroupFilter {
                     .join(",");
                 write!(f, "{s}")
             }
-            MemberOfGroupFilter::NotTheseGroups(ids) => {
+            Self::NotTheseGroups(ids) => {
                 let s: String = ids
                     .iter()
                     .map(|e| format!("!{e}"))
@@ -608,13 +608,13 @@ pub enum FixedVersionStatusFilter {
 impl std::fmt::Display for FixedVersionStatusFilter {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            FixedVersionStatusFilter::Open => {
+            Self::Open => {
                 write!(f, "open")
             }
-            FixedVersionStatusFilter::Locked => {
+            Self::Locked => {
                 write!(f, "locked")
             }
-            FixedVersionStatusFilter::Closed => {
+            Self::Closed => {
                 write!(f, "closed")
             }
         }
@@ -641,16 +641,16 @@ pub enum AssigneeFilter {
 impl std::fmt::Display for AssigneeFilter {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            AssigneeFilter::AnyAssignee => {
+            Self::AnyAssignee => {
                 write!(f, "*")
             }
-            AssigneeFilter::Me => {
+            Self::Me => {
                 write!(f, "me")
             }
-            AssigneeFilter::NotMe => {
+            Self::NotMe => {
                 write!(f, "!me")
             }
-            AssigneeFilter::TheseAssignees(ids) => {
+            Self::TheseAssignees(ids) => {
                 let s: String = ids
                     .iter()
                     .map(|e| e.to_string())
@@ -658,7 +658,7 @@ impl std::fmt::Display for AssigneeFilter {
                     .join(",");
                 write!(f, "{s}")
             }
-            AssigneeFilter::NotTheseAssignees(ids) => {
+            Self::NotTheseAssignees(ids) => {
                 let s: String = ids
                     .iter()
                     .map(|e| format!("!{e}"))
@@ -666,7 +666,7 @@ impl std::fmt::Display for AssigneeFilter {
                     .join(",");
                 write!(f, "{s}")
             }
-            AssigneeFilter::NoAssignee => {
+            Self::NoAssignee => {
                 write!(f, "!*")
             }
         }
@@ -691,10 +691,10 @@ pub enum SortByColumn {
 impl std::fmt::Display for SortByColumn {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            SortByColumn::Forward { column_name } => {
+            Self::Forward { column_name } => {
                 write!(f, "{column_name}")
             }
-            SortByColumn::Reverse { column_name } => {
+            Self::Reverse { column_name } => {
                 write!(f, "{column_name}:desc")
             }
         }
@@ -1412,7 +1412,7 @@ pub(crate) mod test {
     /// or --ignored to run it
     #[traced_test]
     #[test]
-    #[ignore]
+    #[ignore = "loads all pages of issues; runtime ~1m, run with --include-ignored"]
     fn test_list_issues_all_pages() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
         dotenvy::dotenv()?;
@@ -1431,7 +1431,7 @@ pub(crate) mod test {
     /// or --ignored to run it
     #[traced_test]
     #[test]
-    #[ignore]
+    #[ignore = "loads all pages of issues; runtime ~1m, run with --include-ignored"]
     fn test_list_issues_all_pages_iter() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
         dotenvy::dotenv()?;
@@ -1456,7 +1456,7 @@ pub(crate) mod test {
     /// or --ignored to run it
     #[traced_test]
     #[tokio::test]
-    #[ignore]
+    #[ignore = "loads all pages of issues; runtime ~1m, run with --include-ignored"]
     async fn test_list_issues_all_pages_stream() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.read().await;
         dotenvy::dotenv()?;
@@ -1606,7 +1606,7 @@ pub(crate) mod test {
     /// or --ignored to run it
     #[traced_test]
     #[test]
-    #[ignore]
+    #[ignore = "loads all pages of issues; runtime ~1m, run with --include-ignored"]
     fn test_completeness_issue_type_all_pages() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
         dotenvy::dotenv()?;
@@ -1653,7 +1653,7 @@ pub(crate) mod test {
     /// or --ignored to run it
     #[traced_test]
     #[test]
-    #[ignore]
+    #[ignore = "fetches every issue via GetIssue; runtime ~400s, run with --include-ignored"]
     fn test_completeness_issue_type_all_pages_all_issue_details() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
         dotenvy::dotenv()?;

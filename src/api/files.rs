@@ -148,7 +148,6 @@ mod test {
     use crate::api::uploads::UploadFile;
     use pretty_assertions::assert_eq;
     use std::error::Error;
-    use tempfile;
     use tracing_test::traced_test;
 
     #[function_name::named]
@@ -170,10 +169,10 @@ mod test {
     #[traced_test]
     #[test]
     fn test_create_file() -> Result<(), Box<dyn Error>> {
+        use std::io::Write as _;
         let name = format!("unittest_{}", function_name!());
         crate::api::test_helpers::with_project(&name, |redmine, _id, name| {
             let mut temp_file = tempfile::NamedTempFile::new()?;
-            use std::io::Write;
             write!(temp_file, "test file content")?;
             let upload_endpoint = UploadFile::builder()
                 .file(temp_file.path().to_path_buf())

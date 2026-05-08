@@ -45,7 +45,7 @@ pub struct ProjectEssentials {
 
 impl From<Project> for ProjectEssentials {
     fn from(v: Project) -> Self {
-        ProjectEssentials {
+        Self {
             id: v.id,
             name: v.name,
         }
@@ -54,7 +54,7 @@ impl From<Project> for ProjectEssentials {
 
 impl From<&Project> for ProjectEssentials {
     fn from(v: &Project) -> Self {
-        ProjectEssentials {
+        Self {
             id: v.id,
             name: v.name.to_owned(),
         }
@@ -211,9 +211,9 @@ pub enum ProjectFilter {
 impl std::fmt::Display for ProjectFilter {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ProjectFilter::Any => write!(f, "*"),
-            ProjectFilter::None => write!(f, "!*"),
-            ProjectFilter::TheseProjects(ids) => {
+            Self::Any => write!(f, "*"),
+            Self::None => write!(f, "!*"),
+            Self::TheseProjects(ids) => {
                 let s: String = ids
                     .iter()
                     .map(|e| e.to_string())
@@ -221,7 +221,7 @@ impl std::fmt::Display for ProjectFilter {
                     .join(",");
                 write!(f, "{s}")
             }
-            ProjectFilter::NotTheseProjects(ids) => {
+            Self::NotTheseProjects(ids) => {
                 let s: String = ids
                     .iter()
                     .map(|e| format!("!{e}"))

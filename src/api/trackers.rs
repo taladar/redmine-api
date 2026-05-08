@@ -23,7 +23,7 @@ pub struct TrackerEssentials {
 
 impl From<Tracker> for TrackerEssentials {
     fn from(v: Tracker) -> Self {
-        TrackerEssentials {
+        Self {
             id: v.id,
             name: v.name,
         }
@@ -32,7 +32,7 @@ impl From<Tracker> for TrackerEssentials {
 
 impl From<&Tracker> for TrackerEssentials {
     fn from(v: &Tracker) -> Self {
-        TrackerEssentials {
+        Self {
             id: v.id,
             name: v.name.to_owned(),
         }
@@ -59,6 +59,10 @@ pub struct Tracker {
 /// The endpoint for all trackers
 #[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
+#[expect(
+    clippy::empty_structs_with_brackets,
+    reason = "derive_builder requires named-field syntax"
+)]
 pub struct ListTrackers {}
 
 impl ReturnsJsonResponse for ListTrackers {}

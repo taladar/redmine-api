@@ -86,6 +86,10 @@ pub struct Query {
 /// to actually use them pass the query_id to the ListIssues endpoint
 #[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
+#[expect(
+    clippy::empty_structs_with_brackets,
+    reason = "derive_builder requires named-field syntax"
+)]
 pub struct ListQueries {}
 
 impl ReturnsJsonResponse for ListQueries {}

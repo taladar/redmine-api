@@ -202,7 +202,7 @@ impl Endpoint for UpdateProjectMembership {
     fn body(&self) -> Result<Option<(&'static str, Vec<u8>)>, crate::Error> {
         Ok(Some((
             "application/json",
-            serde_json::to_vec(&MembershipWrapper::<UpdateProjectMembership> {
+            serde_json::to_vec(&MembershipWrapper::<Self> {
                 membership: (*self).to_owned(),
             })?,
         )))

@@ -19,13 +19,13 @@ rumdl fmt --fix CHANGELOG.md
 
 cargo build
 
-git add CHANGELOG.md Cargo.toml
+git add CHANGELOG.md Cargo.toml Cargo.lock
 
 git commit -m "chore(release): Release version ${version}"
 
 git tag "redmine_api_${version}"
 
-for remote in origin github taladar; do
+for remote in $(git remote); do
   git push "${remote}"
   git push "${remote}" "redmine_api_${version}"
 done

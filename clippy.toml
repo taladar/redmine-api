@@ -1,0 +1,55 @@
+allowed-scripts = ["Latin"]
+disallowed-methods = [
+  # Use fs_errr functions, so the filename is available in the error message
+  { path = "std::fs::canonicalize", reason = "Use fs_err functions so the filename is available in the error message", replacement = "fs_err::canonicalize" },
+  { path = "std::fs::copy", reason = "Use fs_err functions so the filename is available in the error message", replacement = "fs_err::copy" },
+  { path = "std::fs::create_dir", reason = "Use fs_err functions so the filename is available in the error message", replacement = "fs_err::create_dir" },
+  { path = "std::fs::create_dir_all", reason = "Use fs_err functions so the filename is available in the error message", replacement = "fs_err::create_dir_all" },
+  { path = "std::fs::exists", reason = "Use fs_err functions so the filename is available in the error message", replacement = "fs_err::exists" },
+  { path = "std::fs::hard_link", reason = "Use fs_err functions so the filename is available in the error message", replacement = "fs_err::hard_link" },
+  { path = "std::fs::metadata", reason = "Use fs_err functions so the filename is available in the error message", replacement = "fs_err::metadata" },
+  { path = "std::fs::read", reason = "Use fs_err functions so the filename is available in the error message", replacement = "fs_err::read" },
+  { path = "std::fs::read_dir", reason = "Use fs_err functions so the filename is available in the error message", replacement = "fs_err::read_dir" },
+  { path = "std::fs::read_link", reason = "Use fs_err functions so the filename is available in the error message", replacement = "fs_err::read_link" },
+  { path = "std::fs::read_to_string", reason = "Use fs_err functions so the filename is available in the error message", replacement = "fs_err::read_to_string" },
+  { path = "std::fs::remove_dir", reason = "Use fs_err functions so the filename is available in the error message", replacement = "fs_err::remove_dir" },
+  { path = "std::fs::remove_dir_all", reason = "Use fs_err functions so the filename is available in the error message", replacement = "fs_err::remove_dir_all" },
+  { path = "std::fs::remove_file", reason = "Use fs_err functions so the filename is available in the error message", replacement = "fs_err::remove_file" },
+  { path = "std::fs::rename", reason = "Use fs_err functions so the filename is available in the error message", replacement = "fs_err::rename" },
+  { path = "std::fs::set_permissions", reason = "Use fs_err functions so the filename is available in the error message", replacement = "fs_err::set_permissions" },
+  { path = "std::fs::soft_link", reason = "Use fs_err functions so the filename is available in the error message", replacement = "fs_err::soft_link" },
+  { path = "std::fs::symlink_metadata", reason = "Use fs_err functions so the filename is available in the error message", replacement = "fs_err::symlink_metadata" },
+  { path = "std::fs::write", reason = "Use fs_err functions so the filename is available in the error message", replacement = "fs_err::write" },
+
+  # Use fs_err::path::PathExt methods, so the filename is available in the error message
+  { path = "std::path::Path::try_exists", reason = "Use fs_err::path::PathExt methods so the filename is available in the error message" },
+  { path = "std::path::Path::metadata", reason = "Use fs_err::path::PathExt methods so the filename is available in the error message" },
+  { path = "std::path::Path::symlink_metadata", reason = "Use fs_err::path::PathExt methods so the filename is available in the error message" },
+  { path = "std::path::Path::canonicalize", reason = "Use fs_err::path::PathExt methods so the filename is available in the error message" },
+  { path = "std::path::Path::read_link", reason = "Use fs_err::path::PathExt methods so the filename is available in the error message" },
+  { path = "std::path::Path::read_dir", reason = "Use fs_err::path::PathExt methods so the filename is available in the error message" },
+]
+
+disallowed-macros = [
+  # Use pretty_assertions for colors
+  { path = "std::assert_eq", reason = "Use pretty_assertions for colors", replacement = "pretty_assertions::assert_eq" },
+  { path = "std::assert_ne", reason = "Use pretty_assertions for colors", replacement = "pretty_assertions::assert_ne" },
+  { path = "std::assert_matches", reason = "Use pretty_assertions for colors", replacement = "pretty_assertions::assert_matches" },
+]
+
+enforced-import-renames = [
+  { path = "serde_json::Value", rename = "JsonValue" },
+  { path = "toml::Value", rename = "TomlValue" },
+  { path = "std::io::Error", rename = "IoError" },
+  { path = "reqwest::Error", rename = "ReqwestError" },
+  { path = "reqwest::Client", rename = "ReqwestClient" },
+  { path = "reqwest::blocking::Client", rename = "ReqwestBlockingClient" },
+  { path = "http::header::HeaderMap", rename = "HttpHeaderMap" },
+  { path = "http::header::HeaderName", rename = "HttpHeaderName" },
+  { path = "http::header::HeaderValue", rename = "HttpHeaderValue" },
+  { path = "http::status::StatusCode", rename = "HttpStatusCode" },
+  { path = "reqwest::header::HeaderMap", rename = "ReqwestHeaderMap" },
+  { path = "reqwest::header::HeaderName", rename = "ReqwestHeaderName" },
+  { path = "reqwest::header::HeaderValue", rename = "ReqwestHeaderValue" },
+  { path = "reqwest::StatusCode", rename = "ReqwestStatusCode" },
+]

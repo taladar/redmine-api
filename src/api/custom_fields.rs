@@ -90,23 +90,23 @@ impl serde::Serialize for EditTagStyle {
         S: serde::Serializer,
     {
         match *self {
-            EditTagStyle::DropDown => serializer.serialize_str(""),
-            EditTagStyle::CheckBox => serializer.serialize_str("check_box"),
-            EditTagStyle::Radio => serializer.serialize_str("radio"),
+            Self::DropDown => serializer.serialize_str(""),
+            Self::CheckBox => serializer.serialize_str("check_box"),
+            Self::Radio => serializer.serialize_str("radio"),
         }
     }
 }
 
 impl<'de> serde::Deserialize<'de> for EditTagStyle {
-    fn deserialize<D>(deserializer: D) -> Result<EditTagStyle, D::Error>
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,
     {
         let s = String::deserialize(deserializer)?;
         match s.as_str() {
-            "" => Ok(EditTagStyle::DropDown),
-            "check_box" => Ok(EditTagStyle::CheckBox),
-            "radio" => Ok(EditTagStyle::Radio),
+            "" => Ok(Self::DropDown),
+            "check_box" => Ok(Self::CheckBox),
+            "radio" => Ok(Self::Radio),
             _ => Err(serde::de::Error::unknown_variant(
                 &s,
                 &["", "check_box", "radio"],
@@ -129,6 +129,10 @@ pub struct PossibleValue {
 ///
 /// alternatively you can use your own type limited to the fields you need
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[expect(
+    clippy::struct_excessive_bools,
+    reason = "field set mirrors the Redmine REST representation"
+)]
 pub struct CustomFieldDefinition {
     /// numeric id
     pub id: u64,
@@ -231,11 +235,15 @@ pub struct CustomFieldName {
 }
 
 impl serde::Serialize for CustomFieldEssentialsWithValue {
+    #[expect(
+        clippy::arithmetic_side_effects,
+        reason = "field count is bounded by the four optional fields below"
+    )]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
     {
-        use serde::ser::SerializeStruct;
+        use serde::ser::SerializeStruct as _;
         let mut len = 2;
         if self.multiple.is_some() {
             len += 1;
@@ -342,7 +350,7 @@ impl<'de> serde::Deserialize<'de> for CustomFieldEssentialsWithValue {
                             if vec_string_value.is_some() {
                                 return Err(serde::de::Error::duplicate_field("value"));
                             }
-                            if let Some(true) = multiple {
+                            if multiple == Some(true) {
                                 vec_string_value = Some(map.next_value()?);
                             } else {
                                 string_value = map.next_value()?;
@@ -391,6 +399,10 @@ impl<'de> serde::Deserialize<'de> for CustomFieldEssentialsWithValue {
 /// The endpoint for all custom fields
 #[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
+#[expect(
+    clippy::empty_structs_with_brackets,
+    reason = "derive_builder requires named-field syntax"
+)]
 pub struct ListCustomFields {}
 
 impl ReturnsJsonResponse for ListCustomFields {}

@@ -159,29 +159,29 @@ pub enum ToolbarLanguage {
 impl std::fmt::Display for ToolbarLanguage {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ToolbarLanguage::C => write!(f, "c"),
-            ToolbarLanguage::Cpp => write!(f, "cpp"),
-            ToolbarLanguage::Csharp => write!(f, "csharp"),
-            ToolbarLanguage::Css => write!(f, "css"),
-            ToolbarLanguage::Diff => write!(f, "diff"),
-            ToolbarLanguage::Go => write!(f, "go"),
-            ToolbarLanguage::Groovy => write!(f, "groovy"),
-            ToolbarLanguage::Html => write!(f, "html"),
-            ToolbarLanguage::Java => write!(f, "java"),
-            ToolbarLanguage::Javascript => write!(f, "javascript"),
-            ToolbarLanguage::Objc => write!(f, "objc"),
-            ToolbarLanguage::Perl => write!(f, "perl"),
-            ToolbarLanguage::Php => write!(f, "php"),
-            ToolbarLanguage::Python => write!(f, "python"),
-            ToolbarLanguage::R => write!(f, "r"),
-            ToolbarLanguage::Ruby => write!(f, "ruby"),
-            ToolbarLanguage::Sass => write!(f, "sass"),
-            ToolbarLanguage::Scala => write!(f, "scala"),
-            ToolbarLanguage::Shell => write!(f, "shell"),
-            ToolbarLanguage::Sql => write!(f, "sql"),
-            ToolbarLanguage::Swift => write!(f, "swift"),
-            ToolbarLanguage::Xml => write!(f, "xml"),
-            ToolbarLanguage::Yaml => write!(f, "yaml"),
+            Self::C => write!(f, "c"),
+            Self::Cpp => write!(f, "cpp"),
+            Self::Csharp => write!(f, "csharp"),
+            Self::Css => write!(f, "css"),
+            Self::Diff => write!(f, "diff"),
+            Self::Go => write!(f, "go"),
+            Self::Groovy => write!(f, "groovy"),
+            Self::Html => write!(f, "html"),
+            Self::Java => write!(f, "java"),
+            Self::Javascript => write!(f, "javascript"),
+            Self::Objc => write!(f, "objc"),
+            Self::Perl => write!(f, "perl"),
+            Self::Php => write!(f, "php"),
+            Self::Python => write!(f, "python"),
+            Self::R => write!(f, "r"),
+            Self::Ruby => write!(f, "ruby"),
+            Self::Sass => write!(f, "sass"),
+            Self::Scala => write!(f, "scala"),
+            Self::Shell => write!(f, "shell"),
+            Self::Sql => write!(f, "sql"),
+            Self::Swift => write!(f, "swift"),
+            Self::Xml => write!(f, "xml"),
+            Self::Yaml => write!(f, "yaml"),
         }
     }
 }
@@ -199,8 +199,8 @@ pub enum AutoWatchAction {
 impl std::fmt::Display for AutoWatchAction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            AutoWatchAction::IssueCreated => write!(f, "issue_created"),
-            AutoWatchAction::IssueContributedTo => write!(f, "issue_contributed_to"),
+            Self::IssueCreated => write!(f, "issue_created"),
+            Self::IssueContributedTo => write!(f, "issue_contributed_to"),
         }
     }
 }
@@ -208,6 +208,10 @@ impl std::fmt::Display for AutoWatchAction {
 /// The endpoint to retrieve the current user's my account settings/data
 #[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
+#[expect(
+    clippy::empty_structs_with_brackets,
+    reason = "derive_builder requires named-field syntax"
+)]
 pub struct GetMyAccount {}
 
 impl ReturnsJsonResponse for GetMyAccount {}

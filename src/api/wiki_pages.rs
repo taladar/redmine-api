@@ -132,8 +132,8 @@ pub struct ListProjectWikiPages<'a> {
     include: Option<Vec<WikiPageInclude>>,
 }
 
-impl<'a> ReturnsJsonResponse for ListProjectWikiPages<'a> {}
-impl<'a> NoPagination for ListProjectWikiPages<'a> {}
+impl ReturnsJsonResponse for ListProjectWikiPages<'_> {}
+impl NoPagination for ListProjectWikiPages<'_> {}
 
 impl<'a> ListProjectWikiPages<'a> {
     /// Create a builder for the endpoint.
@@ -143,7 +143,7 @@ impl<'a> ListProjectWikiPages<'a> {
     }
 }
 
-impl<'a> Endpoint for ListProjectWikiPages<'a> {
+impl Endpoint for ListProjectWikiPages<'_> {
     fn method(&self) -> Method {
         Method::GET
     }
@@ -342,7 +342,7 @@ impl<'a> DeleteProjectWikiPage<'a> {
     }
 }
 
-impl<'a> Endpoint for DeleteProjectWikiPage<'a> {
+impl Endpoint for DeleteProjectWikiPage<'_> {
     fn method(&self) -> Method {
         Method::DELETE
     }
@@ -385,7 +385,7 @@ impl<'a> DeleteProjectWikiPageVersion<'a> {
     }
 }
 
-impl<'a> Endpoint for DeleteProjectWikiPageVersion<'a> {
+impl Endpoint for DeleteProjectWikiPageVersion<'_> {
     fn method(&self) -> Method {
         Method::DELETE
     }
@@ -508,6 +508,7 @@ pub(crate) mod test {
     use crate::api::projects::{ListProjects, Project, ProjectsInclude, test::PROJECT_LOCK};
 
     use super::*;
+    use pretty_assertions::assert_eq;
     use std::error::Error;
     use tokio::sync::RwLock;
     use tracing_test::traced_test;

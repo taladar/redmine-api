@@ -33,7 +33,7 @@ pub struct GroupEssentials {
 
 impl From<Group> for GroupEssentials {
     fn from(v: Group) -> Self {
-        GroupEssentials {
+        Self {
             id: v.id,
             name: v.name,
         }
@@ -42,7 +42,7 @@ impl From<Group> for GroupEssentials {
 
 impl From<&Group> for GroupEssentials {
     fn from(v: &Group) -> Self {
-        GroupEssentials {
+        Self {
             id: v.id,
             name: v.name.to_owned(),
         }

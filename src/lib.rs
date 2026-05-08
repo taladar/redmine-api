@@ -1,31 +1,27 @@
-#![deny(unknown_lints)]
-#![deny(renamed_and_removed_lints)]
-#![forbid(unsafe_code)]
-#![deny(deprecated)]
-#![forbid(private_interfaces)]
-#![forbid(private_bounds)]
-#![forbid(non_fmt_panics)]
-#![deny(unreachable_code)]
-#![deny(unreachable_patterns)]
-#![forbid(unused_doc_comments)]
-#![forbid(unused_must_use)]
-#![deny(while_true)]
-#![deny(unused_parens)]
-#![deny(redundant_semicolons)]
-#![deny(non_ascii_idents)]
-#![deny(confusable_idents)]
-#![warn(missing_docs)]
-#![warn(clippy::missing_docs_in_private_items)]
-#![warn(clippy::cargo_common_metadata)]
-#![warn(rustdoc::missing_crate_level_docs)]
-#![deny(rustdoc::broken_intra_doc_links)]
-#![warn(missing_debug_implementations)]
-#![deny(clippy::mod_module_files)]
-//#![warn(clippy::pedantic)]
-#![warn(clippy::redundant_else)]
-#![warn(clippy::must_use_candidate)]
-#![warn(clippy::missing_panics_doc)]
-#![warn(clippy::missing_errors_doc)]
+#![expect(
+    single_use_lifetimes,
+    reason = "endpoint structs hold Cow<'a, str> for cheap borrowed string parameters; the lifetime appears once in the struct but propagates to every call site"
+)]
+#![expect(
+    clippy::module_name_repetitions,
+    reason = "Redmine REST resource types share their module's name (e.g. ListIssues in api::issues) for self-documenting public re-exports"
+)]
+#![expect(
+    clippy::future_not_send,
+    reason = "the async client is not Send by design; the underlying reqwest::Client is shared via Arc"
+)]
+#![cfg_attr(
+    test,
+    expect(
+        unreachable_pub,
+        clippy::unwrap_used,
+        clippy::panic,
+        clippy::indexing_slicing,
+        clippy::arithmetic_side_effects,
+        clippy::print_stderr,
+        reason = "tests use panicking patterns and helper items idiomatically"
+    )
+)]
 #![doc = include_str!("../README.md")]
 
 pub mod api;

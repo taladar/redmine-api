@@ -24,7 +24,7 @@ pub struct IssuePriorityEssentials {
 
 impl From<IssuePriority> for IssuePriorityEssentials {
     fn from(v: IssuePriority) -> Self {
-        IssuePriorityEssentials {
+        Self {
             id: v.id,
             name: v.name,
         }
@@ -33,7 +33,7 @@ impl From<IssuePriority> for IssuePriorityEssentials {
 
 impl From<&IssuePriority> for IssuePriorityEssentials {
     fn from(v: &IssuePriority) -> Self {
-        IssuePriorityEssentials {
+        Self {
             id: v.id,
             name: v.name.to_owned(),
         }
@@ -58,6 +58,10 @@ pub struct IssuePriority {
 /// The endpoint for all issue priorities
 #[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
+#[expect(
+    clippy::empty_structs_with_brackets,
+    reason = "derive_builder requires named-field syntax"
+)]
 pub struct ListIssuePriorities {}
 
 impl ReturnsJsonResponse for ListIssuePriorities {}
@@ -100,7 +104,7 @@ pub struct TimeEntryActivityEssentials {
 
 impl From<TimeEntryActivity> for TimeEntryActivityEssentials {
     fn from(v: TimeEntryActivity) -> Self {
-        TimeEntryActivityEssentials {
+        Self {
             id: v.id,
             name: v.name,
         }
@@ -109,7 +113,7 @@ impl From<TimeEntryActivity> for TimeEntryActivityEssentials {
 
 impl From<&TimeEntryActivity> for TimeEntryActivityEssentials {
     fn from(v: &TimeEntryActivity) -> Self {
-        TimeEntryActivityEssentials {
+        Self {
             id: v.id,
             name: v.name.to_owned(),
         }
@@ -134,6 +138,10 @@ pub struct TimeEntryActivity {
 /// The endpoint for all time entry activities
 #[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
+#[expect(
+    clippy::empty_structs_with_brackets,
+    reason = "derive_builder requires named-field syntax"
+)]
 pub struct ListTimeEntryActivities {}
 
 impl ReturnsJsonResponse for ListTimeEntryActivities {}
@@ -176,7 +184,7 @@ pub struct DocumentCategoryEssentials {
 
 impl From<DocumentCategory> for DocumentCategoryEssentials {
     fn from(v: DocumentCategory) -> Self {
-        DocumentCategoryEssentials {
+        Self {
             id: v.id,
             name: v.name,
         }
@@ -185,7 +193,7 @@ impl From<DocumentCategory> for DocumentCategoryEssentials {
 
 impl From<&DocumentCategory> for DocumentCategoryEssentials {
     fn from(v: &DocumentCategory) -> Self {
-        DocumentCategoryEssentials {
+        Self {
             id: v.id,
             name: v.name.to_owned(),
         }
@@ -210,6 +218,10 @@ pub struct DocumentCategory {
 /// The endpoint for all document categories
 #[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
+#[expect(
+    clippy::empty_structs_with_brackets,
+    reason = "derive_builder requires named-field syntax"
+)]
 pub struct ListDocumentCategories {}
 
 impl ReturnsJsonResponse for ListDocumentCategories {}

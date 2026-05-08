@@ -51,7 +51,7 @@ use std::str::from_utf8;
 
 use serde::Deserialize;
 use serde::Deserializer;
-use serde::Serialize;
+use serde::Serialize as _;
 use serde::de::DeserializeOwned;
 
 use reqwest::Method;
@@ -62,6 +62,10 @@ use tracing::{debug, error, trace};
 
 /// main API client object (sync)
 #[derive(derive_more::Debug)]
+#[expect(
+    clippy::struct_field_names,
+    reason = "redmine_url disambiguates from the impersonate_user_id and matches public accessor naming"
+)]
 pub struct Redmine {
     /// the reqwest client we use to perform our API requests
     client: reqwest::blocking::Client,
@@ -163,13 +167,13 @@ impl Redmine {
     /// Sets the user id of a user to impersonate in all future API calls
     ///
     /// this requires Redmine admin privileges
-    pub fn impersonate_user(&mut self, id: u64) {
+    pub const fn impersonate_user(&mut self, id: u64) {
         self.impersonate_user_id = Some(id);
     }
 
     /// returns the redmine base url
     #[must_use]
-    pub fn redmine_url(&self) -> &Url {
+    pub const fn redmine_url(&self) -> &Url {
         &self.redmine_url
     }
 
@@ -178,9 +182,13 @@ impl Redmine {
     /// this is mostly for convenience since we are already storing the
     /// redmine URL and it works entirely on the client
     #[must_use]
-    #[allow(clippy::missing_panics_doc)]
+    #[expect(
+        clippy::missing_panics_doc,
+        clippy::unwrap_used,
+        reason = "join cannot fail for a constant relative URL"
+    )]
     pub fn issue_url(&self, issue_id: u64) -> Url {
-        let Redmine { redmine_url, .. } = self;
+        let Self { redmine_url, .. } = self;
         // we can unwrap here because we know /issues/<number>
         // parses successfully as an url fragment
         redmine_url.join(&format!("/issues/{issue_id}")).unwrap()
@@ -195,7 +203,7 @@ impl Redmine {
         parameters: QueryParams,
         mime_type_and_body: Option<(&str, Vec<u8>)>,
     ) -> Result<(reqwest::StatusCode, bytes::Bytes), crate::Error> {
-        let Redmine {
+        let Self {
             client,
             redmine_url,
             api_key,
@@ -381,6 +389,10 @@ impl Redmine {
     /// parsed as a JSON object, when any of the pagination keys or the value key are missing
     /// in the JSON object or when the values can not be parsed as the result type.
     ///
+    #[expect(
+        clippy::arithmetic_side_effects,
+        reason = "u64 pagination counters; overflow requires impossibly many results"
+    )]
     pub fn json_response_body_all_pages<E, R>(&self, endpoint: &E) -> Result<Vec<R>, crate::Error>
     where
         E: Endpoint + ReturnsJsonResponse + Pageable,
@@ -448,7 +460,7 @@ impl Redmine {
 
     /// use this to get the results for all pages of a paginated JSON response
     /// as an Iterator
-    pub fn json_response_body_all_pages_iter<'a, 'e, 'i, E, R>(
+    pub const fn json_response_body_all_pages_iter<'a, 'e, 'i, E, R>(
         &'a self,
         endpoint: &'e E,
     ) -> AllPages<'i, E, R>
@@ -502,13 +514,13 @@ impl RedmineAsync {
     /// Sets the user id of a user to impersonate in all future API calls
     ///
     /// this requires Redmine admin privileges
-    pub fn impersonate_user(&mut self, id: u64) {
+    pub const fn impersonate_user(&mut self, id: u64) {
         self.impersonate_user_id = Some(id);
     }
 
     /// returns the redmine base url
     #[must_use]
-    pub fn redmine_url(&self) -> &Url {
+    pub const fn redmine_url(&self) -> &Url {
         &self.redmine_url
     }
 
@@ -517,9 +529,13 @@ impl RedmineAsync {
     /// this is mostly for convenience since we are already storing the
     /// redmine URL and it works entirely on the client
     #[must_use]
-    #[allow(clippy::missing_panics_doc)]
+    #[expect(
+        clippy::missing_panics_doc,
+        clippy::unwrap_used,
+        reason = "join cannot fail for a constant relative URL"
+    )]
     pub fn issue_url(&self, issue_id: u64) -> Url {
-        let RedmineAsync { redmine_url, .. } = self;
+        let Self { redmine_url, .. } = self;
         // we can unwrap here because we know /issues/<number>
         // parses successfully as an url fragment
         redmine_url.join(&format!("/issues/{issue_id}")).unwrap()
@@ -534,7 +550,7 @@ impl RedmineAsync {
         parameters: QueryParams<'_>,
         mime_type_and_body: Option<(&str, Vec<u8>)>,
     ) -> Result<(reqwest::StatusCode, bytes::Bytes), crate::Error> {
-        let RedmineAsync {
+        let Self {
             client,
             redmine_url,
             api_key,
@@ -734,6 +750,11 @@ impl RedmineAsync {
     /// parsed as a JSON object, when any of the pagination keys or the value key are missing
     /// in the JSON object or when the values can not be parsed as the result type.
     ///
+    #[expect(
+        clippy::arithmetic_side_effects,
+        clippy::clone_on_ref_ptr,
+        reason = "u64 pagination counters; cloning an Arc<Self> is intentional to keep the Arc alive across the await"
+    )]
     pub async fn json_response_body_all_pages<E, R>(
         self: std::sync::Arc<Self>,
         endpoint: impl EndpointParameter<E>,
@@ -822,7 +843,6 @@ impl RedmineAsync {
 
 /// A trait representing a parameter value.
 pub trait ParamValue<'a> {
-    #[allow(clippy::wrong_self_convention)]
     /// The parameter value as a string.
     fn as_value(&self) -> Cow<'a, str>;
 }
@@ -882,12 +902,12 @@ where
 }
 
 impl<'a> ParamValue<'a> for Cow<'a, str> {
-    fn as_value(&self) -> Cow<'a, str> {
+    fn as_value(&self) -> Self {
         self.clone()
     }
 }
 
-impl<'a, 'b: 'a> ParamValue<'a> for &'b Cow<'a, str> {
+impl<'a> ParamValue<'a> for &'a Cow<'a, str> {
     fn as_value(&self) -> Cow<'a, str> {
         (*self).clone()
     }
@@ -906,6 +926,10 @@ impl ParamValue<'static> for f64 {
 }
 
 impl ParamValue<'static> for time::OffsetDateTime {
+    #[expect(
+        clippy::unwrap_used,
+        reason = "RFC 3339 formatting cannot fail for a fully-populated OffsetDateTime"
+    )]
     fn as_value(&self) -> Cow<'static, str> {
         self.format(&time::format_description::well_known::Rfc3339)
             .unwrap()
@@ -914,6 +938,10 @@ impl ParamValue<'static> for time::OffsetDateTime {
 }
 
 impl ParamValue<'static> for time::Date {
+    #[expect(
+        clippy::unwrap_used,
+        reason = "the format description literal is a constant valid format"
+    )]
     fn as_value(&self) -> Cow<'static, str> {
         let format = time::format_description::parse("[year]-[month]-[day]").unwrap();
         self.format(&format).unwrap().into()
@@ -963,11 +991,15 @@ pub enum DateTimeFilterPast {
 }
 
 impl std::fmt::Display for DateTimeFilterPast {
+    #[expect(
+        clippy::expect_used,
+        reason = "the format_description!() macro produces a known-good format that cannot fail at runtime"
+    )]
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let format =
             time::macros::format_description!("[year]-[month]-[day]T[hour]:[minute]:[second]Z");
         match self {
-            DateTimeFilterPast::ExactMatch(v) => {
+            Self::ExactMatch(v) => {
                 write!(
                     f,
                     "{}",
@@ -976,7 +1008,7 @@ impl std::fmt::Display for DateTimeFilterPast {
                     )
                 )
             }
-            DateTimeFilterPast::Range(v_start, v_end) => {
+            Self::Range(v_start, v_end) => {
                 write!(
                     f,
                     "><{}|{}",
@@ -988,7 +1020,7 @@ impl std::fmt::Display for DateTimeFilterPast {
                     ),
                 )
             }
-            DateTimeFilterPast::LessThanOrEqual(v) => {
+            Self::LessThanOrEqual(v) => {
                 write!(
                     f,
                     "<={}",
@@ -997,7 +1029,7 @@ impl std::fmt::Display for DateTimeFilterPast {
                     )
                 )
             }
-            DateTimeFilterPast::GreaterThanOrEqual(v) => {
+            Self::GreaterThanOrEqual(v) => {
                 write!(
                     f,
                     ">={}",
@@ -1006,46 +1038,46 @@ impl std::fmt::Display for DateTimeFilterPast {
                     )
                 )
             }
-            DateTimeFilterPast::LessThanDaysAgo(d) => {
-                write!(f, ">t-{}", d)
+            Self::LessThanDaysAgo(d) => {
+                write!(f, ">t-{d}")
             }
-            DateTimeFilterPast::MoreThanDaysAgo(d) => {
-                write!(f, "<t-{}", d)
+            Self::MoreThanDaysAgo(d) => {
+                write!(f, "<t-{d}")
             }
-            DateTimeFilterPast::WithinPastDays(d) => {
-                write!(f, "><t-{}", d)
+            Self::WithinPastDays(d) => {
+                write!(f, "><t-{d}")
             }
-            DateTimeFilterPast::ExactDaysAgo(d) => {
-                write!(f, "t-{}", d)
+            Self::ExactDaysAgo(d) => {
+                write!(f, "t-{d}")
             }
-            DateTimeFilterPast::Today => {
+            Self::Today => {
                 write!(f, "t")
             }
-            DateTimeFilterPast::Yesterday => {
+            Self::Yesterday => {
                 write!(f, "ld")
             }
-            DateTimeFilterPast::ThisWeek => {
+            Self::ThisWeek => {
                 write!(f, "w")
             }
-            DateTimeFilterPast::LastWeek => {
+            Self::LastWeek => {
                 write!(f, "lw")
             }
-            DateTimeFilterPast::LastTwoWeeks => {
+            Self::LastTwoWeeks => {
                 write!(f, "l2w")
             }
-            DateTimeFilterPast::ThisMonth => {
+            Self::ThisMonth => {
                 write!(f, "m")
             }
-            DateTimeFilterPast::LastMonth => {
+            Self::LastMonth => {
                 write!(f, "lm")
             }
-            DateTimeFilterPast::ThisYear => {
+            Self::ThisYear => {
                 write!(f, "y")
             }
-            DateTimeFilterPast::Unset => {
+            Self::Unset => {
                 write!(f, "!*")
             }
-            DateTimeFilterPast::Any => {
+            Self::Any => {
                 write!(f, "*")
             }
         }
@@ -1064,10 +1096,10 @@ pub enum StringFieldFilter {
 impl std::fmt::Display for StringFieldFilter {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            StringFieldFilter::ExactMatch(s) => {
+            Self::ExactMatch(s) => {
                 write!(f, "{s}")
             }
-            StringFieldFilter::SubStringMatch(s) => {
+            Self::SubStringMatch(s) => {
                 write!(f, "~{s}")
             }
         }
@@ -1103,12 +1135,12 @@ pub enum FloatFilter {
 impl std::fmt::Display for FloatFilter {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            FloatFilter::ExactMatch(v) => write!(f, "{}", v),
-            FloatFilter::Range(v_start, v_end) => write!(f, "><{}|{}", v_start, v_end),
-            FloatFilter::LessThanOrEqual(v) => write!(f, "<={}", v),
-            FloatFilter::GreaterThanOrEqual(v) => write!(f, ">={}", v),
-            FloatFilter::Any => write!(f, "*"),
-            FloatFilter::None => write!(f, "!*"),
+            Self::ExactMatch(v) => write!(f, "{v}"),
+            Self::Range(v_start, v_end) => write!(f, "><{v_start}|{v_end}"),
+            Self::LessThanOrEqual(v) => write!(f, "<={v}"),
+            Self::GreaterThanOrEqual(v) => write!(f, ">={v}"),
+            Self::Any => write!(f, "*"),
+            Self::None => write!(f, "!*"),
         }
     }
 }
@@ -1133,12 +1165,12 @@ pub enum IntegerFilter {
 impl std::fmt::Display for IntegerFilter {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            IntegerFilter::ExactMatch(v) => write!(f, "{}", v),
-            IntegerFilter::Range(v_start, v_end) => write!(f, "><{}|{}", v_start, v_end),
-            IntegerFilter::LessThanOrEqual(v) => write!(f, "<={}", v),
-            IntegerFilter::GreaterThanOrEqual(v) => write!(f, ">={}", v),
-            IntegerFilter::Any => write!(f, "*"),
-            IntegerFilter::None => write!(f, "!*"),
+            Self::ExactMatch(v) => write!(f, "{v}"),
+            Self::Range(v_start, v_end) => write!(f, "><{v_start}|{v_end}"),
+            Self::LessThanOrEqual(v) => write!(f, "<={v}"),
+            Self::GreaterThanOrEqual(v) => write!(f, ">={v}"),
+            Self::Any => write!(f, "*"),
+            Self::None => write!(f, "!*"),
         }
     }
 }
@@ -1159,9 +1191,9 @@ pub enum TrackerFilter {
 impl std::fmt::Display for TrackerFilter {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            TrackerFilter::Any => write!(f, "*"),
-            TrackerFilter::None => write!(f, "!*"),
-            TrackerFilter::TheseTrackers(ids) => {
+            Self::Any => write!(f, "*"),
+            Self::None => write!(f, "!*"),
+            Self::TheseTrackers(ids) => {
                 let s: String = ids
                     .iter()
                     .map(|e| e.to_string())
@@ -1169,7 +1201,7 @@ impl std::fmt::Display for TrackerFilter {
                     .join(",");
                 write!(f, "{s}")
             }
-            TrackerFilter::NotTheseTrackers(ids) => {
+            Self::NotTheseTrackers(ids) => {
                 let s: String = ids
                     .iter()
                     .map(|e| format!("!{e}"))
@@ -1197,9 +1229,9 @@ pub enum ActivityFilter {
 impl std::fmt::Display for ActivityFilter {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ActivityFilter::Any => write!(f, "*"),
-            ActivityFilter::None => write!(f, "!*"),
-            ActivityFilter::TheseActivities(ids) => {
+            Self::Any => write!(f, "*"),
+            Self::None => write!(f, "!*"),
+            Self::TheseActivities(ids) => {
                 let s: String = ids
                     .iter()
                     .map(|e| e.to_string())
@@ -1207,7 +1239,7 @@ impl std::fmt::Display for ActivityFilter {
                     .join(",");
                 write!(f, "{s}")
             }
-            ActivityFilter::NotTheseActivities(ids) => {
+            Self::NotTheseActivities(ids) => {
                 let s: String = ids
                     .iter()
                     .map(|e| format!("!{e}"))
@@ -1235,9 +1267,9 @@ pub enum VersionFilter {
 impl std::fmt::Display for VersionFilter {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            VersionFilter::Any => write!(f, "*"),
-            VersionFilter::None => write!(f, "!*"),
-            VersionFilter::TheseVersions(ids) => {
+            Self::Any => write!(f, "*"),
+            Self::None => write!(f, "!*"),
+            Self::TheseVersions(ids) => {
                 let s: String = ids
                     .iter()
                     .map(|e| e.to_string())
@@ -1245,7 +1277,7 @@ impl std::fmt::Display for VersionFilter {
                     .join(",");
                 write!(f, "{s}")
             }
-            VersionFilter::NotTheseVersions(ids) => {
+            Self::NotTheseVersions(ids) => {
                 let s: String = ids
                     .iter()
                     .map(|e| format!("!{e}"))
@@ -1313,10 +1345,14 @@ pub enum DateFilter {
 }
 
 impl std::fmt::Display for DateFilter {
+    #[expect(
+        clippy::expect_used,
+        reason = "the format_description!() macro produces a known-good format that cannot fail at runtime"
+    )]
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let format = time::macros::format_description!("[year]-[month]-[day]");
         match self {
-            DateFilter::ExactMatch(v) => {
+            Self::ExactMatch(v) => {
                 write!(
                     f,
                     "{}",
@@ -1324,7 +1360,7 @@ impl std::fmt::Display for DateFilter {
                         .expect("Error formatting Date in DateFilter::ExactMatch")
                 )
             }
-            DateFilter::Range(v_start, v_end) => {
+            Self::Range(v_start, v_end) => {
                 write!(
                     f,
                     "><{}|{}",
@@ -1336,7 +1372,7 @@ impl std::fmt::Display for DateFilter {
                         .expect("Error formatting second Date in DateFilter::Range"),
                 )
             }
-            DateFilter::LessThanOrEqual(v) => {
+            Self::LessThanOrEqual(v) => {
                 write!(
                     f,
                     "<={}",
@@ -1344,7 +1380,7 @@ impl std::fmt::Display for DateFilter {
                         .expect("Error formatting Date in DateFilter::LessThanOrEqual")
                 )
             }
-            DateFilter::GreaterThanOrEqual(v) => {
+            Self::GreaterThanOrEqual(v) => {
                 write!(
                     f,
                     ">={}",
@@ -1352,67 +1388,67 @@ impl std::fmt::Display for DateFilter {
                         .expect("Error formatting Date in DateFilter::GreaterThanOrEqual")
                 )
             }
-            DateFilter::LessThanDaysAgo(d) => {
-                write!(f, ">t-{}", d)
+            Self::LessThanDaysAgo(d) => {
+                write!(f, ">t-{d}")
             }
-            DateFilter::MoreThanDaysAgo(d) => {
-                write!(f, "<t-{}", d)
+            Self::MoreThanDaysAgo(d) => {
+                write!(f, "<t-{d}")
             }
-            DateFilter::WithinPastDays(d) => {
-                write!(f, "><t-{}", d)
+            Self::WithinPastDays(d) => {
+                write!(f, "><t-{d}")
             }
-            DateFilter::ExactDaysAgo(d) => {
-                write!(f, "t-{}", d)
+            Self::ExactDaysAgo(d) => {
+                write!(f, "t-{d}")
             }
-            DateFilter::InLessThanDays(d) => {
-                write!(f, "<t+{}", d)
+            Self::InLessThanDays(d) => {
+                write!(f, "<t+{d}")
             }
-            DateFilter::InMoreThanDays(d) => {
-                write!(f, ">t+{}", d)
+            Self::InMoreThanDays(d) => {
+                write!(f, ">t+{d}")
             }
-            DateFilter::WithinFutureDays(d) => {
-                write!(f, "><t+{}", d)
+            Self::WithinFutureDays(d) => {
+                write!(f, "><t+{d}")
             }
-            DateFilter::InExactDays(d) => {
-                write!(f, "t+{}", d)
+            Self::InExactDays(d) => {
+                write!(f, "t+{d}")
             }
-            DateFilter::Today => {
+            Self::Today => {
                 write!(f, "t")
             }
-            DateFilter::Yesterday => {
+            Self::Yesterday => {
                 write!(f, "ld")
             }
-            DateFilter::Tomorrow => {
+            Self::Tomorrow => {
                 write!(f, "nd")
             }
-            DateFilter::ThisWeek => {
+            Self::ThisWeek => {
                 write!(f, "w")
             }
-            DateFilter::LastWeek => {
+            Self::LastWeek => {
                 write!(f, "lw")
             }
-            DateFilter::LastTwoWeeks => {
+            Self::LastTwoWeeks => {
                 write!(f, "l2w")
             }
-            DateFilter::NextWeek => {
+            Self::NextWeek => {
                 write!(f, "nw")
             }
-            DateFilter::ThisMonth => {
+            Self::ThisMonth => {
                 write!(f, "m")
             }
-            DateFilter::LastMonth => {
+            Self::LastMonth => {
                 write!(f, "lm")
             }
-            DateFilter::NextMonth => {
+            Self::NextMonth => {
                 write!(f, "nm")
             }
-            DateFilter::ThisYear => {
+            Self::ThisYear => {
                 write!(f, "y")
             }
-            DateFilter::Unset => {
+            Self::Unset => {
                 write!(f, "!*")
             }
-            DateFilter::Any => {
+            Self::Any => {
                 write!(f, "*")
             }
         }
@@ -1623,7 +1659,7 @@ pub struct AllPages<'i, E, R> {
 
 impl<'i, E, R> AllPages<'i, E, R> {
     /// create a new AllPages Iterator
-    pub fn new(redmine: &'i Redmine, endpoint: &'i E) -> Self {
+    pub const fn new(redmine: &'i Redmine, endpoint: &'i E) -> Self {
         Self {
             redmine,
             endpoint,
@@ -1636,13 +1672,17 @@ impl<'i, E, R> AllPages<'i, E, R> {
     }
 }
 
-impl<'i, E, R> Iterator for AllPages<'i, E, R>
+impl<E, R> Iterator for AllPages<'_, E, R>
 where
     E: Endpoint + ReturnsJsonResponse + Pageable,
     R: DeserializeOwned + std::fmt::Debug,
 {
     type Item = Result<R, crate::Error>;
 
+    #[expect(
+        clippy::arithmetic_side_effects,
+        reason = "u64 pagination counters; overflow requires impossibly many results"
+    )]
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(next) = self.reversed_rest.pop() {
             self.yielded += 1;
@@ -1677,6 +1717,12 @@ where
         }
     }
 
+    #[expect(
+        clippy::arithmetic_side_effects,
+        clippy::cast_possible_truncation,
+        clippy::as_conversions,
+        reason = "remaining = total_count - yielded; size_hint upper bound is best-effort"
+    )]
     fn size_hint(&self) -> (usize, Option<usize>) {
         if let Some(total_count) = self.total_count {
             (
@@ -1693,7 +1739,10 @@ where
 #[pin_project::pin_project]
 pub struct AllPagesAsync<E, R> {
     /// the inner future while we are fetching new data
-    #[allow(clippy::type_complexity)]
+    #[expect(
+        clippy::type_complexity,
+        reason = "boxed pinned future signature is intrinsically nested"
+    )]
     #[pin]
     inner: Option<
         std::pin::Pin<Box<dyn futures::Future<Output = Result<ResponsePage<R>, crate::Error>>>>,
@@ -1754,6 +1803,12 @@ where
 {
     type Item = Result<R, crate::Error>;
 
+    #[expect(
+        clippy::arithmetic_side_effects,
+        clippy::clone_on_ref_ptr,
+        clippy::renamed_function_params,
+        reason = "u64 pagination counters; Arc clones are intentional; ctx parameter name is preserved for clarity"
+    )]
     fn poll_next(
         mut self: std::pin::Pin<&mut Self>,
         ctx: &mut std::task::Context<'_>,
@@ -1802,6 +1857,12 @@ where
         }
     }
 
+    #[expect(
+        clippy::arithmetic_side_effects,
+        clippy::cast_possible_truncation,
+        clippy::as_conversions,
+        reason = "remaining = total_count - yielded; size_hint upper bound is best-effort"
+    )]
     fn size_hint(&self) -> (usize, Option<usize>) {
         if let Some(total_count) = self.total_count {
             (
@@ -1834,7 +1895,7 @@ where
 }
 
 impl<E> EndpointParameter<E> for std::sync::Arc<E> {
-    fn into_arc(self) -> std::sync::Arc<E> {
+    fn into_arc(self) -> Self {
         self
     }
 }

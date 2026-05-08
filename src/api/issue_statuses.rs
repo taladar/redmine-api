@@ -25,7 +25,7 @@ pub struct IssueStatusEssentials {
 
 impl From<IssueStatus> for IssueStatusEssentials {
     fn from(v: IssueStatus) -> Self {
-        IssueStatusEssentials {
+        Self {
             id: v.id,
             is_closed: Some(v.is_closed),
             name: v.name,
@@ -35,7 +35,7 @@ impl From<IssueStatus> for IssueStatusEssentials {
 
 impl From<&IssueStatus> for IssueStatusEssentials {
     fn from(v: &IssueStatus) -> Self {
-        IssueStatusEssentials {
+        Self {
             id: v.id,
             is_closed: Some(v.is_closed),
             name: v.name.to_owned(),
@@ -61,6 +61,10 @@ pub struct IssueStatus {
 /// The endpoint for all issue statuses
 #[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
+#[expect(
+    clippy::empty_structs_with_brackets,
+    reason = "derive_builder requires named-field syntax"
+)]
 pub struct ListIssueStatuses {}
 
 impl ReturnsJsonResponse for ListIssueStatuses {}

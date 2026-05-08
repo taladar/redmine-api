@@ -89,13 +89,12 @@ endpoint here mainly to avoid accidental data loss from running a delete example
 copied from here on a production Redmine instance.
 
 ```rust
+use redmine_api::api::issues::{GetIssue, Issue, IssuesWrapper};
 use redmine_api::api::Redmine;
-use redmine_api::api::issues::{Issue, IssuesWrapper, GetIssue};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenvy::dotenv()?;
-    let client =
-      redmine_api::reqwest::blocking::Client::builder()
+    let client = redmine_api::reqwest::blocking::Client::builder()
         .use_rustls_tls()
         .build()?;
     let redmine = Redmine::from_env(client)?;
@@ -118,19 +117,17 @@ first page. This is implemented by having all endpoints that do not implement
 pagination implement the NoPagination trait.
 
 ```rust
+use redmine_api::api::issues::{GetIssue, Issue, IssueWrapper};
 use redmine_api::api::Redmine;
-use redmine_api::api::issues::{Issue, IssueWrapper, GetIssue};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenvy::dotenv()?;
-    let client =
-      redmine_api::reqwest::blocking::Client::builder()
+    let client = redmine_api::reqwest::blocking::Client::builder()
         .use_rustls_tls()
         .build()?;
     let redmine = Redmine::from_env(client)?;
     let endpoint = GetIssue::builder().id(1).build()?;
-    let IssueWrapper { issue } =
-        redmine.json_response_body::<_, IssueWrapper<Issue>>(&endpoint)?;
+    let IssueWrapper { issue } = redmine.json_response_body::<_, IssueWrapper<Issue>>(&endpoint)?;
     println!("Issue found:\n{:#?}", issue);
     Ok(())
 }
@@ -154,19 +151,22 @@ is wrapped in the [ResponsePage](api::ResponsePage) struct to
 return these values.
 
 ```rust
-use redmine_api::api::{Redmine,ResponsePage};
 use redmine_api::api::issues::{Issue, ListIssues};
+use redmine_api::api::{Redmine, ResponsePage};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenvy::dotenv()?;
-    let client =
-      redmine_api::reqwest::blocking::Client::builder()
+    let client = redmine_api::reqwest::blocking::Client::builder()
         .use_rustls_tls()
         .build()?;
     let redmine = Redmine::from_env(client)?;
     let endpoint = ListIssues::builder().build()?;
-    let ResponsePage { values: issues, total_count, offset, limit} =
-        redmine.json_response_body_page::<_, Issue>(&endpoint, 3, 25)?;
+    let ResponsePage {
+        values: issues,
+        total_count,
+        offset,
+        limit,
+    } = redmine.json_response_body_page::<_, Issue>(&endpoint, 3, 25)?;
     println!("Total count: {}", total_count);
     println!("Offset: {}", offset);
     println!("Limit: {}", limit);
@@ -191,19 +191,17 @@ page and not so much for those where hundreds of result pages are expected
 like unfiltered issues.
 
 ```rust
-use redmine_api::api::Redmine;
 use redmine_api::api::issues::{Issue, ListIssues};
+use redmine_api::api::Redmine;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenvy::dotenv()?;
-    let client =
-      redmine_api::reqwest::blocking::Client::builder()
+    let client = redmine_api::reqwest::blocking::Client::builder()
         .use_rustls_tls()
         .build()?;
     let redmine = Redmine::from_env(client)?;
     let endpoint = ListIssues::builder().build()?;
-    let issues =
-        redmine.json_response_body_all_pages::<_, Issue>(&endpoint)?;
+    let issues = redmine.json_response_body_all_pages::<_, Issue>(&endpoint)?;
     for issue in issues {
         println!("Issue found:\n{:#?}", issue);
     }
@@ -225,19 +223,17 @@ redmine instance, not for entities like projects where the number of pages
 are in the low single digits on most instances.
 
 ```rust
-use redmine_api::api::Redmine;
 use redmine_api::api::issues::{Issue, ListIssues};
+use redmine_api::api::Redmine;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenvy::dotenv()?;
-    let client =
-      redmine_api::reqwest::blocking::Client::builder()
+    let client = redmine_api::reqwest::blocking::Client::builder()
         .use_rustls_tls()
         .build()?;
     let redmine = Redmine::from_env(client)?;
     let endpoint = ListIssues::builder().build()?;
-    let issues =
-        redmine.json_response_body_all_pages_iter::<_, Issue>(&endpoint);
+    let issues = redmine.json_response_body_all_pages_iter::<_, Issue>(&endpoint);
     for issue in issues {
         let issue = issue?;
         println!("Issue found:\n{:#?}", issue);

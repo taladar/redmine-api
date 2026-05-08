@@ -1,7 +1,10 @@
 .*~
 .*.swp
-/target
-Cargo.lock
 .env
 tarpaulin-report.html
 tarpaulin-report.json
+/target
+bom.xml
+perf.data
+perf.data.old
+flamegraph.svg

@@ -29,7 +29,7 @@ pub struct IssueCategoryEssentials {
 
 impl From<IssueCategory> for IssueCategoryEssentials {
     fn from(v: IssueCategory) -> Self {
-        IssueCategoryEssentials {
+        Self {
             id: v.id,
             name: v.name,
         }
@@ -38,7 +38,7 @@ impl From<IssueCategory> for IssueCategoryEssentials {
 
 impl From<&IssueCategory> for IssueCategoryEssentials {
     fn from(v: &IssueCategory) -> Self {
-        IssueCategoryEssentials {
+        Self {
             id: v.id,
             name: v.name.to_owned(),
         }
