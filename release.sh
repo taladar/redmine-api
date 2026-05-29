@@ -15,7 +15,7 @@ version="$(cargo get package.version)"
 
 git cliff --prepend CHANGELOG.md -u -t "redmine_api_${version}"
 
-rumdl fmt --fix CHANGELOG.md
+rumdl fmt CHANGELOG.md
 
 cargo build
 
