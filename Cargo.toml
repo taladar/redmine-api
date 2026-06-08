@@ -19,12 +19,12 @@ derive_builder = "0.20.2"
 derive_more = { version = "2.1.1", features = ["debug"] }
 envy = "0.4.2"
 futures = "0.3.32"
-pin-project = "1.1.11"
-reqwest = { version = "0.13.2", default-features = false, features = ["blocking", "json"] }
+pin-project = "1.1.13"
+reqwest = { version = "0.13.4", default-features = false, features = ["blocking", "json"] }
 serde = { version = "1.0.228", features = ["derive"] }
-serde_json = "1.0.149"
+serde_json = "1.0.150"
 serde_repr = "0.1.20"
-serde_with = "3.18.0"
+serde_with = "3.21.0"
 thiserror = "2.0.18"
 time = { version = "0.3.47", features = ["macros", "serde", "serde-human-readable"] }
 tracing = { version = "0.1.44", features = ["log"] }
@@ -35,9 +35,9 @@ dotenvy = "0.15.7"
 finally-block = "0.2.0"
 function_name = "0.3.0"
 pretty_assertions = "1.4.1"
-reqwest = { version = "0.13.2", default-features = false, features = ["charset", "http2", "rustls"] }
+reqwest = { version = "0.13.4", default-features = false, features = ["charset", "http2", "rustls"] }
 tempfile = "3.27.0"
-tokio = { version = "1.51.0", features = ["full"] }
+tokio = { version = "1.52.3", features = ["full"] }
 tracing-test = "0.2.6"
 
 [profile.release]
