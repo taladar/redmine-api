@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.11.5 - 2026-06-08 13:03:31Z
+
+### ⚙️ Miscellaneous Tasks
+
+- Align with updated rust-templates lib template
+- *(template)* Sync later rust-templates lib improvements
+- *(dependencies)* Update dependencies
+
 ## 0.11.4 - 2026-04-07 14:46:59Z
 
 ### ⚙️ Miscellaneous Tasks

@@ -1283,7 +1283,7 @@ dependencies = [
 
 [[package]]
 name = "redmine-api"
-version = "0.11.4"
+version = "0.11.5"
 dependencies = [
  "bytes",
  "derive_builder",
