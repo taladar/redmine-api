@@ -173,10 +173,13 @@ mod test {
     #[traced_test]
     #[test]
     fn test_get_attachment() -> Result<(), Box<dyn Error>> {
-        use crate::api::issues::{CreateIssue, GetIssue, Issue, IssueWrapper, UploadedAttachment};
+        use crate::api::issues::{
+            CreateIssue, GetIssue, Issue, IssueWrapper, UploadedAttachment, test::ISSUES_LOCK,
+        };
         use crate::api::test_helpers::with_project;
         use crate::api::uploads::{FileUploadToken, UploadFile, UploadWrapper};
 
+        let _w_issues = ISSUES_LOCK.blocking_write();
         with_project("test_get_attachment", |redmine, project_id, _| {
             let upload_endpoint = UploadFile::builder().file("README.md").build()?;
             let UploadWrapper {
@@ -236,10 +239,13 @@ mod test {
     #[traced_test]
     #[test]
     fn test_update_delete_attachment() -> Result<(), Box<dyn Error>> {
-        use crate::api::issues::{CreateIssue, GetIssue, Issue, IssueWrapper, UploadedAttachment};
+        use crate::api::issues::{
+            CreateIssue, GetIssue, Issue, IssueWrapper, UploadedAttachment, test::ISSUES_LOCK,
+        };
         use crate::api::test_helpers::with_project;
         use crate::api::uploads::{FileUploadToken, UploadFile, UploadWrapper};
 
+        let _w_issues = ISSUES_LOCK.blocking_write();
         with_project("test_update_delete_attachment", |redmine, project_id, _| {
             let upload_endpoint = UploadFile::builder().file("README.md").build()?;
             let UploadWrapper {
