@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.11.6 - 2026-08-26 07:55:19Z
+
+### 🐛 Bug Fixes
+
+- *(tests)* Hold the ISSUES_LOCK write lock in the attachment tests
+
+### ⚙️ Miscellaneous Tasks
+
+- *(dependencies)* Update dependencies
+
 ## 0.11.5 - 2026-06-08 13:03:31Z
 
 ### ⚙️ Miscellaneous Tasks
