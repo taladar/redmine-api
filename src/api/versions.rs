@@ -140,7 +140,7 @@ impl Endpoint for GetVersion {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-        format!("versions/{}.json", &self.id).into()
+        format!("versions/{}.json", self.id).into()
     }
 }
 
@@ -360,7 +360,7 @@ impl Endpoint for DeleteVersion {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-        format!("versions/{}.json", &self.id).into()
+        format!("versions/{}.json", self.id).into()
     }
 }
 
@@ -386,7 +386,7 @@ impl Endpoint for CloseCompletedVersion {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-        format!("versions/{}/close_completed.json", &self.id).into()
+        format!("versions/{}/close_completed.json", self.id).into()
     }
 }
 

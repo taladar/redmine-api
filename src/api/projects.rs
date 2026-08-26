@@ -352,7 +352,7 @@ impl Endpoint for GetProject<'_> {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-        format!("projects/{}.json", &self.project_id_or_name).into()
+        format!("projects/{}.json", self.project_id_or_name).into()
     }
 
     fn parameters(&self) -> QueryParams<'_> {
@@ -385,7 +385,7 @@ impl Endpoint for ArchiveProject<'_> {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-        format!("projects/{}/archive.json", &self.project_id_or_name).into()
+        format!("projects/{}/archive.json", self.project_id_or_name).into()
     }
 }
 
@@ -412,7 +412,7 @@ impl Endpoint for UnarchiveProject<'_> {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-        format!("projects/{}/unarchive.json", &self.project_id_or_name).into()
+        format!("projects/{}/unarchive.json", self.project_id_or_name).into()
     }
 }
 
@@ -592,7 +592,7 @@ impl Endpoint for DeleteProject<'_> {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-        format!("projects/{}.json", &self.project_id_or_name).into()
+        format!("projects/{}.json", self.project_id_or_name).into()
     }
 }
 

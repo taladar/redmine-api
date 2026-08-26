@@ -541,7 +541,7 @@ impl Endpoint for DeleteUser {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-        format!("users/{}.json", &self.id).into()
+        format!("users/{}.json", self.id).into()
     }
 }
 

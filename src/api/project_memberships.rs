@@ -121,7 +121,7 @@ impl Endpoint for GetProjectMembership {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-        format!("memberships/{}.json", &self.id).into()
+        format!("memberships/{}.json", self.id).into()
     }
 }
 
@@ -231,7 +231,7 @@ impl Endpoint for DeleteProjectMembership {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-        format!("memberships/{}.json", &self.id).into()
+        format!("memberships/{}.json", self.id).into()
     }
 }
 

@@ -75,7 +75,7 @@ impl Endpoint for GetAttachment {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-        format!("attachments/{}.json", &self.id).into()
+        format!("attachments/{}.json", self.id).into()
     }
 }
 
@@ -106,7 +106,7 @@ impl Endpoint for UpdateAttachment {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-        format!("attachments/{}.json", &self.id).into()
+        format!("attachments/{}.json", self.id).into()
     }
 
     fn body(&self) -> Result<Option<(&'static str, Vec<u8>)>, crate::Error> {
@@ -152,7 +152,7 @@ impl Endpoint for DeleteAttachment {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-        format!("attachments/{}.json", &self.id).into()
+        format!("attachments/{}.json", self.id).into()
     }
 }
 

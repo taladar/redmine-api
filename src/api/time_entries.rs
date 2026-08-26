@@ -365,7 +365,7 @@ impl Endpoint for DeleteTimeEntry {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-        format!("time_entries/{}.json", &self.id).into()
+        format!("time_entries/{}.json", self.id).into()
     }
 }
 

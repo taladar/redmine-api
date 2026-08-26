@@ -155,7 +155,7 @@ impl Endpoint for GetGroup {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-        format!("groups/{}.json", &self.id).into()
+        format!("groups/{}.json", self.id).into()
     }
 
     fn parameters(&self) -> QueryParams<'_> {
@@ -285,7 +285,7 @@ impl Endpoint for DeleteGroup {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-        format!("groups/{}.json", &self.id).into()
+        format!("groups/{}.json", self.id).into()
     }
 }
 
@@ -314,7 +314,7 @@ impl Endpoint for AddUserToGroup {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-        format!("groups/{}/users.json", &self.group_id).into()
+        format!("groups/{}/users.json", self.group_id).into()
     }
 
     fn body(&self) -> Result<Option<(&'static str, Vec<u8>)>, crate::Error> {
@@ -346,7 +346,7 @@ impl Endpoint for RemoveUserFromGroup {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-        format!("groups/{}/users/{}.json", &self.group_id, &self.user_id).into()
+        format!("groups/{}/users/{}.json", self.group_id, self.user_id).into()
     }
 }
 

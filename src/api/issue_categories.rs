@@ -116,7 +116,7 @@ impl Endpoint for GetIssueCategory {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-        format!("issue_categories/{}.json", &self.id).into()
+        format!("issue_categories/{}.json", self.id).into()
     }
 }
 
@@ -238,7 +238,7 @@ impl Endpoint for DeleteIssueCategory {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-        format!("issue_categories/{}.json", &self.id).into()
+        format!("issue_categories/{}.json", self.id).into()
     }
 
     fn parameters(&self) -> QueryParams<'_> {

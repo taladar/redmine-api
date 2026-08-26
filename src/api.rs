@@ -943,7 +943,7 @@ impl ParamValue<'static> for time::Date {
         reason = "the format description literal is a constant valid format"
     )]
     fn as_value(&self) -> Cow<'static, str> {
-        let format = time::format_description::parse("[year]-[month]-[day]").unwrap();
+        let format = time::macros::format_description!(version = 3, "[year]-[month]-[day]");
         self.format(&format).unwrap().into()
     }
 }

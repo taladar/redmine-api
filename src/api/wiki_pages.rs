@@ -193,7 +193,7 @@ impl Endpoint for GetProjectWikiPage<'_> {
     fn endpoint(&self) -> Cow<'static, str> {
         format!(
             "projects/{}/wiki/{}.json",
-            &self.project_id_or_name, &self.title
+            self.project_id_or_name, self.title
         )
         .into()
     }
@@ -241,7 +241,7 @@ impl Endpoint for GetProjectWikiPageVersion<'_> {
     fn endpoint(&self) -> Cow<'static, str> {
         format!(
             "projects/{}/wiki/{}/{}.json",
-            &self.project_id_or_name, &self.title, &self.version,
+            self.project_id_or_name, self.title, self.version,
         )
         .into()
     }
@@ -301,7 +301,7 @@ impl Endpoint for CreateOrUpdateProjectWikiPage<'_> {
     fn endpoint(&self) -> Cow<'static, str> {
         format!(
             "projects/{}/wiki/{}.json",
-            &self.project_id_or_name, &self.title
+            self.project_id_or_name, self.title
         )
         .into()
     }
@@ -350,7 +350,7 @@ impl Endpoint for DeleteProjectWikiPage<'_> {
     fn endpoint(&self) -> Cow<'static, str> {
         format!(
             "projects/{}/wiki/{}.json",
-            &self.project_id_or_name, &self.title
+            self.project_id_or_name, self.title
         )
         .into()
     }
@@ -393,7 +393,7 @@ impl Endpoint for DeleteProjectWikiPageVersion<'_> {
     fn endpoint(&self) -> Cow<'static, str> {
         format!(
             "projects/{}/wiki/{}/{}/destroy_version.json",
-            &self.project_id_or_name, &self.title, &self.version
+            self.project_id_or_name, self.title, self.version
         )
         .into()
     }
@@ -431,7 +431,7 @@ impl Endpoint for GetProjectWikiPageAnnotate<'_> {
     fn endpoint(&self) -> Cow<'static, str> {
         format!(
             "projects/{}/wiki/{}/annotate.json",
-            &self.project_id_or_name, &self.title
+            self.project_id_or_name, self.title
         )
         .into()
     }
@@ -476,7 +476,7 @@ impl Endpoint for ExportProjectWikiPage<'_> {
     fn endpoint(&self) -> Cow<'static, str> {
         format!(
             "projects/{}/wiki/{}/export.json",
-            &self.project_id_or_name, &self.title
+            self.project_id_or_name, self.title
         )
         .into()
     }

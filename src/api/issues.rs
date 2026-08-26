@@ -1082,7 +1082,7 @@ impl Endpoint for GetIssue {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-        format!("issues/{}.json", &self.id).into()
+        format!("issues/{}.json", self.id).into()
     }
 
     fn parameters(&self) -> QueryParams<'_> {
@@ -1298,7 +1298,7 @@ impl Endpoint for DeleteIssue {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-        format!("issues/{}.json", &self.id).into()
+        format!("issues/{}.json", self.id).into()
     }
 }
 
@@ -1327,7 +1327,7 @@ impl Endpoint for AddWatcher {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-        format!("issues/{}/watchers.json", &self.issue_id).into()
+        format!("issues/{}/watchers.json", self.issue_id).into()
     }
 
     fn body(&self) -> Result<Option<(&'static str, Vec<u8>)>, crate::Error> {
@@ -1359,7 +1359,7 @@ impl Endpoint for RemoveWatcher {
     }
 
     fn endpoint(&self) -> Cow<'static, str> {
-        format!("issues/{}/watchers/{}.json", &self.issue_id, &self.user_id).into()
+        format!("issues/{}/watchers/{}.json", self.issue_id, self.user_id).into()
     }
 }
 
