@@ -1197,10 +1197,49 @@ impl Endpoint for CreateIssue<'_> {
     }
 }
 
+/// An issue field which [UpdateIssue] can clear (set to no value)
+///
+/// Fields not listed here can be emptied by setting them to an empty value
+/// instead, e.g. an empty description or a done ratio of 0.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[non_exhaustive]
+pub enum ClearableIssueField {
+    /// the issue category
+    Category,
+    /// the target version
+    Version,
+    /// the assignee
+    AssignedTo,
+    /// the parent issue
+    ParentIssue,
+    /// the estimated hours
+    EstimatedHours,
+    /// the start date
+    StartDate,
+    /// the due date
+    DueDate,
+}
+
+impl ClearableIssueField {
+    /// the name of the field in the JSON body of [UpdateIssue]
+    #[must_use]
+    pub const fn json_name(self) -> &'static str {
+        match self {
+            Self::Category => "category_id",
+            Self::Version => "fixed_version_id",
+            Self::AssignedTo => "assigned_to_id",
+            Self::ParentIssue => "parent_issue_id",
+            Self::EstimatedHours => "estimated_hours",
+            Self::StartDate => "start_date",
+            Self::DueDate => "due_date",
+        }
+    }
+}
+
 /// The endpoint to update an existing Redmine issue
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Builder, Serialize)]
-#[builder(setter(strip_option))]
+#[builder(setter(strip_option), build_fn(validate = "Self::validate"))]
 pub struct UpdateIssue<'a> {
     /// id of the issue to update
     #[serde(skip_serializing)]
@@ -1265,6 +1304,41 @@ pub struct UpdateIssue<'a> {
     /// attachments (files)
     #[builder(default)]
     uploads: Option<Vec<UploadedAttachment<'a>>>,
+    /// fields to clear, sent as `null`; a field can not be both set and cleared
+    #[serde(skip_serializing)]
+    #[builder(default)]
+    clear: Option<Vec<ClearableIssueField>>,
+}
+
+impl UpdateIssueBuilder<'_> {
+    /// ensures that no field is both set and cleared when [Self::build()] is called
+    fn validate(&self) -> Result<(), String> {
+        let Some(Some(clear)) = &self.clear else {
+            return Ok(());
+        };
+        for field in clear {
+            let set = match field {
+                ClearableIssueField::Category => matches!(self.category_id, Some(Some(_))),
+                ClearableIssueField::Version => matches!(self.fixed_version_id, Some(Some(_))),
+                ClearableIssueField::AssignedTo => matches!(self.assigned_to_id, Some(Some(_))),
+                ClearableIssueField::ParentIssue => {
+                    matches!(self.parent_issue_id, Some(Some(_)))
+                }
+                ClearableIssueField::EstimatedHours => {
+                    matches!(self.estimated_hours, Some(Some(_)))
+                }
+                ClearableIssueField::StartDate => matches!(self.start_date, Some(Some(_))),
+                ClearableIssueField::DueDate => matches!(self.due_date, Some(Some(_))),
+            };
+            if set {
+                return Err(format!(
+                    "{} can not be both set and cleared",
+                    field.json_name()
+                ));
+            }
+        }
+        Ok(())
+    }
 }
 
 impl<'a> UpdateIssue<'a> {
@@ -1272,6 +1346,19 @@ impl<'a> UpdateIssue<'a> {
     #[must_use]
     pub fn builder() -> UpdateIssueBuilder<'a> {
         UpdateIssueBuilder::default()
+    }
+}
+
+impl UpdateIssue<'_> {
+    /// the issue part of the body, with the cleared fields set to `null`
+    fn json_issue(&self) -> Result<serde_json::Value, serde_json::Error> {
+        let mut issue = serde_json::to_value(self)?;
+        if let (Some(clear), Some(fields)) = (&self.clear, issue.as_object_mut()) {
+            for field in clear {
+                fields.insert(field.json_name().to_owned(), serde_json::Value::Null);
+            }
+        }
+        Ok(issue)
     }
 }
 
@@ -1287,8 +1374,8 @@ impl Endpoint for UpdateIssue<'_> {
     fn body(&self) -> Result<Option<(&'static str, Vec<u8>)>, crate::Error> {
         Ok(Some((
             "application/json",
-            serde_json::to_vec(&IssueWrapper::<UpdateIssue> {
-                issue: (*self).to_owned(),
+            serde_json::to_vec(&IssueWrapper {
+                issue: self.json_issue()?,
             })?,
         )))
     }
@@ -1580,6 +1667,120 @@ pub(crate) mod test {
             assert_eq!(issue.start_date, Some(time::macros::date!(2026 - 02 - 02)));
             assert_eq!(issue.due_date, Some(time::macros::date!(2026 - 02 - 27)));
             assert_eq!(issue.done_ratio, 60);
+            Ok(())
+        })?;
+        Ok(())
+    }
+
+    #[test]
+    fn test_update_issue_clear_fields_body() -> Result<(), Box<dyn Error>> {
+        let endpoint = super::UpdateIssue::builder()
+            .id(1)
+            .subject("new subject")
+            .clear(vec![
+                ClearableIssueField::Category,
+                ClearableIssueField::DueDate,
+            ])
+            .build()?;
+        let Some((_, body)) = endpoint.body()? else {
+            return Err("update issue has no body".into());
+        };
+        let body: serde_json::Value = serde_json::from_slice(&body)?;
+        assert_eq!(
+            body,
+            serde_json::json!({
+                "issue": {
+                    "subject": "new subject",
+                    "category_id": null,
+                    "due_date": null,
+                }
+            })
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_update_issue_set_and_clear_same_field() {
+        let result = super::UpdateIssue::builder()
+            .id(1)
+            .category_id(3)
+            .clear(vec![ClearableIssueField::Category])
+            .build();
+        assert_eq!(
+            result.map_err(|e| e.to_string()).err(),
+            Some("category_id can not be both set and cleared".to_owned())
+        );
+    }
+
+    #[function_name::named]
+    #[traced_test]
+    #[test]
+    fn test_update_issue_clear_fields() -> Result<(), Box<dyn Error>> {
+        let _w_issues = ISSUES_LOCK.blocking_write();
+        let name = format!("unittest_{}", function_name!());
+        with_project(&name, |redmine, project_id, name| {
+            let category_endpoint = crate::api::issue_categories::CreateIssueCategory::builder()
+                .project_id_or_name(name)
+                .name("Unittest Issue Category")
+                .build()?;
+            let crate::api::issue_categories::IssueCategoryWrapper { issue_category } =
+                redmine
+                    .json_response_body::<_, crate::api::issue_categories::IssueCategoryWrapper<
+                        crate::api::issue_categories::IssueCategory,
+                    >>(&category_endpoint)?;
+            let version_endpoint = crate::api::versions::CreateVersion::builder()
+                .project_id_or_name(name)
+                .name("Unittest Version")
+                .build()?;
+            let crate::api::versions::VersionWrapper { version } = redmine
+                .json_response_body::<_, crate::api::versions::VersionWrapper<
+                    crate::api::versions::Version,
+                >>(&version_endpoint)?;
+            let parent_endpoint = super::CreateIssue::builder()
+                .project_id(project_id)
+                .subject("parent")
+                .build()?;
+            let IssueWrapper { issue: parent }: IssueWrapper<Issue> =
+                redmine.json_response_body::<_, _>(&parent_endpoint)?;
+            let create_endpoint = super::CreateIssue::builder()
+                .project_id(project_id)
+                .subject("test subject")
+                .category_id(issue_category.id)
+                .version(version.id)
+                .parent_issue_id(parent.id)
+                .estimated_hours(2.5)
+                .start_date(time::macros::date!(2026 - 01 - 05))
+                .due_date(time::macros::date!(2026 - 01 - 30))
+                .build()?;
+            let IssueWrapper { issue }: IssueWrapper<Issue> =
+                redmine.json_response_body::<_, _>(&create_endpoint)?;
+            assert!(issue.category.is_some());
+            assert!(issue.version.is_some());
+            assert!(issue.parent.is_some());
+            assert_eq!(issue.estimated_hours, Some(2.5));
+            let update_endpoint = super::UpdateIssue::builder()
+                .id(issue.id)
+                .clear(vec![
+                    ClearableIssueField::Category,
+                    ClearableIssueField::Version,
+                    ClearableIssueField::AssignedTo,
+                    ClearableIssueField::ParentIssue,
+                    ClearableIssueField::EstimatedHours,
+                    ClearableIssueField::StartDate,
+                    ClearableIssueField::DueDate,
+                ])
+                .build()?;
+            redmine.ignore_response_body::<_>(&update_endpoint)?;
+            let get_endpoint = GetIssue::builder().id(issue.id).build()?;
+            let IssueWrapper { issue }: IssueWrapper<Issue> =
+                redmine.json_response_body::<_, _>(&get_endpoint)?;
+            assert!(issue.category.is_none());
+            assert!(issue.version.is_none());
+            assert!(issue.assigned_to.is_none());
+            assert!(issue.parent.is_none());
+            assert_eq!(issue.estimated_hours, None);
+            assert_eq!(issue.start_date, None);
+            assert_eq!(issue.due_date, None);
             Ok(())
         })?;
         Ok(())
