@@ -1234,6 +1234,24 @@ impl ClearableIssueField {
             Self::DueDate => "due_date",
         }
     }
+
+    /// the JSON value sent in the body of [UpdateIssue] to clear the field
+    ///
+    /// This is `null` for most fields, but Redmine's `Issue#safe_attributes=`
+    /// silently ignores a falsy `assigned_to_id`, so the assignee is cleared
+    /// with an empty string instead, like the web UI does.
+    #[must_use]
+    pub const fn clear_value(self) -> serde_json::Value {
+        match self {
+            Self::AssignedTo => serde_json::Value::String(String::new()),
+            Self::Category
+            | Self::Version
+            | Self::ParentIssue
+            | Self::EstimatedHours
+            | Self::StartDate
+            | Self::DueDate => serde_json::Value::Null,
+        }
+    }
 }
 
 /// The endpoint to update an existing Redmine issue
@@ -1304,7 +1322,8 @@ pub struct UpdateIssue<'a> {
     /// attachments (files)
     #[builder(default)]
     uploads: Option<Vec<UploadedAttachment<'a>>>,
-    /// fields to clear, sent as `null`; a field can not be both set and cleared
+    /// fields to clear, sent as [ClearableIssueField::clear_value]; a field
+    /// can not be both set and cleared
     #[serde(skip_serializing)]
     #[builder(default)]
     clear: Option<Vec<ClearableIssueField>>,
@@ -1350,12 +1369,13 @@ impl<'a> UpdateIssue<'a> {
 }
 
 impl UpdateIssue<'_> {
-    /// the issue part of the body, with the cleared fields set to `null`
+    /// the issue part of the body, with the cleared fields set to their
+    /// [ClearableIssueField::clear_value]
     fn json_issue(&self) -> Result<serde_json::Value, serde_json::Error> {
         let mut issue = serde_json::to_value(self)?;
         if let (Some(clear), Some(fields)) = (&self.clear, issue.as_object_mut()) {
             for field in clear {
-                fields.insert(field.json_name().to_owned(), serde_json::Value::Null);
+                fields.insert(field.json_name().to_owned(), field.clear_value());
             }
         }
         Ok(issue)
@@ -1679,6 +1699,7 @@ pub(crate) mod test {
             .subject("new subject")
             .clear(vec![
                 ClearableIssueField::Category,
+                ClearableIssueField::AssignedTo,
                 ClearableIssueField::DueDate,
             ])
             .build()?;
@@ -1692,6 +1713,7 @@ pub(crate) mod test {
                 "issue": {
                     "subject": "new subject",
                     "category_id": null,
+                    "assigned_to_id": "",
                     "due_date": null,
                 }
             })
@@ -1742,9 +1764,15 @@ pub(crate) mod test {
                 .build()?;
             let IssueWrapper { issue: parent }: IssueWrapper<Issue> =
                 redmine.json_response_body::<_, _>(&parent_endpoint)?;
+            let my_account_endpoint = crate::api::my_account::GetMyAccount::builder().build()?;
+            let crate::api::users::UserWrapper { user: my_account } = redmine
+                .json_response_body::<_, crate::api::users::UserWrapper<
+                    crate::api::my_account::MyAccount,
+                >>(&my_account_endpoint)?;
             let create_endpoint = super::CreateIssue::builder()
                 .project_id(project_id)
                 .subject("test subject")
+                .assigned_to_id(my_account.id)
                 .category_id(issue_category.id)
                 .version(version.id)
                 .parent_issue_id(parent.id)
@@ -1756,6 +1784,7 @@ pub(crate) mod test {
                 redmine.json_response_body::<_, _>(&create_endpoint)?;
             assert!(issue.category.is_some());
             assert!(issue.version.is_some());
+            assert!(issue.assigned_to.is_some());
             assert!(issue.parent.is_some());
             assert_eq!(issue.estimated_hours, Some(2.5));
             let update_endpoint = super::UpdateIssue::builder()
