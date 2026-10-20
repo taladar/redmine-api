@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.11.7 - 2026-10-20 10:55:54Z
+
+### 🚀 Features
+
+- *(issues)* Add start_date, due_date and done_ratio to create/update
+
+### ⚙️ Miscellaneous Tasks
+
+- *(dependencies)* Update rustls for RUSTSEC-2026-0285 and 0346..0349
+- *(dependencies)* Upgrade dependencies
+
 ## 0.11.6 - 2026-08-26 07:55:19Z
 
 ### 🐛 Bug Fixes
