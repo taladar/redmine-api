@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.0 - 2026-10-20 17:08:26Z
+
+### 🐛 Bug Fixes
+
+- *(http)* Return Err on Http error status codes in the async client too
+
 ## 0.11.9 - 2026-10-20 15:54:17Z
 
 ### 🐛 Bug Fixes
