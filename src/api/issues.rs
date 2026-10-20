@@ -1153,6 +1153,15 @@ pub struct CreateIssue<'a> {
     /// estimated hours it will take to implement this issue
     #[builder(default)]
     estimated_hours: Option<f64>,
+    /// the start date for the issue
+    #[builder(default)]
+    start_date: Option<time::Date>,
+    /// the due date for the issue
+    #[builder(default)]
+    due_date: Option<time::Date>,
+    /// the percentage done (0-100)
+    #[builder(default)]
+    done_ratio: Option<u64>,
     /// attachments (files)
     #[builder(default)]
     uploads: Option<Vec<UploadedAttachment<'a>>>,
@@ -1238,6 +1247,15 @@ pub struct UpdateIssue<'a> {
     /// estimated hours it will take to implement this issue
     #[builder(default)]
     estimated_hours: Option<f64>,
+    /// the start date for the issue
+    #[builder(default)]
+    start_date: Option<time::Date>,
+    /// the due date for the issue
+    #[builder(default)]
+    due_date: Option<time::Date>,
+    /// the percentage done (0-100)
+    #[builder(default)]
+    done_ratio: Option<u64>,
     /// add a comment (note)
     #[builder(default)]
     notes: Option<Cow<'a, str>>,
@@ -1525,6 +1543,43 @@ pub(crate) mod test {
                 .subject("New test subject")
                 .build()?;
             redmine.ignore_response_body::<_>(&update_endpoint)?;
+            Ok(())
+        })?;
+        Ok(())
+    }
+
+    #[function_name::named]
+    #[traced_test]
+    #[test]
+    fn test_create_and_update_issue_dates_and_done_ratio() -> Result<(), Box<dyn Error>> {
+        let _w_issues = ISSUES_LOCK.blocking_write();
+        let name = format!("unittest_{}", function_name!());
+        with_project(&name, |redmine, project_id, _name| {
+            let create_endpoint = super::CreateIssue::builder()
+                .project_id(project_id)
+                .subject("test subject")
+                .start_date(time::macros::date!(2026 - 01 - 05))
+                .due_date(time::macros::date!(2026 - 01 - 30))
+                .done_ratio(20)
+                .build()?;
+            let IssueWrapper { issue }: IssueWrapper<Issue> =
+                redmine.json_response_body::<_, _>(&create_endpoint)?;
+            assert_eq!(issue.start_date, Some(time::macros::date!(2026 - 01 - 05)));
+            assert_eq!(issue.due_date, Some(time::macros::date!(2026 - 01 - 30)));
+            assert_eq!(issue.done_ratio, 20);
+            let update_endpoint = super::UpdateIssue::builder()
+                .id(issue.id)
+                .start_date(time::macros::date!(2026 - 02 - 02))
+                .due_date(time::macros::date!(2026 - 02 - 27))
+                .done_ratio(60)
+                .build()?;
+            redmine.ignore_response_body::<_>(&update_endpoint)?;
+            let get_endpoint = GetIssue::builder().id(issue.id).build()?;
+            let IssueWrapper { issue }: IssueWrapper<Issue> =
+                redmine.json_response_body::<_, _>(&get_endpoint)?;
+            assert_eq!(issue.start_date, Some(time::macros::date!(2026 - 02 - 02)));
+            assert_eq!(issue.due_date, Some(time::macros::date!(2026 - 02 - 27)));
+            assert_eq!(issue.done_ratio, 60);
             Ok(())
         })?;
         Ok(())
