@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.8 - 2026-10-20 11:44:30Z
+
+### 🚀 Features
+
+- *(issues)* Allow UpdateIssue to clear fields
+
 ## 0.11.7 - 2026-10-20 10:55:54Z
 
 ### 🚀 Features
