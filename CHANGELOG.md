@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.9 - 2026-10-20 15:54:17Z
+
+### 🐛 Bug Fixes
+
+- *(issues)* Clear assignee with an empty string in UpdateIssue
+
 ## 0.11.8 - 2026-10-20 11:44:30Z
 
 ### 🚀 Features
