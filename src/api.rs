@@ -600,8 +600,10 @@ impl RedmineAsync {
         }
         if status.is_client_error() {
             error!(%url, %method, "Redmine status error (client error): {:?} response: {:?}", status, from_utf8(&response_body));
+            return Err(crate::Error::HttpErrorResponse(status));
         } else if status.is_server_error() {
             error!(%url, %method, "Redmine status error (server error): {:?} response: {:?}", status, from_utf8(&response_body));
+            return Err(crate::Error::HttpErrorResponse(status));
         }
         Ok((status, response_body))
     }
