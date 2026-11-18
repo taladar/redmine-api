@@ -84,12 +84,12 @@ This is mainly useful in practice for queries that do not have a response body
 (e.g. delete queries) or for queries that have a side-effect (like creating an
 issue) where we do not care about the response body.
 
-For illustrative purposes I am using the [GetIssue](api::issues::GetIssue)
-endpoint here mainly to avoid accidental data loss from running a delete example
-copied from here on a production Redmine instance.
+For illustrative purposes I am using the [GetUser](api::users::GetUser)
+endpoint (fetching the current user) here mainly to avoid accidental data loss
+from running a delete example copied from here on a production Redmine instance.
 
 ```rust
-use redmine_api::api::issues::{GetIssue, Issue, IssuesWrapper};
+use redmine_api::api::users::GetUser;
 use redmine_api::api::Redmine;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -98,7 +98,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .use_rustls_tls()
         .build()?;
     let redmine = Redmine::from_env(client)?;
-    let endpoint = GetIssue::builder().id(1).build()?;
+    let endpoint = GetUser::builder().build()?;
     redmine.ignore_response_body::<_>(&endpoint)?;
     Ok(())
 }
@@ -117,7 +117,7 @@ first page. This is implemented by having all endpoints that do not implement
 pagination implement the NoPagination trait.
 
 ```rust
-use redmine_api::api::issues::{GetIssue, Issue, IssueWrapper};
+use redmine_api::api::users::{GetUser, User, UserWrapper};
 use redmine_api::api::Redmine;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -126,9 +126,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .use_rustls_tls()
         .build()?;
     let redmine = Redmine::from_env(client)?;
-    let endpoint = GetIssue::builder().id(1).build()?;
-    let IssueWrapper { issue } = redmine.json_response_body::<_, IssueWrapper<Issue>>(&endpoint)?;
-    println!("Issue found:\n{:#?}", issue);
+    let endpoint = GetUser::builder().build()?;
+    let UserWrapper { user } = redmine.json_response_body::<_, UserWrapper<User>>(&endpoint)?;
+    println!("Current user:\n{:#?}", user);
     Ok(())
 }
 ```

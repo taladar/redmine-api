@@ -40,7 +40,6 @@ pub struct MyAccount {
         serialize_with = "crate::api::serialize_optional_rfc3339",
         deserialize_with = "crate::api::deserialize_optional_rfc3339"
     )]
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub last_login_on: Option<time::OffsetDateTime>,
     /// the user's API key
     pub api_key: String,

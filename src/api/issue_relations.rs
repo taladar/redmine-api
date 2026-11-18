@@ -208,7 +208,7 @@ mod test {
     use super::*;
     use crate::api::issues::test::ISSUES_LOCK;
     use crate::api::issues::{CreateIssue, Issue, IssueWrapper};
-    use crate::api::test_helpers::with_project;
+    use crate::api::test_helpers::{create_issue, with_project};
     use pretty_assertions::assert_eq;
     use std::error::Error;
     use tokio::sync::RwLock;
@@ -218,34 +218,53 @@ mod test {
     /// creating/deleting or creating/updating/deleting
     static ISSUE_RELATION_LOCK: RwLock<()> = RwLock::const_new(());
 
+    /// creates a project with two related issues and calls the function with
+    /// the id of the first issue and the id of the relation
+    fn with_issue_relation<F>(name: &str, f: F) -> Result<(), Box<dyn Error>>
+    where
+        F: FnOnce(&crate::api::Redmine, u64, u64) -> Result<(), Box<dyn Error>>,
+    {
+        let _w_issues = ISSUES_LOCK.blocking_write();
+        let _w_issue_relation = ISSUE_RELATION_LOCK.blocking_write();
+        with_project(name, |redmine, project_id, _name| {
+            let issue1 = create_issue(redmine, project_id, "Test issue 1")?;
+            let issue2 = create_issue(redmine, project_id, "Test issue 2")?;
+            let create_endpoint = super::CreateIssueRelation::builder()
+                .issue_from_id(issue1.id)
+                .issue_to_id(issue2.id)
+                .relation_type(IssueRelationType::Precedes)
+                .delay(2)
+                .build()?;
+            let RelationWrapper { relation }: RelationWrapper<IssueRelation> =
+                redmine.json_response_body::<_, _>(&create_endpoint)?;
+            f(redmine, issue1.id, relation.id)
+        })
+    }
+
+    #[function_name::named]
     #[traced_test]
     #[test]
     fn test_list_issue_relations_no_pagination() -> Result<(), Box<dyn Error>> {
-        let _r_issue_relation = ISSUE_RELATION_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .tls_backend_rustls()
-                .build()?,
-        )?;
-        let endpoint = ListIssueRelations::builder().issue_id(50017).build()?;
-        redmine.json_response_body::<_, RelationsWrapper<IssueRelation>>(&endpoint)?;
-        Ok(())
+        let name = format!("unittest_{}", function_name!());
+        with_issue_relation(&name, |redmine, issue_id, relation_id| {
+            let endpoint = ListIssueRelations::builder().issue_id(issue_id).build()?;
+            let RelationsWrapper { relations } =
+                redmine.json_response_body::<_, RelationsWrapper<IssueRelation>>(&endpoint)?;
+            assert!(relations.iter().any(|r| r.id == relation_id));
+            Ok(())
+        })
     }
 
+    #[function_name::named]
     #[traced_test]
     #[test]
     fn test_get_issue_relation() -> Result<(), Box<dyn Error>> {
-        let _r_issue_relation = ISSUE_RELATION_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .tls_backend_rustls()
-                .build()?,
-        )?;
-        let endpoint = GetIssueRelation::builder().id(10).build()?;
-        redmine.json_response_body::<_, RelationWrapper<IssueRelation>>(&endpoint)?;
-        Ok(())
+        let name = format!("unittest_{}", function_name!());
+        with_issue_relation(&name, |redmine, _issue_id, relation_id| {
+            let endpoint = GetIssueRelation::builder().id(relation_id).build()?;
+            redmine.json_response_body::<_, RelationWrapper<IssueRelation>>(&endpoint)?;
+            Ok(())
+        })
     }
 
     #[function_name::named]
@@ -318,24 +337,22 @@ mod test {
     ///
     /// this will only catch fields we missed if they are part of the response but
     /// it is better than nothing
+    #[function_name::named]
     #[traced_test]
     #[test]
     fn test_completeness_issue_relation_type() -> Result<(), Box<dyn Error>> {
-        let _r_issue_relation = ISSUE_RELATION_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .tls_backend_rustls()
-                .build()?,
-        )?;
-        let endpoint = ListIssueRelations::builder().issue_id(50017).build()?;
-        let RelationsWrapper { relations: values } =
-            redmine.json_response_body::<_, RelationsWrapper<serde_json::Value>>(&endpoint)?;
-        for value in values {
-            let o: IssueRelation = serde_json::from_value(value.clone())?;
-            let reserialized = serde_json::to_value(o)?;
-            assert_eq!(value, reserialized);
-        }
-        Ok(())
+        let name = format!("unittest_{}", function_name!());
+        with_issue_relation(&name, |redmine, issue_id, _relation_id| {
+            let endpoint = ListIssueRelations::builder().issue_id(issue_id).build()?;
+            let RelationsWrapper { relations: values } =
+                redmine.json_response_body::<_, RelationsWrapper<serde_json::Value>>(&endpoint)?;
+            assert!(!values.is_empty());
+            for value in values {
+                let o: IssueRelation = serde_json::from_value(value.clone())?;
+                let reserialized = serde_json::to_value(o)?;
+                assert_eq!(value, reserialized);
+            }
+            Ok(())
+        })
     }
 }

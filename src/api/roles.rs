@@ -236,8 +236,14 @@ mod test {
                 .tls_backend_rustls()
                 .build()?,
         )?;
-        let endpoint = GetRole::builder().id(8).build()?;
-        redmine.json_response_body::<_, RoleWrapper<Role>>(&endpoint)?;
+        let list_endpoint = ListRoles::builder().build()?;
+        let RolesWrapper { roles } =
+            redmine.json_response_body::<_, RolesWrapper<RoleEssentials>>(&list_endpoint)?;
+        let role = roles.first().ok_or("no roles found")?;
+        let endpoint = GetRole::builder().id(role.id).build()?;
+        let RoleWrapper { role: fetched } =
+            redmine.json_response_body::<_, RoleWrapper<Role>>(&endpoint)?;
+        assert_eq!(fetched.id, role.id);
         Ok(())
     }
 

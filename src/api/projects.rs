@@ -684,20 +684,18 @@ pub(crate) mod test {
         Ok(())
     }
 
+    #[function_name::named]
     #[traced_test]
     #[test]
     fn test_get_project() -> Result<(), Box<dyn Error>> {
-        let _r_project = PROJECT_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .tls_backend_rustls()
-                .build()?,
-        )?;
-        let endpoint = GetProject::builder()
-            .project_id_or_name("sandbox")
-            .build()?;
-        redmine.json_response_body::<_, ProjectWrapper<Project>>(&endpoint)?;
+        let name = format!("unittest_{}", function_name!());
+        with_project(&name, |redmine, project_id, name| {
+            let endpoint = GetProject::builder().project_id_or_name(name).build()?;
+            let ProjectWrapper { project } =
+                redmine.json_response_body::<_, ProjectWrapper<Project>>(&endpoint)?;
+            assert_eq!(project.id, project_id);
+            Ok(())
+        })?;
         Ok(())
     }
 

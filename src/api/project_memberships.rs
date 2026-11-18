@@ -253,7 +253,7 @@ pub struct MembershipWrapper<T> {
 #[cfg(test)]
 pub(crate) mod test {
     use super::*;
-    use crate::api::test_helpers::with_project;
+    use crate::api::test_helpers::{current_user_id, with_project};
     use pretty_assertions::assert_eq;
     use std::error::Error;
     use tokio::sync::RwLock;
@@ -263,66 +263,111 @@ pub(crate) mod test {
     /// creating/deleting or creating/updating/deleting
     pub static PROJECT_MEMBERSHIP_LOCK: RwLock<()> = RwLock::const_new(());
 
+    /// returns the ids of all roles which can be given to project members
+    fn role_ids(redmine: &crate::api::Redmine) -> Result<Vec<u64>, Box<dyn Error>> {
+        use crate::api::roles::{ListRoles, RolesWrapper};
+        let endpoint = ListRoles::builder().build()?;
+        let RolesWrapper { roles } =
+            redmine.json_response_body::<_, RolesWrapper<RoleEssentials>>(&endpoint)?;
+        if roles.is_empty() {
+            return Err("no roles found".into());
+        }
+        Ok(roles.into_iter().map(|r| r.id).collect())
+    }
+
+    #[function_name::named]
     #[traced_test]
     #[test]
     fn test_list_project_memberships_first_page() -> Result<(), Box<dyn Error>> {
         let _r_project_memberships = PROJECT_MEMBERSHIP_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .tls_backend_rustls()
-                .build()?,
-        )?;
-        let endpoint = ListProjectMemberships::builder()
-            .project_id_or_name("sandbox")
-            .build()?;
-        redmine.json_response_body_page::<_, ProjectMembership>(&endpoint, 0, 25)?;
-        Ok(())
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_list_project_memberships_all_pages() -> Result<(), Box<dyn Error>> {
-        let _r_project_memberships = PROJECT_MEMBERSHIP_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .tls_backend_rustls()
-                .build()?,
-        )?;
-        let endpoint = ListProjectMemberships::builder()
-            .project_id_or_name("sandbox")
-            .build()?;
-        redmine.json_response_body_all_pages::<_, ProjectMembership>(&endpoint)?;
-        Ok(())
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_get_project_membership() -> Result<(), Box<dyn Error>> {
-        let _r_project_memberships = PROJECT_MEMBERSHIP_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .tls_backend_rustls()
-                .build()?,
-        )?;
-        let endpoint = GetProjectMembership::builder().id(238).build()?;
-        redmine.json_response_body::<_, MembershipWrapper<ProjectMembership>>(&endpoint)?;
+        let name = format!("unittest_{}", function_name!());
+        with_project(&name, |redmine, _project_id, name| {
+            let endpoint = ListProjectMemberships::builder()
+                .project_id_or_name(name)
+                .build()?;
+            let page = redmine.json_response_body_page::<_, ProjectMembership>(&endpoint, 0, 25)?;
+            assert!(!page.values.is_empty());
+            Ok(())
+        })?;
         Ok(())
     }
 
     #[function_name::named]
     #[traced_test]
     #[test]
+    fn test_list_project_memberships_all_pages() -> Result<(), Box<dyn Error>> {
+        let _r_project_memberships = PROJECT_MEMBERSHIP_LOCK.blocking_read();
+        let name = format!("unittest_{}", function_name!());
+        with_project(&name, |redmine, _project_id, name| {
+            let endpoint = ListProjectMemberships::builder()
+                .project_id_or_name(name)
+                .build()?;
+            let memberships =
+                redmine.json_response_body_all_pages::<_, ProjectMembership>(&endpoint)?;
+            assert!(!memberships.is_empty());
+            Ok(())
+        })?;
+        Ok(())
+    }
+
+    #[function_name::named]
+    #[traced_test]
+    #[test]
+    fn test_get_project_membership() -> Result<(), Box<dyn Error>> {
+        let _r_project_memberships = PROJECT_MEMBERSHIP_LOCK.blocking_read();
+        let name = format!("unittest_{}", function_name!());
+        with_project(&name, |redmine, _project_id, name| {
+            let list_endpoint = ListProjectMemberships::builder()
+                .project_id_or_name(name)
+                .build()?;
+            let memberships =
+                redmine.json_response_body_all_pages::<_, ProjectMembership>(&list_endpoint)?;
+            let membership = memberships.first().ok_or("no project membership found")?;
+            let endpoint = GetProjectMembership::builder().id(membership.id).build()?;
+            redmine.json_response_body::<_, MembershipWrapper<ProjectMembership>>(&endpoint)?;
+            Ok(())
+        })?;
+        Ok(())
+    }
+
+    /// returns the membership of the current user in the project created by
+    /// [`with_project`]
+    fn current_user_membership(
+        redmine: &crate::api::Redmine,
+        project_id: u64,
+    ) -> Result<ProjectMembership, Box<dyn Error>> {
+        let user_id = current_user_id(redmine)?;
+        let endpoint = ListProjectMemberships::builder()
+            .project_id_or_name(project_id.to_string())
+            .build()?;
+        let memberships =
+            redmine.json_response_body_all_pages::<_, ProjectMembership>(&endpoint)?;
+        memberships
+            .into_iter()
+            .find(|m| m.user.as_ref().is_some_and(|u| u.id == user_id))
+            .ok_or_else(|| "current user is not a member of the test project".into())
+    }
+
+    /// the project created by [`with_project`] already has the current user as
+    /// a member so we remove that membership first and then create it again
+    /// to avoid having to create a user (which is slow to delete on large
+    /// Redmine instances)
+    #[function_name::named]
+    #[traced_test]
+    #[test]
     fn test_create_project_membership() -> Result<(), Box<dyn Error>> {
         let _w_project_memberships = PROJECT_MEMBERSHIP_LOCK.blocking_write();
         let name = format!("unittest_{}", function_name!());
-        with_project(&name, |redmine, project_id, _| {
+        with_project(&name, |redmine, project_id, _name| {
+            let membership = current_user_membership(redmine, project_id)?;
+            let delete_endpoint = super::DeleteProjectMembership::builder()
+                .id(membership.id)
+                .build()?;
+            redmine.ignore_response_body::<_>(&delete_endpoint)?;
             let create_endpoint = super::CreateProjectMembership::builder()
                 .project_id_or_name(project_id.to_string())
-                .user_ids(vec![1])
-                .role_ids(vec![8])
+                .user_ids(vec![current_user_id(redmine)?])
+                .role_ids(membership.roles.iter().map(|r| r.id).collect())
                 .build()?;
             redmine
                 .json_response_body::<_, MembershipWrapper<ProjectMembership>>(&create_endpoint)?;
@@ -338,18 +383,25 @@ pub(crate) mod test {
         let _w_project_memberships = PROJECT_MEMBERSHIP_LOCK.blocking_write();
         let name = format!("unittest_{}", function_name!());
         with_project(&name, |redmine, project_id, _name| {
-            let create_endpoint = super::CreateProjectMembership::builder()
-                .project_id_or_name(project_id.to_string())
-                .user_ids(vec![1])
-                .role_ids(vec![8])
-                .build()?;
-            let MembershipWrapper { membership } = redmine
-                .json_response_body::<_, MembershipWrapper<ProjectMembership>>(&create_endpoint)?;
+            let membership = current_user_membership(redmine, project_id)?;
+            let mut new_role_ids: Vec<u64> = membership.roles.iter().map(|r| r.id).collect();
+            if let Some(extra_role_id) = role_ids(redmine)?
+                .into_iter()
+                .find(|id| !new_role_ids.contains(id))
+            {
+                new_role_ids.push(extra_role_id);
+            }
             let update_endpoint = super::UpdateProjectMembership::builder()
                 .id(membership.id)
-                .role_ids(vec![8])
+                .role_ids(new_role_ids.clone())
                 .build()?;
             redmine.ignore_response_body::<_>(&update_endpoint)?;
+            let get_endpoint = GetProjectMembership::builder().id(membership.id).build()?;
+            let MembershipWrapper { membership } = redmine
+                .json_response_body::<_, MembershipWrapper<ProjectMembership>>(&get_endpoint)?;
+            for role_id in new_role_ids {
+                assert!(membership.roles.iter().any(|r| r.id == role_id));
+            }
             Ok(())
         })?;
         Ok(())
@@ -359,25 +411,25 @@ pub(crate) mod test {
     ///
     /// this will only catch fields we missed if they are part of the response but
     /// it is better than nothing
+    #[function_name::named]
     #[traced_test]
     #[test]
     fn test_completeness_project_membership_type() -> Result<(), Box<dyn Error>> {
         let _r_project_memberships = PROJECT_MEMBERSHIP_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .tls_backend_rustls()
-                .build()?,
-        )?;
-        let endpoint = ListProjectMemberships::builder()
-            .project_id_or_name("sandbox")
-            .build()?;
-        let values: Vec<serde_json::Value> = redmine.json_response_body_all_pages(&endpoint)?;
-        for value in values {
-            let o: ProjectMembership = serde_json::from_value(value.clone())?;
-            let reserialized = serde_json::to_value(o)?;
-            assert_eq!(value, reserialized);
-        }
+        let name = format!("unittest_{}", function_name!());
+        with_project(&name, |redmine, _project_id, name| {
+            let endpoint = ListProjectMemberships::builder()
+                .project_id_or_name(name)
+                .build()?;
+            let values: Vec<serde_json::Value> = redmine.json_response_body_all_pages(&endpoint)?;
+            assert!(!values.is_empty());
+            for value in values {
+                let o: ProjectMembership = serde_json::from_value(value.clone())?;
+                let reserialized = serde_json::to_value(o)?;
+                assert_eq!(value, reserialized);
+            }
+            Ok(())
+        })?;
         Ok(())
     }
 }

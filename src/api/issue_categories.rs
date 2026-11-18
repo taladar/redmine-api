@@ -267,7 +267,7 @@ pub struct IssueCategoryWrapper<T> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::api::test_helpers::with_project;
+    use crate::api::test_helpers::{current_user_id, with_project};
     use pretty_assertions::assert_eq;
     use std::error::Error;
     use tokio::sync::RwLock;
@@ -277,36 +277,51 @@ mod test {
     /// creating/deleting or creating/updating/deleting
     static ISSUE_CATEGORY_LOCK: RwLock<()> = RwLock::const_new(());
 
+    /// creates a project with an issue category and calls the function with
+    /// the project identifier and the id of the issue category
+    fn with_issue_category<F>(name: &str, f: F) -> Result<(), Box<dyn Error>>
+    where
+        F: FnOnce(&crate::api::Redmine, &str, u64) -> Result<(), Box<dyn Error>>,
+    {
+        let _w_issue_category = ISSUE_CATEGORY_LOCK.blocking_write();
+        with_project(name, |redmine, _id, name| {
+            let create_endpoint = super::CreateIssueCategory::builder()
+                .project_id_or_name(name)
+                .name("Unittest Issue Category")
+                .assigned_to_id(current_user_id(redmine)?)
+                .build()?;
+            let IssueCategoryWrapper { issue_category }: IssueCategoryWrapper<IssueCategory> =
+                redmine.json_response_body::<_, _>(&create_endpoint)?;
+            f(redmine, name, issue_category.id)
+        })
+    }
+
+    #[function_name::named]
     #[traced_test]
     #[test]
     fn test_list_issue_categories_no_pagination() -> Result<(), Box<dyn Error>> {
-        let _r_issue_category = ISSUE_CATEGORY_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .tls_backend_rustls()
-                .build()?,
-        )?;
-        let endpoint = ListIssueCategories::builder()
-            .project_id_or_name("336")
-            .build()?;
-        redmine.json_response_body::<_, IssueCategoriesWrapper<IssueCategory>>(&endpoint)?;
-        Ok(())
+        let name = format!("unittest_{}", function_name!());
+        with_issue_category(&name, |redmine, name, id| {
+            let endpoint = ListIssueCategories::builder()
+                .project_id_or_name(name)
+                .build()?;
+            let IssueCategoriesWrapper { issue_categories } = redmine
+                .json_response_body::<_, IssueCategoriesWrapper<IssueCategory>>(&endpoint)?;
+            assert!(issue_categories.iter().any(|c| c.id == id));
+            Ok(())
+        })
     }
 
+    #[function_name::named]
     #[traced_test]
     #[test]
     fn test_get_issue_category() -> Result<(), Box<dyn Error>> {
-        let _r_issue_category = ISSUE_CATEGORY_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .tls_backend_rustls()
-                .build()?,
-        )?;
-        let endpoint = GetIssueCategory::builder().id(10).build()?;
-        redmine.json_response_body::<_, IssueCategoryWrapper<IssueCategory>>(&endpoint)?;
-        Ok(())
+        let name = format!("unittest_{}", function_name!());
+        with_issue_category(&name, |redmine, _name, id| {
+            let endpoint = GetIssueCategory::builder().id(id).build()?;
+            redmine.json_response_body::<_, IssueCategoryWrapper<IssueCategory>>(&endpoint)?;
+            Ok(())
+        })
     }
 
     #[function_name::named]
@@ -375,28 +390,26 @@ mod test {
     ///
     /// this will only catch fields we missed if they are part of the response but
     /// it is better than nothing
+    #[function_name::named]
     #[traced_test]
     #[test]
     fn test_completeness_issue_category_type() -> Result<(), Box<dyn Error>> {
-        let _r_issue_category = ISSUE_CATEGORY_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .tls_backend_rustls()
-                .build()?,
-        )?;
-        let endpoint = ListIssueCategories::builder()
-            .project_id_or_name("336")
-            .build()?;
-        let IssueCategoriesWrapper {
-            issue_categories: values,
-        } = redmine
-            .json_response_body::<_, IssueCategoriesWrapper<serde_json::Value>>(&endpoint)?;
-        for value in values {
-            let o: IssueCategory = serde_json::from_value(value.clone())?;
-            let reserialized = serde_json::to_value(o)?;
-            assert_eq!(value, reserialized);
-        }
-        Ok(())
+        let name = format!("unittest_{}", function_name!());
+        with_issue_category(&name, |redmine, name, _id| {
+            let endpoint = ListIssueCategories::builder()
+                .project_id_or_name(name)
+                .build()?;
+            let IssueCategoriesWrapper {
+                issue_categories: values,
+            } = redmine
+                .json_response_body::<_, IssueCategoriesWrapper<serde_json::Value>>(&endpoint)?;
+            assert!(!values.is_empty());
+            for value in values {
+                let o: IssueCategory = serde_json::from_value(value.clone())?;
+                let reserialized = serde_json::to_value(o)?;
+                assert_eq!(value, reserialized);
+            }
+            Ok(())
+        })
     }
 }

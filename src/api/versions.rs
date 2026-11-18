@@ -421,34 +421,50 @@ mod test {
     /// creating/deleting or creating/updating/deleting
     static VERSION_LOCK: RwLock<()> = RwLock::const_new(());
 
+    /// creates a project with a version and calls the function with the
+    /// project id and the version id
+    fn with_version<F>(name: &str, f: F) -> Result<(), Box<dyn Error>>
+    where
+        F: FnOnce(&crate::api::Redmine, u64, u64) -> Result<(), Box<dyn Error>>,
+    {
+        let _w_version = VERSION_LOCK.blocking_write();
+        with_project(name, |redmine, project_id, _name| {
+            let create_endpoint = super::CreateVersion::builder()
+                .project_id_or_name(project_id.to_string())
+                .name("Unittest Version")
+                .build()?;
+            let VersionWrapper { version } =
+                redmine.json_response_body::<_, VersionWrapper<Version>>(&create_endpoint)?;
+            f(redmine, project_id, version.id)
+        })
+    }
+
+    #[function_name::named]
     #[traced_test]
     #[test]
     fn test_list_versions_no_pagination() -> Result<(), Box<dyn Error>> {
-        let _r_version = VERSION_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .tls_backend_rustls()
-                .build()?,
-        )?;
-        let endpoint = ListVersions::builder().project_id_or_name("92").build()?;
-        redmine.json_response_body::<_, VersionsWrapper<Version>>(&endpoint)?;
-        Ok(())
+        let name = format!("unittest_{}", function_name!());
+        with_version(&name, |redmine, project_id, version_id| {
+            let endpoint = ListVersions::builder()
+                .project_id_or_name(project_id.to_string())
+                .build()?;
+            let VersionsWrapper { versions } =
+                redmine.json_response_body::<_, VersionsWrapper<Version>>(&endpoint)?;
+            assert!(versions.iter().any(|v| v.id == version_id));
+            Ok(())
+        })
     }
 
+    #[function_name::named]
     #[traced_test]
     #[test]
     fn test_get_version() -> Result<(), Box<dyn Error>> {
-        let _r_version = VERSION_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .tls_backend_rustls()
-                .build()?,
-        )?;
-        let endpoint = GetVersion::builder().id(1182).build()?;
-        redmine.json_response_body::<_, VersionWrapper<Version>>(&endpoint)?;
-        Ok(())
+        let name = format!("unittest_{}", function_name!());
+        with_version(&name, |redmine, _project_id, version_id| {
+            let endpoint = GetVersion::builder().id(version_id).build()?;
+            redmine.json_response_body::<_, VersionWrapper<Version>>(&endpoint)?;
+            Ok(())
+        })
     }
 
     #[function_name::named]

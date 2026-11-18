@@ -170,9 +170,12 @@ mod test {
     use std::error::Error;
     use tracing_test::traced_test;
 
-    #[traced_test]
-    #[test]
-    fn test_get_attachment() -> Result<(), Box<dyn Error>> {
+    /// creates a project with an issue with an attachment and calls the
+    /// function with the attachment id
+    fn with_attachment<F>(name: &str, f: F) -> Result<(), Box<dyn Error>>
+    where
+        F: FnOnce(&crate::api::Redmine, u64) -> Result<(), Box<dyn Error>>,
+    {
         use crate::api::issues::{
             CreateIssue, GetIssue, Issue, IssueWrapper, UploadedAttachment, test::ISSUES_LOCK,
         };
@@ -180,7 +183,7 @@ mod test {
         use crate::api::uploads::{FileUploadToken, UploadFile, UploadWrapper};
 
         let _w_issues = ISSUES_LOCK.blocking_write();
-        with_project("test_get_attachment", |redmine, project_id, _| {
+        with_project(name, |redmine, project_id, _| {
             let upload_endpoint = UploadFile::builder().file("README.md").build()?;
             let UploadWrapper {
                 upload: FileUploadToken { id: _, token },
@@ -206,8 +209,18 @@ mod test {
                 .build()?;
             let IssueWrapper { issue } =
                 redmine.json_response_body::<_, IssueWrapper<Issue>>(&get_issue_endpoint)?;
-            let attachment_id = issue.attachments.unwrap().first().unwrap().id;
+            let attachment_id = issue
+                .attachments
+                .and_then(|a| a.first().map(|a| a.id))
+                .ok_or("created issue has no attachment")?;
+            f(redmine, attachment_id)
+        })
+    }
 
+    #[traced_test]
+    #[test]
+    fn test_get_attachment() -> Result<(), Box<dyn Error>> {
+        with_attachment("test_get_attachment", |redmine, attachment_id| {
             let endpoint = GetAttachment::builder().id(attachment_id).build()?;
             redmine.json_response_body::<_, AttachmentWrapper<Attachment>>(&endpoint)?;
             Ok(())
@@ -221,19 +234,18 @@ mod test {
     #[traced_test]
     #[test]
     fn test_completeness_attachment_type() -> Result<(), Box<dyn Error>> {
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .tls_backend_rustls()
-                .build()?,
-        )?;
-        let endpoint = GetAttachment::builder().id(38468).build()?;
-        let AttachmentWrapper { attachment: value } =
-            redmine.json_response_body::<_, AttachmentWrapper<serde_json::Value>>(&endpoint)?;
-        let o: Attachment = serde_json::from_value(value.clone())?;
-        let reserialized = serde_json::to_value(o)?;
-        assert_eq!(value, reserialized);
-        Ok(())
+        with_attachment(
+            "test_completeness_attachment_type",
+            |redmine, attachment_id| {
+                let endpoint = GetAttachment::builder().id(attachment_id).build()?;
+                let AttachmentWrapper { attachment: value } = redmine
+                    .json_response_body::<_, AttachmentWrapper<serde_json::Value>>(&endpoint)?;
+                let o: Attachment = serde_json::from_value(value.clone())?;
+                let reserialized = serde_json::to_value(o)?;
+                assert_eq!(value, reserialized);
+                Ok(())
+            },
+        )
     }
 
     #[traced_test]

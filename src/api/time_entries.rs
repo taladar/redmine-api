@@ -413,7 +413,7 @@ mod test {
         Ok(())
     }
 
-    /// this takes a long time and is not very useful given the relative uniformity of time entries
+    // this takes a long time and is not very useful given the relative uniformity of time entries
     // #[traced_test]
     // #[test]
     // #[ignore]
@@ -426,63 +426,82 @@ mod test {
     //     Ok(())
     // }
 
+    /// creates a project with an issue and a time entry on that issue and
+    /// calls the function with the time entry
+    fn with_time_entry<F>(name: &str, f: F) -> Result<(), Box<dyn Error>>
+    where
+        F: FnOnce(&crate::api::Redmine, TimeEntry) -> Result<(), Box<dyn Error>>,
+    {
+        use crate::api::enumerations::{
+            ListTimeEntryActivities, TimeEntryActivitiesWrapper, TimeEntryActivity,
+        };
+        use crate::api::issues::test::ISSUES_LOCK;
+        use crate::api::test_helpers::{create_issue, with_project};
+        let _w_issues = ISSUES_LOCK.blocking_write();
+        let _w_time_entries = TIME_ENTRY_LOCK.blocking_write();
+        with_project(name, |redmine, project_id, _name| {
+            let issue = create_issue(redmine, project_id, "Time entry test issue")?;
+            let activities_endpoint = ListTimeEntryActivities::builder().build()?;
+            let TimeEntryActivitiesWrapper {
+                time_entry_activities,
+            } = redmine.json_response_body::<_, TimeEntryActivitiesWrapper<TimeEntryActivity>>(
+                &activities_endpoint,
+            )?;
+            let activity = time_entry_activities
+                .iter()
+                .find(|a| a.active)
+                .ok_or("no active time entry activity found")?;
+            let create_endpoint = super::CreateTimeEntry::builder()
+                .issue_id(issue.id)
+                .hours(1.0)
+                .activity_id(activity.id)
+                .build()?;
+            let TimeEntryWrapper { time_entry } =
+                redmine.json_response_body::<_, TimeEntryWrapper<TimeEntry>>(&create_endpoint)?;
+            f(redmine, time_entry)
+        })
+    }
+
+    #[function_name::named]
     #[traced_test]
     #[test]
     fn test_get_time_entry() -> Result<(), Box<dyn Error>> {
-        let _r_time_entries = TIME_ENTRY_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .tls_backend_rustls()
-                .build()?,
-        )?;
-        let endpoint = GetTimeEntry::builder().id(832).build()?;
-        redmine.json_response_body::<_, TimeEntryWrapper<TimeEntry>>(&endpoint)?;
-        Ok(())
+        let name = format!("unittest_{}", function_name!());
+        with_time_entry(&name, |redmine, time_entry| {
+            let endpoint = GetTimeEntry::builder().id(time_entry.id).build()?;
+            redmine.json_response_body::<_, TimeEntryWrapper<TimeEntry>>(&endpoint)?;
+            Ok(())
+        })
     }
 
+    #[function_name::named]
     #[traced_test]
     #[test]
     fn test_create_time_entry() -> Result<(), Box<dyn Error>> {
-        let _w_time_entries = TIME_ENTRY_LOCK.blocking_write();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .tls_backend_rustls()
-                .build()?,
-        )?;
-        let create_endpoint = super::CreateTimeEntry::builder()
-            .issue_id(25095)
-            .hours(1.0)
-            .activity_id(8)
-            .build()?;
-        redmine.json_response_body::<_, TimeEntryWrapper<TimeEntry>>(&create_endpoint)?;
-        Ok(())
+        let name = format!("unittest_{}", function_name!());
+        with_time_entry(&name, |_redmine, time_entry| {
+            assert!((time_entry.hours - 1.0).abs() < f64::EPSILON);
+            Ok(())
+        })
     }
 
+    #[function_name::named]
     #[traced_test]
     #[test]
     fn test_update_time_entry() -> Result<(), Box<dyn Error>> {
-        let _w_time_entries = TIME_ENTRY_LOCK.blocking_write();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .tls_backend_rustls()
-                .build()?,
-        )?;
-        let create_endpoint = super::CreateTimeEntry::builder()
-            .issue_id(25095)
-            .hours(1.0)
-            .activity_id(8)
-            .build()?;
-        let TimeEntryWrapper { time_entry } =
-            redmine.json_response_body::<_, TimeEntryWrapper<TimeEntry>>(&create_endpoint)?;
-        let update_endpoint = super::UpdateTimeEntry::builder()
-            .id(time_entry.id)
-            .hours(2.0)
-            .build()?;
-        redmine.ignore_response_body::<_>(&update_endpoint)?;
-        Ok(())
+        let name = format!("unittest_{}", function_name!());
+        with_time_entry(&name, |redmine, time_entry| {
+            let update_endpoint = super::UpdateTimeEntry::builder()
+                .id(time_entry.id)
+                .hours(2.0)
+                .build()?;
+            redmine.ignore_response_body::<_>(&update_endpoint)?;
+            let get_endpoint = GetTimeEntry::builder().id(time_entry.id).build()?;
+            let TimeEntryWrapper { time_entry } =
+                redmine.json_response_body::<_, TimeEntryWrapper<TimeEntry>>(&get_endpoint)?;
+            assert!((time_entry.hours - 2.0).abs() < f64::EPSILON);
+            Ok(())
+        })
     }
 
     /// this tests if any of the results contain a field we are not deserializing

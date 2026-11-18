@@ -1507,7 +1507,7 @@ pub struct IssueWrapper<T> {
 pub(crate) mod test {
     use super::*;
     use crate::api::ResponsePage;
-    use crate::api::test_helpers::with_project;
+    use crate::api::test_helpers::{create_issue, with_project};
     use pretty_assertions::assert_eq;
     use std::error::Error;
     use tokio::sync::RwLock;
@@ -1554,64 +1554,74 @@ pub(crate) mod test {
     /// this version of the test will load all pages of issues which means it
     /// can take a while (a minute or more) so you need to use --include-ignored
     /// or --ignored to run it
+    #[function_name::named]
     #[traced_test]
     #[test]
     #[ignore = "loads all pages of issues; runtime ~1m, run with --include-ignored"]
     fn test_list_issues_all_pages_iter() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .tls_backend_rustls()
-                .build()?,
-        )?;
-        let endpoint = ListIssues::builder().build()?;
-        let mut i = 0;
-        for issue in redmine.json_response_body_all_pages_iter::<_, Issue>(&endpoint) {
-            let _issue = issue?;
-            i += 1;
-        }
-        assert!(i > 0);
-
+        let _w_issues = ISSUES_LOCK.blocking_write();
+        let name = format!("unittest_{}", function_name!());
+        with_project(&name, |redmine, project_id, _name| {
+            create_issue(redmine, project_id, "Test issue for listing")?;
+            let endpoint = ListIssues::builder().build()?;
+            let mut i = 0;
+            for issue in redmine.json_response_body_all_pages_iter::<_, Issue>(&endpoint) {
+                let _issue = issue?;
+                i += 1;
+            }
+            assert!(i > 0);
+            Ok(())
+        })?;
         Ok(())
     }
 
     /// this version of the test will load all pages of issues which means it
     /// can take a while (a minute or more) so you need to use --include-ignored
     /// or --ignored to run it
+    #[function_name::named]
     #[traced_test]
-    #[tokio::test]
+    #[test]
     #[ignore = "loads all pages of issues; runtime ~1m, run with --include-ignored"]
-    async fn test_list_issues_all_pages_stream() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.read().await;
-        dotenvy::dotenv()?;
-        let redmine = crate::api::RedmineAsync::from_env(
-            reqwest::Client::builder().tls_backend_rustls().build()?,
-        )?;
-        let endpoint = ListIssues::builder().build()?;
-        let mut i = 0;
-        let mut stream = redmine.json_response_body_all_pages_stream::<_, Issue>(&endpoint);
-        while let Some(issue) = <_ as futures::stream::StreamExt>::next(&mut stream).await {
-            let _issue = issue?;
-            i += 1;
-        }
-        assert!(i > 0);
-
+    fn test_list_issues_all_pages_stream() -> Result<(), Box<dyn Error>> {
+        let _w_issues = ISSUES_LOCK.blocking_write();
+        let name = format!("unittest_{}", function_name!());
+        // the fixture setup uses the blocking client which can not be used
+        // inside an async runtime so we only use the runtime for the actual
+        // stream test
+        with_project(&name, |redmine, project_id, _name| {
+            create_issue(redmine, project_id, "Test issue for listing")?;
+            tokio::runtime::Runtime::new()?.block_on(async {
+                let redmine = crate::api::RedmineAsync::from_env(
+                    reqwest::Client::builder().tls_backend_rustls().build()?,
+                )?;
+                let endpoint = ListIssues::builder().build()?;
+                let mut i = 0;
+                let mut stream = redmine.json_response_body_all_pages_stream::<_, Issue>(&endpoint);
+                while let Some(issue) = <_ as futures::stream::StreamExt>::next(&mut stream).await {
+                    let _issue = issue?;
+                    i += 1;
+                }
+                assert!(i > 0);
+                Ok::<_, Box<dyn Error>>(())
+            })
+        })?;
         Ok(())
     }
 
+    #[function_name::named]
     #[traced_test]
     #[test]
     fn test_get_issue() -> Result<(), Box<dyn Error>> {
-        let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .tls_backend_rustls()
-                .build()?,
-        )?;
-        let endpoint = GetIssue::builder().id(40000).build()?;
-        redmine.json_response_body::<_, IssueWrapper<Issue>>(&endpoint)?;
+        let _w_issues = ISSUES_LOCK.blocking_write();
+        let name = format!("unittest_{}", function_name!());
+        with_project(&name, |redmine, project_id, _name| {
+            let issue = create_issue(redmine, project_id, "Test issue for get")?;
+            let endpoint = GetIssue::builder().id(issue.id).build()?;
+            let IssueWrapper { issue: fetched } =
+                redmine.json_response_body::<_, IssueWrapper<Issue>>(&endpoint)?;
+            assert_eq!(fetched.id, issue.id);
+            Ok(())
+        })?;
         Ok(())
     }
 
