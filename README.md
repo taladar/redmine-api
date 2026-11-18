@@ -45,6 +45,23 @@ containers are named `redmine-api-test-<version>` and
 `redmine-api-test-<version>-db` and are left running for the next test run,
 remove both to start over with an empty database.
 
+## Tested Redmine versions
+
+On 2026-11-18 the full test suite was run against every Redmine version from
+7.0.3 down to 4.2.10 that is available as an official Redmine Docker image:
+
+* 5.0.0 to 7.0.3 work, except for 6.0.0 and 6.0.1
+* 6.0.1 returns the hours of time entries as a fraction (e.g. "1/1") instead of
+  a number which can not be parsed, this is
+  [Redmine bug #41819](https://www.redmine.org/issues/41819), fixed in 6.0.2.
+  6.0.0 has no Docker image but has the same code so it is affected as well.
+  Everything else works with those versions.
+* 4.2.10 and older are not supported, listing trackers fails because the
+  enabled\_standard\_fields of trackers were only added in Redmine 5.0
+
+Fields added in later Redmine versions are optional in the corresponding types
+(e.g. the description of issue statuses, added in Redmine 5.1).
+
 ## How to use this crate
 
 All the examples in this README file assume that REDMINE\_API\_KEY and

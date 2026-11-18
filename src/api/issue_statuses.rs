@@ -52,7 +52,7 @@ pub struct IssueStatus {
     pub id: u64,
     /// display name
     pub name: String,
-    /// description
+    /// description (Redmine 5.1 and later)
     pub description: Option<String>,
     /// is this status considered closed
     pub is_closed: bool,
@@ -131,7 +131,10 @@ mod test {
     #[traced_test]
     #[test]
     fn test_completeness_issue_status_type() -> Result<(), Box<dyn Error>> {
+        use crate::api::test_helpers::{RedmineVersion, redmine_version};
         crate::api::test_helpers::setup()?;
+        // the description field was added in Redmine 5.1
+        let has_description = redmine_version()? >= RedmineVersion::new(5, 1, 0);
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -143,7 +146,10 @@ mod test {
         } = redmine.json_response_body::<_, IssueStatusesWrapper<serde_json::Value>>(&endpoint)?;
         for value in values {
             let o: IssueStatus = serde_json::from_value(value.clone())?;
-            let reserialized = serde_json::to_value(o)?;
+            let mut reserialized = serde_json::to_value(o)?;
+            if !has_description && let Some(object) = reserialized.as_object_mut() {
+                assert_eq!(object.remove("description"), Some(serde_json::Value::Null));
+            }
             assert_eq!(value, reserialized);
         }
         Ok(())
