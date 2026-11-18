@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.13.0 - 2026-11-18 13:25:04Z
+
+### 🚀 Features
+
+- *(api)* Support Redmine 7.0 while staying compatible with 6.x
+
+### 📚 Documentation
+
+- Document the tested Redmine versions
+
+### 🧪 Testing
+
+- Create test fixtures instead of relying on hard-coded ids
+- Declare the Redmine version and manage a local test container
+
 ## 0.12.1 - 2026-11-16 15:16:42Z
 
 ### ⚙️ Miscellaneous Tasks
