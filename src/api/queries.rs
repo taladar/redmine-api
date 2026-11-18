@@ -134,7 +134,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_queries_first_page() -> Result<(), Box<dyn Error>> {
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -148,7 +148,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_queries_all_pages() -> Result<(), Box<dyn Error>> {
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -166,7 +166,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_completeness_query_type() -> Result<(), Box<dyn Error>> {
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()

@@ -261,7 +261,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_issue_priorities_no_pagination() -> Result<(), Box<dyn Error>> {
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -275,7 +275,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_time_entry_activities_no_pagination() -> Result<(), Box<dyn Error>> {
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -290,7 +290,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_document_categories_no_pagination() -> Result<(), Box<dyn Error>> {
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()

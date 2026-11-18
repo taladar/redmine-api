@@ -449,7 +449,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_get_my_account() -> Result<(), Box<dyn Error>> {
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -463,7 +463,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_update_my_account() -> Result<(), Box<dyn Error>> {
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -496,7 +496,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_completeness_my_account_type() -> Result<(), Box<dyn Error>> {
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()

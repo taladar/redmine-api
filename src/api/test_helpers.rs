@@ -2,10 +2,30 @@
 use std::error::Error;
 use tracing::trace;
 
-use crate::api::groups::{CreateGroup, DeleteGroup, Group, GroupWrapper, test::GROUP_LOCK};
+use crate::api::groups::{
+    CreateGroup, DeleteGroup, Group, GroupEssentials, GroupWrapper, GroupsWrapper, ListGroups,
+    test::GROUP_LOCK,
+};
 use crate::api::projects::{
     CreateProject, DeleteProject, GetProject, Project, ProjectWrapper, test::PROJECT_LOCK,
 };
+
+/// Prepares the environment for a test, loads the .env file (if there is
+/// one) and makes sure the local Redmine test container is running if one is
+/// configured (see [`crate::api::test_container`])
+///
+/// # Errors
+///
+/// This returns an error if the .env file can not be parsed or the test
+/// container can not be set up
+pub fn setup() -> Result<(), Box<dyn Error>> {
+    match dotenvy::dotenv() {
+        Ok(_) => {}
+        Err(e) if e.not_found() => trace!("No .env file found"),
+        Err(e) => return Err(e.into()),
+    }
+    crate::api::test_container::ensure_container()
+}
 
 /// Create a project for testing and then call the function with the project
 /// id and name and then cleans up the project in both the error and the ok
@@ -26,7 +46,7 @@ where
     F: FnOnce(&crate::api::Redmine, u64, &str) -> Result<(), Box<dyn Error>>,
 {
     let _w_projects = PROJECT_LOCK.blocking_write();
-    dotenvy::dotenv()?;
+    setup()?;
     let redmine = crate::api::Redmine::from_env(
         reqwest::blocking::Client::builder()
             .tls_backend_rustls()
@@ -111,12 +131,21 @@ where
     F: FnOnce(&crate::api::Redmine, u64, &str) -> Result<(), Box<dyn Error>>,
 {
     let _w_groups = GROUP_LOCK.blocking_write();
-    dotenvy::dotenv()?;
+    setup()?;
     let redmine = crate::api::Redmine::from_env(
         reqwest::blocking::Client::builder()
             .tls_backend_rustls()
             .build()?,
     )?;
+    // remove left-overs from a previous test run that failed to clean up
+    let list_endpoint = ListGroups::builder().build()?;
+    let GroupsWrapper { groups } =
+        redmine.json_response_body::<_, GroupsWrapper<GroupEssentials>>(&list_endpoint)?;
+    for group in groups.into_iter().filter(|g| g.name == name) {
+        trace!(%name, id = group.id, "Deleting left-over test group");
+        let delete_endpoint = DeleteGroup::builder().id(group.id).build()?;
+        redmine.ignore_response_body::<_>(&delete_endpoint)?;
+    }
     let create_endpoint = CreateGroup::builder().name(name).build()?;
     let GroupWrapper { group } =
         redmine.json_response_body::<_, GroupWrapper<Group>>(&create_endpoint)?;
@@ -172,4 +201,109 @@ pub fn create_issue(
     let IssueWrapper { issue } =
         redmine.json_response_body::<_, IssueWrapper<Issue>>(&create_endpoint)?;
     Ok(issue)
+}
+
+/// A Redmine version as declared in the `REDMINE_VERSION` environment
+/// variable (e.g. `6.1.2` or `7.0`), used by tests whose expected behaviour
+/// depends on the version of the Redmine instance they run against
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub struct RedmineVersion {
+    /// major version
+    pub major: u64,
+    /// minor version
+    pub minor: u64,
+    /// patch version
+    pub patch: u64,
+}
+
+impl RedmineVersion {
+    /// create a new version for comparisons
+    #[must_use]
+    pub const fn new(major: u64, minor: u64, patch: u64) -> Self {
+        Self {
+            major,
+            minor,
+            patch,
+        }
+    }
+}
+
+impl std::fmt::Display for RedmineVersion {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}.{}.{}", self.major, self.minor, self.patch)
+    }
+}
+
+impl std::str::FromStr for RedmineVersion {
+    type Err = String;
+
+    /// parses `major[.minor[.patch]]`, ignoring any suffix after the patch
+    /// version (e.g. `6.1.2.stable`)
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let mut parts = s.trim().split('.');
+        let mut next = |name: &str, required: bool| -> Result<u64, String> {
+            match parts.next() {
+                Some(part) => part
+                    .parse()
+                    .map_err(|e| format!("invalid {name} version {part:?} in {s:?}: {e}")),
+                None if required => Err(format!("missing {name} version in {s:?}")),
+                None => Ok(0),
+            }
+        };
+        Ok(Self {
+            major: next("major", true)?,
+            minor: next("minor", false)?,
+            patch: next("patch", false)?,
+        })
+    }
+}
+
+/// Returns the version of the Redmine instance the tests run against as
+/// declared in the `REDMINE_VERSION` environment variable (or `.env` file)
+///
+/// # Errors
+///
+/// This returns an error if the variable is not set or can not be parsed
+pub fn redmine_version() -> Result<RedmineVersion, Box<dyn Error>> {
+    // a missing .env file is fine if the variables are set in the environment
+    if let Err(e) = dotenvy::dotenv() {
+        trace!("Could not load .env file: {e}");
+    }
+    let version = std::env::var("REDMINE_VERSION").map_err(|e| {
+        format!(
+            "REDMINE_VERSION needs to be set to the version of the Redmine instance at \
+             REDMINE_URL (e.g. 6.1.2) for version dependent tests: {e}"
+        )
+    })?;
+    Ok(version.parse()?)
+}
+
+#[cfg(test)]
+mod test {
+    use super::RedmineVersion;
+    use pretty_assertions::assert_eq;
+
+    #[test]
+    fn test_parse_redmine_version() -> Result<(), String> {
+        assert_eq!(
+            "6.1.2".parse::<RedmineVersion>()?,
+            RedmineVersion::new(6, 1, 2)
+        );
+        assert_eq!(
+            "7.0".parse::<RedmineVersion>()?,
+            RedmineVersion::new(7, 0, 0)
+        );
+        assert_eq!("7".parse::<RedmineVersion>()?, RedmineVersion::new(7, 0, 0));
+        assert_eq!(
+            " 6.1.2.stable ".parse::<RedmineVersion>()?,
+            RedmineVersion::new(6, 1, 2)
+        );
+        for invalid in ["", "seven", "7.x"] {
+            if let Ok(version) = invalid.parse::<RedmineVersion>() {
+                return Err(format!("{invalid:?} parsed as {version}"));
+            }
+        }
+        assert!(RedmineVersion::new(6, 1, 2) < RedmineVersion::new(7, 0, 0));
+        Ok(())
+    }
 }

@@ -1521,7 +1521,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_first_page() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -1540,7 +1540,7 @@ pub(crate) mod test {
     #[ignore = "loads all pages of issues; runtime ~1m, run with --include-ignored"]
     fn test_list_issues_all_pages() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -1853,7 +1853,7 @@ pub(crate) mod test {
     #[test]
     fn test_completeness_issue_type_first_page() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -1904,7 +1904,7 @@ pub(crate) mod test {
     #[ignore = "loads all pages of issues; runtime ~1m, run with --include-ignored"]
     fn test_completeness_issue_type_all_pages() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -1951,7 +1951,7 @@ pub(crate) mod test {
     #[ignore = "fetches every issue via GetIssue; runtime ~400s, run with --include-ignored"]
     fn test_completeness_issue_type_all_pages_all_issue_details() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -1998,7 +1998,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_created_on_filter_exact_match() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -2018,7 +2018,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_created_on_filter_range() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -2039,7 +2039,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_created_on_filter_less_than_or_equal() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -2059,7 +2059,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_created_on_filter_greater_than_or_equal() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -2079,7 +2079,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_created_on_filter_less_than_days_ago() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -2098,7 +2098,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_created_on_filter_more_than_days_ago() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -2117,7 +2117,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_created_on_filter_within_past_days() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -2136,7 +2136,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_created_on_filter_exact_days_ago() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -2155,7 +2155,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_created_on_filter_today() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -2174,7 +2174,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_created_on_filter_yesterday() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -2193,7 +2193,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_created_on_filter_this_week() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -2212,7 +2212,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_created_on_filter_last_week() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -2231,7 +2231,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_created_on_filter_last_two_weeks() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -2250,7 +2250,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_created_on_filter_this_month() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -2269,7 +2269,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_created_on_filter_last_month() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -2288,7 +2288,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_created_on_filter_this_year() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -2307,7 +2307,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_created_on_filter_unset() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -2326,7 +2326,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_created_on_filter_any() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -2345,7 +2345,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_updated_on_filter_exact_match() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -2365,7 +2365,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_updated_on_filter_range() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -2386,7 +2386,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_updated_on_filter_less_than_or_equal() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -2406,7 +2406,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_updated_on_filter_greater_than_or_equal() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -2426,7 +2426,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_updated_on_filter_less_than_days_ago() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -2445,7 +2445,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_updated_on_filter_more_than_days_ago() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -2464,7 +2464,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_updated_on_filter_within_past_days() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -2483,7 +2483,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_updated_on_filter_exact_days_ago() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -2502,7 +2502,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_updated_on_filter_today() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -2521,7 +2521,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_updated_on_filter_yesterday() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -2540,7 +2540,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_updated_on_filter_this_week() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -2559,7 +2559,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_updated_on_filter_last_week() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -2578,7 +2578,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_updated_on_filter_last_two_weeks() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -2597,7 +2597,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_updated_on_filter_this_month() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -2616,7 +2616,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_updated_on_filter_last_month() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -2635,7 +2635,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_updated_on_filter_this_year() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -2654,7 +2654,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_updated_on_filter_unset() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -2673,7 +2673,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_updated_on_filter_any() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -2692,7 +2692,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_start_date_filter_exact_match() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -2712,7 +2712,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_start_date_filter_range() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -2733,7 +2733,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_start_date_filter_less_than_or_equal() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -2753,7 +2753,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_start_date_filter_greater_than_or_equal() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -2773,7 +2773,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_start_date_filter_less_than_days_ago() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -2792,7 +2792,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_start_date_filter_more_than_days_ago() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -2811,7 +2811,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_start_date_filter_within_past_days() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -2830,7 +2830,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_start_date_filter_exact_days_ago() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -2849,7 +2849,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_start_date_filter_in_less_than_days() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -2868,7 +2868,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_start_date_filter_in_more_than_days() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -2887,7 +2887,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_start_date_filter_within_future_days() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -2906,7 +2906,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_start_date_filter_in_exact_days() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -2925,7 +2925,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_start_date_filter_today() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -2944,7 +2944,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_start_date_filter_yesterday() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -2963,7 +2963,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_start_date_filter_tomorrow() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -2982,7 +2982,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_start_date_filter_this_week() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -3001,7 +3001,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_start_date_filter_last_week() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -3020,7 +3020,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_start_date_filter_last_two_weeks() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -3039,7 +3039,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_start_date_filter_next_week() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -3058,7 +3058,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_start_date_filter_this_month() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -3077,7 +3077,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_start_date_filter_last_month() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -3096,7 +3096,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_start_date_filter_next_month() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -3115,7 +3115,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_start_date_filter_this_year() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -3134,7 +3134,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_start_date_filter_unset() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -3153,7 +3153,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_start_date_filter_any() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -3170,7 +3170,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_due_date_filter_exact_match() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -3190,7 +3190,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_due_date_filter_range() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -3211,7 +3211,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_due_date_filter_less_than_or_equal() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -3231,7 +3231,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_due_date_filter_greater_than_or_equal() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -3251,7 +3251,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_due_date_filter_less_than_days_ago() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -3270,7 +3270,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_due_date_filter_more_than_days_ago() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -3289,7 +3289,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_due_date_filter_within_past_days() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -3308,7 +3308,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_due_date_filter_exact_days_ago() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -3327,7 +3327,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_due_date_filter_in_less_than_days() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -3346,7 +3346,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_due_date_filter_in_more_than_days() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -3365,7 +3365,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_due_date_filter_within_future_days() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -3384,7 +3384,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_due_date_filter_in_exact_days() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -3403,7 +3403,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_due_date_filter_today() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -3420,7 +3420,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_due_date_filter_yesterday() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -3439,7 +3439,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_due_date_filter_tomorrow() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -3458,7 +3458,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_due_date_filter_this_week() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -3477,7 +3477,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_due_date_filter_last_week() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -3496,7 +3496,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_due_date_filter_last_two_weeks() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -3515,7 +3515,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_due_date_filter_next_week() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -3534,7 +3534,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_due_date_filter_this_month() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -3553,7 +3553,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_due_date_filter_last_month() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -3572,7 +3572,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_due_date_filter_next_month() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -3591,7 +3591,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_due_date_filter_this_year() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -3610,7 +3610,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_due_date_filter_unset() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -3627,7 +3627,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_due_date_filter_any() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -3644,7 +3644,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_issues_child_id_filter() -> Result<(), Box<dyn Error>> {
         let _r_issues = ISSUES_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()

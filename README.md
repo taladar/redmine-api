@@ -17,6 +17,34 @@ Any such changes should not take a lot of effort when changing a client when
 updating this crate though, most likely the existing parameter value would just
 have to be wrapped in a new Enum.
 
+## Running the tests
+
+The tests run against a live Redmine instance and create (and delete again)
+projects, issues, groups and other objects on it, so do not run them against
+a production instance.
+
+They need the following variables, set in the environment or a .env file:
+
+* REDMINE\_URL - the base URL of the Redmine instance
+* REDMINE\_API\_KEY - the API key of an admin user on that instance
+* REDMINE\_VERSION - the version of that Redmine instance (e.g. 6.1.2), used
+  by tests that expect different behaviour depending on the Redmine version
+
+The tests only rely on the default data Redmine loads into a new instance, so a
+fresh instance of the official Redmine Docker image with the REST API enabled
+works as well.
+
+The tests can also manage such a local instance themselves. If
+REDMINE\_TEST\_CONTAINER\_RUNTIME is set to podman or docker the tests make sure
+a container with the official Redmine image for REDMINE\_VERSION (and a
+PostgreSQL container for its database) is running before they start, creating
+or starting the containers if necessary. Redmine is published on the port from
+REDMINE\_URL (which has to be a URL like `http://127.0.0.1:3100`) and the admin
+user gets the API key from REDMINE\_API\_KEY (e.g. 40 random hex digits). The
+containers are named `redmine-api-test-<version>` and
+`redmine-api-test-<version>-db` and are left running for the next test run,
+remove both to start over with an empty database.
+
 ## How to use this crate
 
 All the examples in this README file assume that REDMINE\_API\_KEY and

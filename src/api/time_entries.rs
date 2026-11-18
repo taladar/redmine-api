@@ -402,7 +402,7 @@ mod test {
     #[test]
     fn test_list_time_entries_first_page() -> Result<(), Box<dyn Error>> {
         let _r_time_entries = TIME_ENTRY_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -419,7 +419,7 @@ mod test {
     // #[ignore]
     // fn test_list_time_entries_all_pages() -> Result<(), Box<dyn Error>> {
     //     let _r_time_entries = TIME_ENTRY_LOCK.blocking_read();
-    //     dotenvy::dotenv()?;
+    //     crate::api::test_helpers::setup()?;
     //     let redmine = crate::api::Redmine::from_env()?;
     //     let endpoint = ListTimeEntries::builder().build()?;
     //     redmine.json_response_body_all_pages::<_, TimeEntry>(&endpoint)?;
@@ -512,7 +512,7 @@ mod test {
     #[test]
     fn test_completeness_time_entry_type_first_page() -> Result<(), Box<dyn Error>> {
         let _r_time_entries = TIME_ENTRY_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()

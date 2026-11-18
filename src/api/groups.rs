@@ -415,7 +415,7 @@ pub struct GroupWrapper<T> {
 pub(crate) mod test {
     use super::*;
     use crate::api::project_memberships::test::PROJECT_MEMBERSHIP_LOCK;
-    use crate::api::test_helpers::{current_user_id, with_group};
+    use crate::api::test_helpers::{RedmineVersion, current_user_id, redmine_version, with_group};
     use crate::api::users::test::USER_LOCK;
     use pretty_assertions::assert_eq;
     use std::error::Error;
@@ -431,7 +431,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_groups_no_pagination() -> Result<(), Box<dyn Error>> {
         let _r_groups = GROUP_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -522,13 +522,13 @@ pub(crate) mod test {
         })
     }
 
-    /// checks whether the Redmine instance supports [`RemoveUsersFromGroup`]
-    /// (Redmine 7.0 and later)
+    /// checks whether the Redmine instance has the route used by
+    /// [`RemoveUsersFromGroup`] (Redmine 7.0 and later)
     ///
     /// sends the request without any users to an empty group, Redmine 7.0 and
     /// later answers this with an empty API 404 response while older versions
     /// do not have the route at all and answer with the HTML 404 page
-    fn supports_remove_users_from_group(group_id: u64) -> Result<bool, Box<dyn Error>> {
+    fn has_remove_users_from_group_route(group_id: u64) -> Result<bool, Box<dyn Error>> {
         let url = std::env::var("REDMINE_URL")?;
         let api_key = std::env::var("REDMINE_API_KEY")?;
         let response = reqwest::blocking::Client::builder()
@@ -567,18 +567,31 @@ pub(crate) mod test {
         })
     }
 
-    /// this test is skipped (passes without testing anything) on Redmine
-    /// versions before 7.0 which do not have the endpoint
+    /// the endpoint was added in Redmine 7.0, on older versions (according to
+    /// `REDMINE_VERSION`) this only checks that the endpoint does not exist yet
     #[function_name::named]
     #[traced_test]
     #[test]
     fn test_add_and_remove_users_from_group() -> Result<(), Box<dyn Error>> {
+        let version = redmine_version()?;
         let name = format!("unittest_{}", function_name!());
         with_group(&name, |redmine, group_id, _name| {
-            if !supports_remove_users_from_group(group_id)? {
-                tracing::warn!("Redmine version does not support RemoveUsersFromGroup, skipping");
+            let has_route = has_remove_users_from_group_route(group_id)?;
+            if version < RedmineVersion::new(7, 0, 0) {
+                assert!(
+                    !has_route,
+                    "REDMINE_VERSION is {version} but the Redmine instance has the \
+                     RemoveUsersFromGroup endpoint added in Redmine 7.0, \
+                     is REDMINE_VERSION correct?"
+                );
                 return Ok(());
             }
+            assert!(
+                has_route,
+                "REDMINE_VERSION is {version} but the Redmine instance does not have the \
+                 RemoveUsersFromGroup endpoint added in Redmine 7.0, \
+                 is REDMINE_VERSION correct?"
+            );
             let user_id = current_user_id(redmine)?;
             let add_endpoint = AddUserToGroup::builder()
                 .group_id(group_id)
@@ -604,7 +617,7 @@ pub(crate) mod test {
     #[test]
     fn test_completeness_group_type() -> Result<(), Box<dyn Error>> {
         let _r_groups = GROUP_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -634,7 +647,7 @@ pub(crate) mod test {
         let _r_user = USER_LOCK.blocking_read();
         let _r_groups = GROUP_LOCK.blocking_read();
         let _r_project_memberships = PROJECT_MEMBERSHIP_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()

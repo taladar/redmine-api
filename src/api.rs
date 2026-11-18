@@ -37,6 +37,8 @@ pub mod queries;
 pub mod roles;
 pub mod search;
 #[cfg(test)]
+pub mod test_container;
+#[cfg(test)]
 pub mod test_helpers;
 pub mod time_entries;
 pub mod trackers;

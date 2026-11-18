@@ -203,7 +203,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_roles_no_pagination() -> Result<(), Box<dyn Error>> {
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -217,7 +217,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_roles_givable_filter() -> Result<(), Box<dyn Error>> {
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -230,7 +230,7 @@ mod test {
 
     #[test]
     fn test_get_role() -> Result<(), Box<dyn Error>> {
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -254,7 +254,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_completeness_role_type() -> Result<(), Box<dyn Error>> {
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()

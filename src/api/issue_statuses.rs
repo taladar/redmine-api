@@ -113,7 +113,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_list_issue_statuses_no_pagination() -> Result<(), Box<dyn Error>> {
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -131,7 +131,7 @@ mod test {
     #[traced_test]
     #[test]
     fn test_completeness_issue_status_type() -> Result<(), Box<dyn Error>> {
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()

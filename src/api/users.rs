@@ -595,7 +595,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_users_first_page() -> Result<(), Box<dyn Error>> {
         let _r_user = USER_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -610,7 +610,7 @@ pub(crate) mod test {
     #[test]
     fn test_list_users_all_pages() -> Result<(), Box<dyn Error>> {
         let _r_user = USER_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -625,7 +625,7 @@ pub(crate) mod test {
     #[test]
     fn test_get_user() -> Result<(), Box<dyn Error>> {
         let _r_user = USER_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -642,7 +642,7 @@ pub(crate) mod test {
     fn test_create_user() -> Result<(), Box<dyn Error>> {
         let _w_user = USER_LOCK.blocking_write();
         let name = format!("unittest_{}", function_name!());
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -677,7 +677,7 @@ pub(crate) mod test {
     // fn test_create_user_send_account_info() -> Result<(), Box<dyn Error>> {
     //     let _w_user = USER_LOCK.blocking_write();
     //     let name = format!("unittest_{}", function_name!());
-    //     dotenvy::dotenv()?;
+    //     crate::api::test_helpers::setup()?;
     //     let redmine = crate::api::Redmine::from_env()?;
     //     let list_endpoint = ListUsers::builder().name(name.clone()).build()?;
     //     let UsersWrapper { users } =
@@ -710,7 +710,7 @@ pub(crate) mod test {
     // fn test_create_admin_user() -> Result<(), Box<dyn Error>> {
     //     let _w_user = USER_LOCK.blocking_write();
     //     let name = format!("unittest_{}", function_name!());
-    //     dotenvy::dotenv()?;
+    //     crate::api::test_helpers::setup()?;
     //     let redmine = crate::api::Redmine::from_env()?;
     //     let list_endpoint = ListUsers::builder().name(name.clone()).build()?;
     //     let UsersWrapper { users } =
@@ -739,7 +739,7 @@ pub(crate) mod test {
     fn test_update_user() -> Result<(), Box<dyn Error>> {
         let _w_user = USER_LOCK.blocking_write();
         let name = format!("unittest_{}", function_name!());
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -777,7 +777,7 @@ pub(crate) mod test {
     #[test]
     fn test_completeness_user_type_first_page() -> Result<(), Box<dyn Error>> {
         let _r_user = USER_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
@@ -811,7 +811,7 @@ pub(crate) mod test {
         let _r_user = USER_LOCK.blocking_read();
         let _r_groups = GROUP_LOCK.blocking_read();
         let _r_project_memberships = PROJECT_MEMBERSHIP_LOCK.blocking_read();
-        dotenvy::dotenv()?;
+        crate::api::test_helpers::setup()?;
         let redmine = crate::api::Redmine::from_env(
             reqwest::blocking::Client::builder()
                 .tls_backend_rustls()
