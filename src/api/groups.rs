@@ -9,6 +9,7 @@
 //! - [x] delete group endpoint
 //! - [x] add user to group endpoint
 //! - [x] remove user from group endpoint
+//! - [x] remove users from group endpoint (Redmine 7.0 and later)
 
 use derive_builder::Builder;
 use reqwest::Method;
@@ -323,6 +324,13 @@ impl Endpoint for AddUserToGroup {
 }
 
 /// The endpoint to remove a Redmine user from a Redmine group
+///
+/// This works with all supported Redmine versions but is deprecated in
+/// Redmine 7.0 and scheduled for removal in Redmine 8.0. When targeting only
+/// Redmine 7.0 or later prefer [`RemoveUsersFromGroup`].
+///
+/// Starting with Redmine 7.0 this returns a 404 if the user is not a member
+/// of the group.
 #[derive(Debug, Clone, Builder)]
 #[builder(setter(strip_option))]
 pub struct RemoveUserFromGroup {
@@ -350,6 +358,44 @@ impl Endpoint for RemoveUserFromGroup {
     }
 }
 
+/// The endpoint to remove one or more Redmine users from a Redmine group
+///
+/// This endpoint requires Redmine 7.0 or later, older versions return a 404.
+/// Use [`RemoveUserFromGroup`] for older versions.
+///
+/// Redmine returns a 404 if none of the given users are members of the group.
+#[derive(Debug, Clone, Builder, Serialize)]
+#[builder(setter(strip_option))]
+pub struct RemoveUsersFromGroup {
+    /// Group Id to remove the users from
+    #[serde(skip_serializing)]
+    group_id: u64,
+    /// Users to remove from the group
+    user_ids: Vec<u64>,
+}
+
+impl RemoveUsersFromGroup {
+    /// Create a builder for the endpoint.
+    #[must_use]
+    pub fn builder() -> RemoveUsersFromGroupBuilder {
+        RemoveUsersFromGroupBuilder::default()
+    }
+}
+
+impl Endpoint for RemoveUsersFromGroup {
+    fn method(&self) -> Method {
+        Method::DELETE
+    }
+
+    fn endpoint(&self) -> Cow<'static, str> {
+        format!("groups/{}/users.json", self.group_id).into()
+    }
+
+    fn body(&self) -> Result<Option<(&'static str, Vec<u8>)>, crate::Error> {
+        Ok(Some(("application/json", serde_json::to_vec(self)?)))
+    }
+}
+
 /// helper struct for outer layers with a groups field holding the inner data
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, serde::Deserialize)]
 pub struct GroupsWrapper<T> {
@@ -369,11 +415,12 @@ pub struct GroupWrapper<T> {
 pub(crate) mod test {
     use super::*;
     use crate::api::project_memberships::test::PROJECT_MEMBERSHIP_LOCK;
-    use crate::api::test_helpers::with_group;
+    use crate::api::test_helpers::{current_user_id, with_group};
     use crate::api::users::test::USER_LOCK;
     use pretty_assertions::assert_eq;
     use std::error::Error;
     use tokio::sync::RwLock;
+    use tracing::trace;
     use tracing_test::traced_test;
 
     /// needed so we do not get 404s when listing while
@@ -395,18 +442,18 @@ pub(crate) mod test {
         Ok(())
     }
 
+    #[function_name::named]
     #[traced_test]
     #[test]
     fn test_get_group() -> Result<(), Box<dyn Error>> {
-        let _r_groups = GROUP_LOCK.blocking_read();
-        dotenvy::dotenv()?;
-        let redmine = crate::api::Redmine::from_env(
-            reqwest::blocking::Client::builder()
-                .tls_backend_rustls()
-                .build()?,
-        )?;
-        let endpoint = GetGroup::builder().id(338).build()?;
-        redmine.json_response_body::<_, GroupWrapper<Group>>(&endpoint)?;
+        let name = format!("unittest_{}", function_name!());
+        with_group(&name, |redmine, id, name| {
+            let endpoint = GetGroup::builder().id(id).build()?;
+            let GroupWrapper { group } =
+                redmine.json_response_body::<_, GroupWrapper<Group>>(&endpoint)?;
+            assert_eq!(group.name, name);
+            Ok(())
+        })?;
         Ok(())
     }
 
@@ -433,6 +480,120 @@ pub(crate) mod test {
             Ok(())
         })?;
         Ok(())
+    }
+
+    /// returns the ids of the users in the group
+    fn group_user_ids(
+        redmine: &crate::api::Redmine,
+        group_id: u64,
+    ) -> Result<Vec<u64>, Box<dyn Error>> {
+        let endpoint = GetGroup::builder()
+            .id(group_id)
+            .include(vec![GroupInclude::Users])
+            .build()?;
+        let GroupWrapper { group } =
+            redmine.json_response_body::<_, GroupWrapper<Group>>(&endpoint)?;
+        Ok(group
+            .users
+            .unwrap_or_default()
+            .into_iter()
+            .map(|u| u.id)
+            .collect())
+    }
+
+    /// creates a group, adds the current user to it, calls the function with
+    /// the group id and the user id and deletes the group afterwards
+    ///
+    /// this uses the current user instead of creating a user because deleting
+    /// users can take a very long time on large Redmine instances
+    fn with_current_user_in_group<F>(name: &str, f: F) -> Result<(), Box<dyn Error>>
+    where
+        F: FnOnce(&crate::api::Redmine, u64, u64) -> Result<(), Box<dyn Error>>,
+    {
+        with_group(name, |redmine, group_id, _name| {
+            let user_id = current_user_id(redmine)?;
+            let add_endpoint = AddUserToGroup::builder()
+                .group_id(group_id)
+                .user_id(user_id)
+                .build()?;
+            redmine.ignore_response_body::<_>(&add_endpoint)?;
+            assert_eq!(group_user_ids(redmine, group_id)?, vec![user_id]);
+            f(redmine, group_id, user_id)
+        })
+    }
+
+    /// checks whether the Redmine instance supports [`RemoveUsersFromGroup`]
+    /// (Redmine 7.0 and later)
+    ///
+    /// sends the request without any users to an empty group, Redmine 7.0 and
+    /// later answers this with an empty API 404 response while older versions
+    /// do not have the route at all and answer with the HTML 404 page
+    fn supports_remove_users_from_group(group_id: u64) -> Result<bool, Box<dyn Error>> {
+        let url = std::env::var("REDMINE_URL")?;
+        let api_key = std::env::var("REDMINE_API_KEY")?;
+        let response = reqwest::blocking::Client::builder()
+            .tls_backend_rustls()
+            .build()?
+            .delete(format!(
+                "{}/groups/{group_id}/users.json",
+                url.trim_end_matches('/')
+            ))
+            .header("X-Redmine-API-Key", api_key)
+            .send()?;
+        let content_type = response
+            .headers()
+            .get(reqwest::header::CONTENT_TYPE)
+            .and_then(|v| v.to_str().ok())
+            .unwrap_or_default()
+            .to_owned();
+        trace!(status = %response.status(), %content_type, "RemoveUsersFromGroup probe");
+        Ok(response.status() == reqwest::StatusCode::NOT_FOUND
+            && content_type.starts_with("application/json"))
+    }
+
+    #[function_name::named]
+    #[traced_test]
+    #[test]
+    fn test_add_and_remove_user_from_group() -> Result<(), Box<dyn Error>> {
+        let name = format!("unittest_{}", function_name!());
+        with_current_user_in_group(&name, |redmine, group_id, user_id| {
+            let remove_endpoint = RemoveUserFromGroup::builder()
+                .group_id(group_id)
+                .user_id(user_id)
+                .build()?;
+            redmine.ignore_response_body::<_>(&remove_endpoint)?;
+            assert_eq!(group_user_ids(redmine, group_id)?, Vec::<u64>::new());
+            Ok(())
+        })
+    }
+
+    /// this test is skipped (passes without testing anything) on Redmine
+    /// versions before 7.0 which do not have the endpoint
+    #[function_name::named]
+    #[traced_test]
+    #[test]
+    fn test_add_and_remove_users_from_group() -> Result<(), Box<dyn Error>> {
+        let name = format!("unittest_{}", function_name!());
+        with_group(&name, |redmine, group_id, _name| {
+            if !supports_remove_users_from_group(group_id)? {
+                tracing::warn!("Redmine version does not support RemoveUsersFromGroup, skipping");
+                return Ok(());
+            }
+            let user_id = current_user_id(redmine)?;
+            let add_endpoint = AddUserToGroup::builder()
+                .group_id(group_id)
+                .user_id(user_id)
+                .build()?;
+            redmine.ignore_response_body::<_>(&add_endpoint)?;
+            assert_eq!(group_user_ids(redmine, group_id)?, vec![user_id]);
+            let remove_endpoint = RemoveUsersFromGroup::builder()
+                .group_id(group_id)
+                .user_ids(vec![user_id])
+                .build()?;
+            redmine.ignore_response_body::<_>(&remove_endpoint)?;
+            assert_eq!(group_user_ids(redmine, group_id)?, Vec::<u64>::new());
+            Ok(())
+        })
     }
 
     /// this tests if any of the results contain a field we are not deserializing

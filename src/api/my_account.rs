@@ -80,6 +80,8 @@ pub enum MailNotificationOption {
     OnlyAssigned,
     /// Only for issues I own.
     OnlyOwner,
+    /// Only for things I watch (Redmine 7.0 and later).
+    OnlyMyWatches,
     /// No notifications.
     None,
 }

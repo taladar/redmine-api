@@ -366,6 +366,9 @@ pub enum MailNotificationOptions {
     OnlyAssigned,
     /// Only get notifications for events in issues owned by the user
     OnlyOwner,
+    /// Only get notifications for events in objects watched by the user
+    /// (Redmine 7.0 and later)
+    OnlyMyWatches,
     /// Do not get any notifications
     #[serde(rename = "none")]
     NoMailNotifications,

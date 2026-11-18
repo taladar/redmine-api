@@ -22,6 +22,7 @@ use serde::Serialize;
 use std::borrow::Cow;
 
 use crate::api::attachments::Attachment;
+use crate::api::projects::ProjectEssentials;
 use crate::api::users::UserEssentials;
 use crate::api::{Endpoint, NoPagination, QueryParams, ReturnsJsonResponse};
 
@@ -61,6 +62,9 @@ pub struct WikiPageEssentials {
     pub parent: Option<WikiPageParent>,
     /// the version number of the wiki page
     pub version: u64,
+    /// the project this wiki page belongs to (Redmine 7.0 and later)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub project: Option<ProjectEssentials>,
     /// The time when this wiki page was created
     #[serde(
         serialize_with = "crate::api::serialize_rfc3339",
@@ -100,6 +104,9 @@ pub struct WikiPage {
     pub version: u64,
     /// the comments supplied when saving this version of the page
     pub comments: String,
+    /// the project this wiki page belongs to (Redmine 7.0 and later)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub project: Option<ProjectEssentials>,
     /// The time when this wiki page was created
     #[serde(
         serialize_with = "crate::api::serialize_rfc3339",

@@ -115,6 +115,20 @@ impl<'de> serde::Deserialize<'de> for EditTagStyle {
     }
 }
 
+/// How the default value of a date custom field is interpreted
+///
+/// Only returned by Redmine 7.0 and later, and only for custom fields with
+/// the `date` field format
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum DefaultValueMode {
+    /// the default value is a fixed date (e.g. `2026-01-01`)
+    FixedDate,
+    /// the default value is an offset in days relative to the current date
+    /// (e.g. `3` or `-1`)
+    DateOffset,
+}
+
 /// Possible values contain a value and a label
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -161,7 +175,15 @@ pub struct CustomFieldDefinition {
     /// can this field be added more than once
     pub multiple: bool,
     /// default value for the field
+    ///
+    /// for date fields with a `default_value_mode` of
+    /// [`DefaultValueMode::DateOffset`] this is the raw offset in days
+    /// (e.g. `"3"`), not a date
     pub default_value: Option<String>,
+    /// how the default value of a date field is interpreted
+    /// (only date fields, Redmine 7.0 and later)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub default_value_mode: Option<DefaultValueMode>,
     /// visibility of the custom field
     pub visible: bool,
     /// which roles can see the custom field

@@ -46,6 +46,7 @@ where
             "files".into(),
             "issue_tracking".into(),
             "news".into(),
+            "time_tracking".into(),
             "wiki".into(),
         ])
         .build()?;
@@ -53,11 +54,7 @@ where
         redmine.json_response_body::<_, ProjectWrapper<Project>>(&create_endpoint)?;
 
     // Add current user to the project with a role that has manage_files permission
-    let current_user_endpoint = crate::api::my_account::GetMyAccount::builder().build()?;
-    let current_user_wrapper = redmine.json_response_body::<_, crate::api::users::UserWrapper<
-        crate::api::my_account::MyAccount,
-    >>(&current_user_endpoint)?;
-    let current_user_id = current_user_wrapper.user.id;
+    let current_user_id = current_user_id(&redmine)?;
 
     let list_roles_endpoint = crate::api::roles::ListRoles::builder().build()?;
     let roles_wrapper = redmine.json_response_body::<_, crate::api::roles::RolesWrapper<
@@ -138,4 +135,41 @@ where
     f(&redmine, id, name)?;
     trace!(%name, "Actual test body ends here");
     Ok(())
+}
+
+/// Returns the id of the user the API key belongs to
+///
+/// # Errors
+///
+/// This returns an error when the current user can not be fetched
+pub fn current_user_id(redmine: &crate::api::Redmine) -> Result<u64, Box<dyn Error>> {
+    let endpoint = crate::api::my_account::GetMyAccount::builder().build()?;
+    let crate::api::users::UserWrapper { user } = redmine
+        .json_response_body::<_, crate::api::users::UserWrapper<crate::api::my_account::MyAccount>>(
+            &endpoint,
+        )?;
+    Ok(user.id)
+}
+
+/// Creates an issue with the given subject in the given project for testing
+///
+/// The issue is not deleted explicitly, it is deleted along with the project
+/// created by [`with_project`]
+///
+/// # Errors
+///
+/// This returns an error when it can not create the issue
+pub fn create_issue(
+    redmine: &crate::api::Redmine,
+    project_id: u64,
+    subject: &str,
+) -> Result<crate::api::issues::Issue, Box<dyn Error>> {
+    use crate::api::issues::{CreateIssue, Issue, IssueWrapper};
+    let create_endpoint = CreateIssue::builder()
+        .project_id(project_id)
+        .subject(subject)
+        .build()?;
+    let IssueWrapper { issue } =
+        redmine.json_response_body::<_, IssueWrapper<Issue>>(&create_endpoint)?;
+    Ok(issue)
 }
